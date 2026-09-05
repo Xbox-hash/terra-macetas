@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
@@ -113,15 +113,8 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
         var body = new
         {
             number = phone,
-            options = new
-            {
-                delay = 1200,
-                presence = "composing"
-            },
-            textMessage = new
-            {
-                text = message
-            }
+            text = message,
+            delay = 1200
         };
 
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
@@ -140,6 +133,16 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
 
     private static string CleanPhone(string phone)
     {
-        return new string(phone.Where(char.IsDigit).ToArray());
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        // Si el número en Paraguay empieza con 098... convertir a 59598...
+        if (digits.StartsWith("09") && digits.Length == 10)
+        {
+            digits = "595" + digits.Substring(1);
+        }
+        else if (digits.StartsWith("9") && digits.Length == 9)
+        {
+            digits = "595" + digits;
+        }
+        return digits;
     }
 }

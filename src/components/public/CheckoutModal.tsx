@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { ShoppingBag, Sparkles, CheckCircle2, MessageCircle, MapPin, User, Phone, Building, ArrowRight, X } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
@@ -62,11 +62,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       message += `💰 *TOTAL A ABONAR: ${formatPrice(totalAmount)}*\n\n`;
       message += `Quedo a la espera de su confirmación para coordinar el pago y el envío. ¡Muchas gracias!`;
 
-      // 3. Abrir WhatsApp en pestaña nueva
-      const waUrl = `https://wa.me/${config.whatsappNumber}?text=${encodeURIComponent(message)}`;
-      window.open(waUrl, '_blank');
-
-      // 4. Limpiar carrito y mostrar pantalla de éxito
+      // 3. Limpiar carrito y mostrar pantalla de éxito directo (sin abrir ventana de WhatsApp web)
       clearCart();
       if (closeCartDrawer) closeCartDrawer();
       setOrderSuccess(true);
