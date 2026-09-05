@@ -8,7 +8,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(amount: number): string {
-  return `${STORE_CONFIG.currencySymbol} ${amount.toLocaleString('es-PY')}`;
+  const rounded = Math.round(amount || 0);
+  return `${STORE_CONFIG.currencySymbol} ${rounded.toLocaleString('es-PY', { maximumFractionDigits: 0 })}`;
 }
 
 export function formatPhoneNumber(phone?: string): string {
