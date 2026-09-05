@@ -1,6 +1,6 @@
 ﻿import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Layers, Package, Building2, Settings, LogOut, Sprout, ExternalLink, X } from 'lucide-react';
+import { LayoutDashboard, Layers, Package, Building2, Users, Settings, LogOut, Sprout, ExternalLink, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompany } from '../../contexts/CompanyContext';
 
@@ -24,6 +24,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
     { label: 'Líneas', path: '/admin/lineas', icon: Layers },
     { label: 'Productos', path: '/admin/productos', icon: Package },
     { label: 'Datos Empresa', path: '/admin/empresa', icon: Building2 },
+    { label: 'Usuarios / Accesos', path: '/admin/usuarios', icon: Users },
   ];
 
   const sidebarContent = (
@@ -118,7 +119,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
 
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-300 hover:bg-rose-950/40 hover:text-rose-200 transition-colors border border-rose-900/30"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-300 hover:bg-rose-950/40 hover:text-rose-200 transition-colors border border-rose-900/30 cursor-pointer"
         >
           <LogOut className="w-3.5 h-3.5" />
           Cerrar Sesión

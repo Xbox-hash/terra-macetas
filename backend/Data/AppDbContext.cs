@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<CompanyConfig> CompanyConfigs => Set<CompanyConfig>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<SiteVisit> SiteVisits => Set<SiteVisit>();
+    public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -50,6 +51,12 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<SiteVisit>(entity =>
         {
             entity.HasKey(e => e.Id);
+        });
+
+        modelBuilder.Entity<AdminUser>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Email).IsUnique();
         });
     }
 }

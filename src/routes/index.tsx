@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { PublicLayout } from '../layouts/PublicLayout';
 import { AdminLayout } from '../layouts/AdminLayout';
@@ -16,6 +16,7 @@ import { DashboardPage } from '../pages/admin/DashboardPage';
 import { LinesAdminPage } from '../pages/admin/LinesAdminPage';
 import { ProductsAdminPage } from '../pages/admin/ProductsAdminPage';
 import { CompanyAdminPage } from '../pages/admin/CompanyAdminPage';
+import { UsersAdminPage } from '../pages/admin/UsersAdminPage';
 
 export const router = createBrowserRouter([
   // Public Site routes
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
       { path: 'lineas', element: <LinesAdminPage /> },
       { path: 'productos', element: <ProductsAdminPage /> },
       { path: 'empresa', element: <CompanyAdminPage /> },
+      { path: 'usuarios', element: <UsersAdminPage /> },
     ],
   },
 ]);
