@@ -1,10 +1,11 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag, MessageCircle, Truck, Sparkles, Shield, Check, Info } from 'lucide-react';
 import { Product, ProductLine } from '../../types';
 import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
 import { useCart } from '../../contexts/CartContext';
+import { useCompany } from '../../contexts/CompanyContext';
 import { useToast } from '../../contexts/ToastContext';
 import { formatPrice, getWhatsAppUrl } from '../../utils';
 import { Button } from '../../components/common/Button';
@@ -15,6 +16,7 @@ export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToCart, openCartDrawer } = useCart();
+  const { config } = useCompany();
   const { showToast } = useToast();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -80,8 +82,9 @@ export const ProductDetailPage: React.FC = () => {
   };
 
   const handleQuickWhatsApp = () => {
-    const singleItem = [{ product, quantity, subtotal: product.price * quantity }];
-    const url = getWhatsAppUrl(singleItem, product.price * quantity, `Hola, me interesa pedir específicamente esta maceta: ${product.name}`);
+    const message = `🌿 *¡Hola ${config.storeName}!* Me interesa pedir directamente esta pieza:\n\n🪴 *${product.name}*\n   • Cantidad: ${quantity}\n   • Precio unitario: ${formatPrice(product.price)}\n   • Total estimado: ${formatPrice(product.price * quantity)}\n\n¿Tienen disponibilidad y cómo coordinamos la entrega? ¡Muchas gracias!`;
+    const targetNumber = config.whatsappNumber?.replace(/\D/g, '') || '595981234567';
+    const url = `https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
 
