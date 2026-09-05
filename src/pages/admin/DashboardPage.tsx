@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { AdminHeader } from '../../components/admin/AdminHeader';
 import { Button } from '../../components/common/Button';
+import { Modal } from '../../components/common/Modal';
 import { formatPrice } from '../../utils';
 import { dashboardService, orderService, DashboardStats } from '../../services/orderService';
 import { useToast } from '../../contexts/ToastContext';
@@ -45,6 +46,7 @@ export const DashboardPage: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'Pendiente' | 'Cerrado' | 'Cancelado'>('all');
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [orderToCancel, setOrderToCancel] = useState<any | null>(null);
 
   const loadDashboardData = async () => {
     setLoading(true);
@@ -73,14 +75,14 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
-  const handleCancelOrder = async (orderId: string) => {
-    if (!confirm('¿Desea cancelar este pedido? Permanecerá visible durante 7 días y luego se purgará automáticamente.')) {
-      return;
-    }
+  const confirmCancelOrder = async () => {
+    if (!orderToCancel) return;
+    const orderId = orderToCancel.id;
     setActionLoadingId(orderId);
     try {
       await orderService.cancelOrder(orderId);
       showToast(`Pedido #${orderId.substring(0, 8)} CANCELADO (saldrá en 7 días).`, 'info');
+      setOrderToCancel(null);
       loadDashboardData();
     } catch (err: any) {
       showToast('Error al cancelar pedido', 'error');
@@ -414,7 +416,7 @@ export const DashboardPage: React.FC = () => {
                                   <Check className="w-3.5 h-3.5" /> Cerrar
                                 </button>
                                 <button
-                                  onClick={() => handleCancelOrder(order.id)}
+                                  onClick={() => setOrderToCancel(order)}
                                   disabled={actionLoadingId === order.id}
                                   className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-colors cursor-pointer"
                                   title="Cancelar pedido (se eliminará automáticamente pasados 7 días)"
@@ -434,6 +436,64 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Modal Elegante de Confirmación de Cancelación */}
+      <Modal
+        isOpen={Boolean(orderToCancel)}
+        onClose={() => setOrderToCancel(null)}
+        maxWidth="md"
+      >
+        {orderToCancel && (
+          <div className="text-center py-4 px-2 space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center mx-auto shadow-xs">
+              <AlertCircle className="w-8 h-8 text-rose-600" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1 rounded-full">
+                Confirmar Cancelación
+              </span>
+              <h3 className="font-serif text-2xl font-bold text-[#222A21] pt-1">
+                ¿Desea cancelar este pedido?
+              </h3>
+              <p className="text-sm text-[#5C6A5A] max-w-sm mx-auto leading-relaxed">
+                El pedido <strong>#{orderToCancel.id}</strong> de <strong>{orderToCancel.customerName || 'Cliente'}</strong> pasará a estado cancelado.
+              </p>
+            </div>
+
+            <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-[#E8E2D6] text-xs text-[#5D6B5C] text-left space-y-2">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-700 shrink-0" />
+                <span><strong>Retención de 7 días:</strong> Permanecerá en tu lista para revisión o posible restauración.</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Trash2 className="w-4 h-4 text-rose-600 shrink-0" />
+                <span><strong>Purga automática:</strong> Transcurridos los 7 días, saldrá automáticamente del sistema.</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="md"
+                className="w-full justify-center text-xs"
+                onClick={() => setOrderToCancel(null)}
+              >
+                Volver
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                className="w-full justify-center bg-rose-700 hover:bg-rose-800 text-white text-xs border-transparent shadow-md"
+                isLoading={actionLoadingId === orderToCancel.id}
+                onClick={confirmCancelOrder}
+              >
+                Sí, Cancelar Pedido
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
