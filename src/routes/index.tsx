@@ -17,6 +17,7 @@ import { LinesAdminPage } from '../pages/admin/LinesAdminPage';
 import { ProductsAdminPage } from '../pages/admin/ProductsAdminPage';
 import { CompanyAdminPage } from '../pages/admin/CompanyAdminPage';
 import { UsersAdminPage } from '../pages/admin/UsersAdminPage';
+import { AnalyticsPage } from '../pages/admin/AnalyticsPage';
 
 export const router = createBrowserRouter([
   // Public Site routes
@@ -43,6 +44,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'dashboard', element: <DashboardPage /> },
+      { path: 'reportes', element: <AnalyticsPage /> },
+      { path: 'analytics', element: <AnalyticsPage /> },
       { path: 'lineas', element: <LinesAdminPage /> },
       { path: 'productos', element: <ProductsAdminPage /> },
       { path: 'empresa', element: <CompanyAdminPage /> },

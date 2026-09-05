@@ -1,6 +1,6 @@
-﻿import React from 'react';
+import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Layers, Package, Building2, Users, Settings, LogOut, Sprout, ExternalLink, X } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Layers, Package, Building2, Users, Settings, LogOut, Sprout, ExternalLink, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompany } from '../../contexts/CompanyContext';
 
@@ -21,6 +21,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
 
   const navItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Reportes & BI', path: '/admin/reportes', icon: BarChart3 },
     { label: 'Líneas', path: '/admin/lineas', icon: Layers },
     { label: 'Productos', path: '/admin/productos', icon: Package },
     { label: 'Datos Empresa', path: '/admin/empresa', icon: Building2 },
