@@ -286,11 +286,13 @@ export const AnalyticsPage: React.FC = () => {
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte_Ventas');
+    const sheetName = (config.storeName || 'Ventas').slice(0, 30);
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 
     worksheet['!cols'] = [{ wch: 14 }, { wch: 18 }, { wch: 20 }, { wch: 16 }, { wch: 22 }, { wch: 40 }, { wch: 16 }, { wch: 14 }, { wch: 12 }];
 
-    XLSX.writeFile(workbook, `TERRA_Reporte_Ventas_${startDate || 'Historico'}_al_${endDate || 'Actual'}.xlsx`);
+    const cleanStoreName = (config.storeName || 'Reporte').replace(/[^a-zA-Z0-9]/g, '_');
+    XLSX.writeFile(workbook, `${cleanStoreName}_Reporte_Ventas_${startDate || 'Historico'}_al_${endDate || 'Actual'}.xlsx`);
   };
 
   // EXPORT TO PDF
@@ -321,12 +323,12 @@ export const AnalyticsPage: React.FC = () => {
     doc.roundedRect(14, 48, 182, 22, 3, 3, 'F');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
+    doc.setFontSize(9.5);
     doc.setTextColor(45, 58, 47);
-    doc.text(`Facturación Total: ₲ ${kpis.totalRevenue.toLocaleString('es-PY')}`, 20, 58);
+    doc.text(`Facturación Total: Gs. ${kpis.totalRevenue.toLocaleString('es-PY')}`, 20, 57);
     doc.text(`Pedidos Cerrados: ${kpis.closedCount} de ${kpis.totalCount}`, 20, 64);
 
-    doc.text(`Ticket Promedio: ₲ ${Math.round(kpis.averageTicket).toLocaleString('es-PY')}`, 105, 58);
+    doc.text(`Ticket Promedio: Gs. ${Math.round(kpis.averageTicket).toLocaleString('es-PY')}`, 105, 57);
     doc.text(`Tasa de Cierre: ${kpis.conversionRate.toFixed(1)}%`, 105, 64);
 
     // Tabla de Pedidos
@@ -335,13 +337,13 @@ export const AnalyticsPage: React.FC = () => {
       new Date(o.createdAt).toLocaleDateString('es-PY'),
       o.customerName || 'Cliente',
       o.customerPhone || '-',
-      o.items?.map((i: any) => `${i.quantity || i.Quantity}x ${i.productName || i.product?.name || i.ProductName}`).join(', ') || '',
-      `₲ ${Number(o.total).toLocaleString('es-PY')}`,
+      o.items?.map((i: any) => `${i.quantity || i.Quantity}x ${i.productName || i.product?.name || i.ProductName}`).join(', ') || '-',
+      `Gs. ${Number(o.total).toLocaleString('es-PY')}`,
       o.status
     ]);
 
     autoTable(doc, {
-      startY: 76,
+      startY: 75,
       head: [['ID', 'Fecha', 'Cliente', 'Teléfono', 'Productos', 'Total', 'Estado']],
       body: tableData,
       theme: 'grid',
@@ -349,24 +351,28 @@ export const AnalyticsPage: React.FC = () => {
         fillColor: [45, 58, 47],
         textColor: [255, 255, 255],
         fontStyle: 'bold',
-        fontSize: 8
+        fontSize: 8,
+        halign: 'left'
       },
       styles: {
         fontSize: 7.5,
-        cellPadding: 2.5
+        cellPadding: 3,
+        overflow: 'linebreak',
+        valign: 'middle'
       },
       columnStyles: {
-        0: { cellWidth: 24 },
-        1: { cellWidth: 20 },
-        2: { cellWidth: 28 },
-        3: { cellWidth: 24 },
-        4: { cellWidth: 48 },
-        5: { cellWidth: 22, halign: 'right' },
-        6: { cellWidth: 16, halign: 'center' }
+        0: { cellWidth: 24, fontStyle: 'bold' },
+        1: { cellWidth: 18 },
+        2: { cellWidth: 26 },
+        3: { cellWidth: 22 },
+        4: { cellWidth: 46 },
+        5: { cellWidth: 24, halign: 'right', fontStyle: 'bold' },
+        6: { cellWidth: 20, halign: 'center' }
       }
     });
 
-    doc.save(`TERRA_Informe_Ventas_${startDate || 'Historico'}.pdf`);
+    const filename = `${(config.storeName || 'TERRA').replace(/[^a-zA-Z0-9]/g, '_')}_Informe_Ventas_${startDate || 'Historico'}.pdf`;
+    doc.save(filename);
   };
 
   return (

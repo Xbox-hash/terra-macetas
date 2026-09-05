@@ -1,4 +1,4 @@
-﻿namespace TerraMacetas.Api.DTOs;
+namespace TerraMacetas.Api.DTOs;
 
 public class CompanyConfigDto
 {
@@ -15,4 +15,8 @@ public class CompanyConfigDto
     public string City { get; set; } = string.Empty;
     public string Country { get; set; } = string.Empty;
     public string BusinessHours { get; set; } = string.Empty;
+    public bool WhatsappGatewayEnabled { get; set; } = true;
+    public string? WhatsappApiUrl { get; set; } = "http://localhost:8080";
+    public string? WhatsappApiKey { get; set; } = "TerraSecretApiKey2026_WhatsAppGateway!";
+    public string? WhatsappInstanceName { get; set; } = "terra_bot";
 }

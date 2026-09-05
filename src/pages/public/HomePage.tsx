@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, ShieldCheck, Truck, Palette, HeartHandshake } from 'lucide-react';
 import { Product, ProductLine } from '../../types';
@@ -7,8 +7,10 @@ import { lineService } from '../../services/lineService';
 import { ProductCard } from '../../components/public/ProductCard';
 import { LineCard } from '../../components/public/LineCard';
 import { Button } from '../../components/common/Button';
+import { useCompany } from '../../contexts/CompanyContext';
 
 export const HomePage: React.FC = () => {
+  const { config } = useCompany();
   const [lines, setLines] = useState<ProductLine[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -212,8 +214,8 @@ export const HomePage: React.FC = () => {
                 Amor por la arcilla, el diseño y las plantas vivas
               </h2>
 
-              <p className="text-sm sm:text-base text-[#5A6757] leading-relaxed">
-                En <strong>TERRA</strong> entendemos que incorporar vegetación en tu hogar u oficina es un ritual de bienestar. Por eso no creamos macetas genéricas: diseñamos piezas con personalidad, peso, textura y proporciones cuidadosamente estudiadas para que tus plantas respiren y luzcan en su máximo esplendor.
+              <p className="text-base sm:text-lg text-[#526050] font-light leading-relaxed">
+                En <strong>{config.storeName || 'nuestro taller'}</strong> entendemos que incorporar vegetación en tu hogar u oficina es un ritual de bienestar. Por eso no creamos macetas genéricas: diseñamos piezas con personalidad, peso, textura y proporciones cuidadosamente estudiadas para que tus plantas respiren y luzcan en su máximo esplendor.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">

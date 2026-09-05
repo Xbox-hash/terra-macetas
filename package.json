@@ -20,10 +20,14 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.41.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.3",
-    "tailwind-merge": "^3.6.0"
+    "recharts": "^2.15.1",
+    "tailwind-merge": "^3.6.0",
+    "xlsx": "^0.18.5"
   }
 }

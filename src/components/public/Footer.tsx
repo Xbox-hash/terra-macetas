@@ -1,7 +1,8 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Sprout, Phone, MapPin, Mail, ArrowUpRight, Camera } from 'lucide-react';
 import { useCompany } from '../../contexts/CompanyContext';
+import { formatPhoneNumber } from '../../utils';
 
 export const Footer: React.FC = () => {
   const { config } = useCompany();
@@ -75,11 +76,11 @@ export const Footer: React.FC = () => {
                   <span>{config.address}, {config.city}</span>
                 </li>
               )}
-              {config.whatsappDisplay && (
+              {config.whatsappNumber && (
                 <li className="flex items-center gap-2.5">
                   <Phone className="w-4 h-4 text-[#A1B39D] shrink-0" />
                   <a href={`https://wa.me/${config.whatsappNumber}`} target="_blank" rel="noreferrer" className="hover:text-white underline-offset-4 hover:underline">
-                    {config.whatsappDisplay}
+                    {formatPhoneNumber(config.whatsappDisplay || config.whatsappNumber)}
                   </a>
                 </li>
               )}

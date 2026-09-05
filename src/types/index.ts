@@ -1,4 +1,4 @@
-﻿// Product and Catalog Types
+// Product and Catalog Types
 export interface ProductLine {
   id: string;
   name: string;
@@ -47,6 +47,11 @@ export interface Order {
   paymentStatus: PaymentStatus;
   channel: 'whatsapp' | 'web';
   createdAt: string;
+  closedAt?: string;
+  closedBy?: string;
+  cancelledAt?: string;
+  cancelledBy?: string;
+  reopenedBy?: string;
 }
 
 // Auth & Admin Types
@@ -54,8 +59,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'staff' | 'customer';
+  role: 'admin' | 'staff' | 'customer' | string;
   avatarUrl?: string;
+  permissions?: string[];
 }
 
 export interface AuthState {
@@ -79,4 +85,8 @@ export interface StoreConfig {
   city: string;
   country: string;
   businessHours: string;
+  whatsappGatewayEnabled?: boolean;
+  whatsappApiUrl?: string;
+  whatsappApiKey?: string;
+  whatsappInstanceName?: string;
 }

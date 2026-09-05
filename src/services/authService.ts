@@ -1,22 +1,24 @@
-﻿import { User, AuthState } from '../types';
+import { User, AuthState } from '../types';
 
 const API_BASE_URL = 'http://127.0.0.1:5000/api/auth';
 const AUTH_STORAGE_KEY = 'terra_auth_state';
 
 export interface CreateUserData {
   name: string;
-  email: string;
+  email?: string;
   password: string;
   role?: string;
   avatarUrl?: string;
+  permissions?: string[];
 }
 
 export interface UpdateUserData {
   name: string;
-  email: string;
+  email?: string;
   newPassword?: string;
   role?: string;
   avatarUrl?: string;
+  permissions?: string[];
   active: boolean;
 }
 

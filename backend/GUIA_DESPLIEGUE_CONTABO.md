@@ -1,10 +1,10 @@
-﻿# Guía de Despliegue en Servidor Contabo (Backend + Frontend + Evolution API)
+# 🚀 Guía de Despliegue y Configuración en Producción (VPS Contabo)
 
-Esta guía detalla cómo desplegar el proyecto en un servidor VPS de **Contabo** con costo de gateway WhatsApp **$0 USD**.
+Esta guía explica paso a paso cómo configurar **Evolution API (WhatsApp Autónomo)** y el acceso de **Superusuario / Desarrollador** al desplegar en tu VPS de Contabo.
 
 ---
 
-## 🏗️ Arquitectura en el VPS Contabo
+## 🏗️ Arquitectura de Servicios en Contabo
 
 ```
                     ┌────────────────────────┐
@@ -12,7 +12,7 @@ Esta guía detalla cómo desplegar el proyecto en un servidor VPS de **Contabo**
                     │                        │
   [Navegador Web] ──┼─► NGINX (Reverse Proxy)│
                     │     ├─► Frontend (React / Dist) [:80/:443]
-                    │     ├─► Backend (ASP.NET Core)  [:5000]
+                    │     ├─► Backend (.NET 8 Web API) [:5000]
                     │     └─► SQL Server / PostgreSQL
                     │
   [Backend .NET]  ──┼─► Evolution API (Docker) [:8080]
@@ -24,58 +24,64 @@ Esta guía detalla cómo desplegar el proyecto en un servidor VPS de **Contabo**
 
 ---
 
-## 🚀 Paso 1: Levantar Evolution API (WhatsApp Gateway) en Contabo
+## 🛠️ PASO 1: Levantar Evolution API en Contabo
 
-En la carpeta del backend ya tenés el archivo [`docker-compose-evolution.yml`](file:///C:/repos/TerraMacetas.Api/docker-compose-evolution.yml).
-
-1. Subir ese archivo al servidor VPS.
-2. Ejecutar:
+1. Conectate por SSH a tu servidor Contabo:
+   ```bash
+   ssh root@TU_IP_CONTABO
+   ```
+2. Creá el directorio y subí el archivo `docker-compose-evolution.yml`:
+   ```bash
+   mkdir -p /opt/terra/evolution && cd /opt/terra/evolution
+   ```
+3. Iniciá los contenedores:
    ```bash
    docker compose -f docker-compose-evolution.yml up -d
    ```
-3. El servicio estará activo en el puerto `8080`.
+4. Verificá que los contenedores estén activos:
+   ```bash
+   docker ps
+   ```
 
 ---
 
-## 📲 Paso 2: Vincular el número de WhatsApp de la Empresa (QR)
+## 📱 PASO 2: Vincular el WhatsApp del Negocio (Código QR)
 
-1. En tu navegador abrí: `http://IP_DE_TU_CONTABO:8080/instance/create` (o mediante Postman / Dashboard de Evolution).
-2. Creá la instancia `terra_instance`:
+1. Creá la instancia `terra_bot` en tu servidor:
    ```bash
    curl -X POST "http://localhost:8080/instance/create" \
      -H "Content-Type: application/json" \
      -H "apikey: TerraSecretApiKey2026_WhatsAppGateway!" \
-     -d '{"instanceName": "terra_instance", "qrcode": true}'
+     -d '{"instanceName": "terra_bot", "qrcode": true, "integration": "WHATSAPP-BAILEYS"}'
    ```
-3. Escaneá el **código QR** que aparece con el WhatsApp del negocio (*Dispositivos vinculados*).
-4. ¡Listo! A partir de ese momento el servidor tiene permiso para enviar mensajes solos.
+2. Obtené el código QR de conexión:
+   ```bash
+   curl -X GET "http://localhost:8080/instance/connect/terra_bot" \
+     -H "apikey: TerraSecretApiKey2026_WhatsAppGateway!"
+   ```
+3. Escaneá el QR desde el teléfono del negocio (**WhatsApp > Ajustes > Dispositivos vinculados > Vincular dispositivo**).
 
 ---
 
-## ⚙️ Paso 3: Configuración en ASP.NET Core (`appsettings.json`)
+## 🔑 PASO 3: Configuración con tu Superusuario en el Panel Web
 
-En tu [`appsettings.json`](file:///C:/repos/TerraMacetas.Api/appsettings.json) del backend:
+Una vez que la web esté publicada en tu dominio:
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=TerraMacetasDb;User Id=sa;Password=TuPasswordSeguro!;TrustServerCertificate=True;"
-  },
-  "WhatsAppGateway": {
-    "Enabled": true,
-    "BaseUrl": "http://localhost:8080",
-    "ApiKey": "TerraSecretApiKey2026_WhatsAppGateway!",
-    "InstanceName": "terra_instance"
-  }
-}
-```
+1. Ingresá al panel: `https://tudominio.com/admin/login`
+2. **Iniciá sesión como Desarrollador**:
+   - **Usuario:** `dev`
+   - **Contraseña:** `dev12345`
+3. Andá a **Datos de la Empresa** (`/admin/empresa`).
+4. Verás la tarjeta exclusiva para desarrollador:
+   - **URL Servidor Evolution API:** `http://localhost:8080` (o `http://127.0.0.1:8080`).
+   - **Nombre de Instancia:** `terra_bot`.
+   - **API Key:** `TerraSecretApiKey2026_WhatsAppGateway!`.
+5. Presioná **Guardar Información**.
 
 ---
 
-## 📩 Qué sucede automáticamente al recibir un pedido:
+## 👤 PASO 4: Entrega al Cliente
 
-Cuando un cliente presiona **"Confirmar y Enviar Pedido"** en la web:
-1. El backend guarda la orden en la tabla `dbo.Orders` de SQL Server.
-2. El servicio `EvolutionWhatsAppService.cs` dispara **2 mensajes automáticos**:
-   - **Al WhatsApp del Dueño/Empresa:** Recibe la notificación de nuevo pedido con el desglose de macetas, monto total y datos del cliente.
-   - **Al WhatsApp del Cliente:** Recibe un mensaje automático agradeciéndole la compra e informándole que en instantes se comunicarán con él.
+Al entregarle el sistema al cliente:
+- Le entregás su usuario: `admin` (Contraseña: `admin123` o la que elija).
+- **El cliente NUNCA verá** los datos técnicos del gateway, API Keys, ni la existencia del usuario `dev`. Solo verá su número de teléfono comercial para recibir pedidos.

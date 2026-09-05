@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
 using TerraMacetas.Api.DTOs;
@@ -54,6 +54,10 @@ public class CompanyController : ControllerBase
         config.City = dto.City?.Trim() ?? string.Empty;
         config.Country = dto.Country?.Trim() ?? string.Empty;
         config.BusinessHours = dto.BusinessHours?.Trim() ?? string.Empty;
+        config.WhatsappGatewayEnabled = dto.WhatsappGatewayEnabled;
+        config.WhatsappApiUrl = string.IsNullOrWhiteSpace(dto.WhatsappApiUrl) ? "http://localhost:8080" : dto.WhatsappApiUrl.Trim();
+        config.WhatsappApiKey = string.IsNullOrWhiteSpace(dto.WhatsappApiKey) ? "TerraSecretApiKey2026_WhatsAppGateway!" : dto.WhatsappApiKey.Trim();
+        config.WhatsappInstanceName = string.IsNullOrWhiteSpace(dto.WhatsappInstanceName) ? "terra_bot" : dto.WhatsappInstanceName.Trim();
         config.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -77,7 +81,11 @@ public class CompanyController : ControllerBase
             Address = c.Address,
             City = c.City,
             Country = c.Country,
-            BusinessHours = c.BusinessHours
+            BusinessHours = c.BusinessHours,
+            WhatsappGatewayEnabled = c.WhatsappGatewayEnabled,
+            WhatsappApiUrl = c.WhatsappApiUrl,
+            WhatsappApiKey = c.WhatsappApiKey,
+            WhatsappInstanceName = c.WhatsappInstanceName
         };
     }
 }

@@ -1,32 +1,38 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, Sprout, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCompany } from '../../contexts/CompanyContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Button } from '../../components/common/Button';
 import { FormInput } from '../../components/common/FormInput';
-import { STORE_CONFIG } from '../../data/mockData';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('admin@terra.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();
+  const { config } = useCompany();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      setError('Por favor complete todos los campos.');
+      return;
+    }
+
     setError('');
     setLoading(true);
 
     try {
-      await login(email, password, remember);
-      showToast('¡Bienvenido al panel administrativo de TERRA!');
+      await login(email.trim(), password, remember);
+      showToast(`¡Bienvenido al panel administrativo de ${config.storeName || 'TERRA'}!`);
       navigate('/admin/dashboard');
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión');
@@ -41,13 +47,21 @@ export const LoginPage: React.FC = () => {
         {/* Brand Header */}
         <div className="text-center mb-8 space-y-3">
           <Link to="/" className="inline-flex items-center gap-2.5">
-            <div className="w-12 h-12 rounded-2xl bg-[#374538] text-[#D0DEC7] flex items-center justify-center shadow-lg mx-auto">
-              <Sprout className="w-7 h-7 text-[#A9BCA1]" />
-            </div>
+            {config.logoUrl ? (
+              <img
+                src={config.logoUrl}
+                alt={config.storeName}
+                className="w-14 h-14 rounded-2xl object-cover border border-[#3E4E40] shadow-lg mx-auto"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-2xl bg-[#374538] text-[#D0DEC7] flex items-center justify-center shadow-lg mx-auto">
+                <Sprout className="w-7 h-7 text-[#A9BCA1]" />
+              </div>
+            )}
           </Link>
           <div>
             <h1 className="font-serif text-3xl font-bold tracking-wider text-white">
-              {STORE_CONFIG.storeName}
+              {config.storeName || 'TERRA'}
             </h1>
             <p className="text-xs uppercase tracking-widest text-[#8CA08A] font-semibold mt-1">
               Acceso a Administración
@@ -60,7 +74,7 @@ export const LoginPage: React.FC = () => {
           <div className="border-b border-[#E8E2D5] pb-4">
             <h2 className="font-serif text-xl font-bold text-[#222A21]">Iniciar Sesión</h2>
             <p className="text-xs text-[#6F7B6D] mt-0.5">
-              Ingresá tus credenciales para administrar el catálogo y líneas.
+              Ingresá tus credenciales para administrar el catálogo y los pedidos.
             </p>
           </div>
 
@@ -73,12 +87,12 @@ export const LoginPage: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <FormInput
-                label="Correo Electrónico"
-                type="email"
+                label="Usuario o Correo Electrónico"
+                type="text"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@terra.com"
+                placeholder="Ej: admin o admin@terra.com"
               />
             </div>
 
@@ -98,7 +112,7 @@ export const LoginPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7E8B7C] hover:text-[#2D3A2F]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7E8B7C] hover:text-[#2D3A2F] cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -115,8 +129,6 @@ export const LoginPage: React.FC = () => {
                 />
                 <span>Recordarme</span>
               </label>
-
-              <span className="text-[11px] text-[#7E8B7C]">Credenciales mock listas</span>
             </div>
 
             <div className="pt-2">
@@ -128,17 +140,10 @@ export const LoginPage: React.FC = () => {
                 isLoading={loading}
                 rightIcon={<ArrowRight className="w-4 h-4" />}
               >
-                Ingresar al Dashboard
+                Ingresar al Panel
               </Button>
             </div>
           </form>
-
-          {/* Quick Demo Help */}
-          <div className="p-3 bg-[#EDE7DC] rounded-xl text-[11px] text-[#556253] space-y-1">
-            <p className="font-semibold text-[#2D3A2F]">💡 Datos de prueba precargados:</p>
-            <p><strong>Email:</strong> admin@terra.com</p>
-            <p><strong>Contraseña:</strong> admin123</p>
-          </div>
         </div>
 
         <div className="text-center mt-6">

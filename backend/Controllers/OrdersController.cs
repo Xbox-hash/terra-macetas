@@ -60,9 +60,34 @@ public class OrdersController : ControllerBase
         return Ok(MapToDto(order));
     }
 
+    // 🛡️ Memoria para Rate Limiting de Pedidos (Máximo 5 pedidos por IP por minuto)
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, List<DateTime>> _orderRateLimits = new();
+
     [HttpPost]
     public async Task<ActionResult<OrderDto>> Create([FromBody] CreateOrderDto dto)
     {
+        // 1. 🛡️ Honeypot Anti-Bot (Si un bot completó el campo trampa 'website', descartamos silenciosamente)
+        if (!string.IsNullOrWhiteSpace(dto.Website))
+        {
+            _logger.LogWarning("Intento de pedido descartado por detección de bot (Honeypot).");
+            return Ok(new OrderDto { Id = "ORD-BOT", CustomerName = "Bot Detected", Status = "Cancelado" });
+        }
+
+        // 2. 🛡️ Rate Limiting Anti-Spam (Máximo 5 pedidos por minuto por IP)
+        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var now = DateTime.UtcNow;
+        var timestamps = _orderRateLimits.GetOrAdd(clientIp, _ => new List<DateTime>());
+
+        lock (timestamps)
+        {
+            timestamps.RemoveAll(t => t < now.AddMinutes(-1));
+            if (timestamps.Count >= 5)
+            {
+                return StatusCode(429, new { message = "Demasiados pedidos en poco tiempo. Por favor espere un momento antes de volver a intentar." });
+            }
+            timestamps.Add(now);
+        }
+
         var order = new Order
         {
             Id = $"ORD-{Guid.NewGuid().ToString("N")[..8].ToUpper()}",
@@ -101,13 +126,14 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPatch("{id}/close")]
-    public async Task<ActionResult<OrderDto>> CloseOrder(string id)
+    public async Task<ActionResult<OrderDto>> CloseOrder(string id, [FromBody] OrderActionRequestDto? req = null)
     {
         var order = await _context.Orders.FindAsync(id);
         if (order == null) return NotFound(new { message = "Pedido no encontrado" });
 
         order.Status = "Cerrado";
         order.ClosedAt = DateTime.UtcNow;
+        order.ClosedBy = !string.IsNullOrWhiteSpace(req?.User) ? req.User.Trim() : "Administrador";
         order.CancelledAt = null;
         await _context.SaveChangesAsync();
 
@@ -115,13 +141,14 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPatch("{id}/cancel")]
-    public async Task<ActionResult<OrderDto>> CancelOrder(string id)
+    public async Task<ActionResult<OrderDto>> CancelOrder(string id, [FromBody] OrderActionRequestDto? req = null)
     {
         var order = await _context.Orders.FindAsync(id);
         if (order == null) return NotFound(new { message = "Pedido no encontrado" });
 
         order.Status = "Cancelado";
         order.CancelledAt = DateTime.UtcNow;
+        order.CancelledBy = !string.IsNullOrWhiteSpace(req?.User) ? req.User.Trim() : "Administrador";
         order.ClosedAt = null;
         await _context.SaveChangesAsync();
 
@@ -129,12 +156,13 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPatch("{id}/reopen")]
-    public async Task<ActionResult<OrderDto>> ReopenOrder(string id)
+    public async Task<ActionResult<OrderDto>> ReopenOrder(string id, [FromBody] OrderActionRequestDto? req = null)
     {
         var order = await _context.Orders.FindAsync(id);
         if (order == null) return NotFound(new { message = "Pedido no encontrado" });
 
         order.Status = "Pendiente";
+        order.ReopenedBy = !string.IsNullOrWhiteSpace(req?.User) ? req.User.Trim() : "Administrador";
         order.ClosedAt = null;
         order.CancelledAt = null;
         await _context.SaveChangesAsync();
@@ -180,7 +208,10 @@ public class OrdersController : ControllerBase
             Channel = o.Channel,
             CreatedAt = o.CreatedAt,
             ClosedAt = o.ClosedAt,
-            CancelledAt = o.CancelledAt
+            ClosedBy = o.ClosedBy,
+            CancelledAt = o.CancelledAt,
+            CancelledBy = o.CancelledBy,
+            ReopenedBy = o.ReopenedBy
         };
     }
 }

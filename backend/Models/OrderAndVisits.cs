@@ -35,7 +35,16 @@ public class Order
 
     public DateTime? ClosedAt { get; set; }
 
+    [MaxLength(150)]
+    public string? ClosedBy { get; set; }
+
     public DateTime? CancelledAt { get; set; }
+
+    [MaxLength(150)]
+    public string? CancelledBy { get; set; }
+
+    [MaxLength(150)]
+    public string? ReopenedBy { get; set; }
 }
 
 public class SiteVisit

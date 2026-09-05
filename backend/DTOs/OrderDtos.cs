@@ -24,7 +24,15 @@ public class OrderDto
     public string Channel { get; set; } = "WhatsApp";
     public DateTime CreatedAt { get; set; }
     public DateTime? ClosedAt { get; set; }
+    public string? ClosedBy { get; set; }
     public DateTime? CancelledAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public string? ReopenedBy { get; set; }
+}
+
+public class OrderActionRequestDto
+{
+    public string? User { get; set; }
 }
 
 public class CreateOrderDto
@@ -36,6 +44,8 @@ public class CreateOrderDto
     public decimal Total { get; set; }
     public List<OrderItemDto> Items { get; set; } = new();
     public string Channel { get; set; } = "WhatsApp";
+    // 🛡️ Honeypot Anti-Bot: Los usuarios reales no lo llenan, los bots sí.
+    public string? Website { get; set; }
 }
 
 public class DashboardStatsDto

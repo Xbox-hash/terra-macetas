@@ -143,6 +143,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
           </div>
 
           <div className="space-y-3.5">
+            {/* 🛡️ Honeypot invisible para atrapar bots */}
+            <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
+              <input
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                value=""
+                onChange={() => {}}
+              />
+            </div>
+
             <FormInput
               label="Tu Nombre Completo"
               required
@@ -153,12 +165,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <FormInput
-                label="WhatsApp / Teléfono"
+                label="WhatsApp / Teléfono de Contacto"
                 type="tel"
                 required
-                placeholder="Ej: 0981 123 456"
+                placeholder="Ej: 0981 123 456 o +55 45 99988-7766"
+                helperText="Acepta números de Paraguay (098...) y Brasil (+55...)"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(e.target.value.replace(/[^0-9+\s-()]/g, ''))}
               />
 
               <FormInput

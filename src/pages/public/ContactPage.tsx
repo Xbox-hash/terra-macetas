@@ -1,8 +1,9 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Phone, MessageCircle, Mail, MapPin, Clock, Camera, Send, CheckCircle2 } from 'lucide-react';
 import { useCompany } from '../../contexts/CompanyContext';
 import { Button } from '../../components/common/Button';
 import { useToast } from '../../contexts/ToastContext';
+import { formatPhoneNumber } from '../../utils';
 
 export const ContactPage: React.FC = () => {
   const { config } = useCompany();
@@ -50,7 +51,7 @@ export const ContactPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-xs uppercase font-bold tracking-wider text-[#576455]">WhatsApp Oficial</h3>
-                  <p className="text-sm font-semibold text-[#222A21] mt-0.5">{config.whatsappDisplay || config.whatsappNumber}</p>
+                  <p className="text-sm font-semibold text-[#222A21] mt-0.5">{formatPhoneNumber(config.whatsappDisplay || config.whatsappNumber)}</p>
                   <p className="text-xs text-[#6F7B6D] mt-0.5">Respuesta inmediata en horario comercial</p>
                 </div>
               </div>

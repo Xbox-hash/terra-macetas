@@ -24,11 +24,13 @@ import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { formatPrice } from '../../utils';
 import { dashboardService, orderService, DashboardStats } from '../../services/orderService';
+import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Order } from '../../types';
 
 export const DashboardPage: React.FC = () => {
   const { openMobileSidebar } = useOutletContext<{ openMobileSidebar: () => void }>();
+  const { user } = useAuth();
   const { showToast } = useToast();
 
   const [stats, setStats] = useState<DashboardStats>({
@@ -65,8 +67,8 @@ export const DashboardPage: React.FC = () => {
   const handleCloseOrder = async (orderId: string) => {
     setActionLoadingId(orderId);
     try {
-      await orderService.closeOrder(orderId);
-      showToast(`Pedido #${orderId.substring(0, 8)} marcado como CERRADO.`);
+      await orderService.closeOrder(orderId, user?.name || 'Administrador');
+      showToast(`Pedido #${orderId.substring(0, 8)} marcado como CERRADO por ${user?.name || 'Administrador'}.`);
       loadDashboardData();
     } catch (err: any) {
       showToast('Error al cerrar pedido', 'error');
@@ -80,8 +82,8 @@ export const DashboardPage: React.FC = () => {
     const orderId = orderToCancel.id;
     setActionLoadingId(orderId);
     try {
-      await orderService.cancelOrder(orderId);
-      showToast(`Pedido #${orderId.substring(0, 8)} CANCELADO (saldrá en 7 días).`, 'info');
+      await orderService.cancelOrder(orderId, user?.name || 'Administrador');
+      showToast(`Pedido #${orderId.substring(0, 8)} CANCELADO por ${user?.name || 'Administrador'} (saldrá en 7 días).`, 'info');
       setOrderToCancel(null);
       loadDashboardData();
     } catch (err: any) {
@@ -94,8 +96,8 @@ export const DashboardPage: React.FC = () => {
   const handleReopenOrder = async (orderId: string) => {
     setActionLoadingId(orderId);
     try {
-      await orderService.reopenOrder(orderId);
-      showToast(`Pedido #${orderId.substring(0, 8)} reabierto a PENDIENTE.`);
+      await orderService.reopenOrder(orderId, user?.name || 'Administrador');
+      showToast(`Pedido #${orderId.substring(0, 8)} restaurado por ${user?.name || 'Administrador'}.`);
       loadDashboardData();
     } catch (err: any) {
       showToast('Error al reabrir pedido', 'error');
@@ -280,7 +282,7 @@ export const DashboardPage: React.FC = () => {
                 {loading ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-[#7E8B7D]">
-                      Cargando pedidos de SQL Server...
+                      Cargando pedidos...
                     </td>
                   </tr>
                 ) : filteredOrders.length === 0 ? (
@@ -321,10 +323,23 @@ export const DashboardPage: React.FC = () => {
                           <span className="font-bold text-sm text-[#222A21] block">
                             {order.customerName || 'Cliente WhatsApp'}
                           </span>
-                          {order.customerPhone && (
-                            <span className="text-xs text-[#4A5D4E] font-medium block">
-                              📱 {order.customerPhone}
-                            </span>
+                          {order.customerPhone ? (
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs text-[#4A5D4E] font-medium block">
+                                📱 {order.customerPhone}
+                              </span>
+                              <a
+                                href={`https://wa.me/${order.customerPhone.replace(/[^0-9]/g, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors"
+                                title="Abrir chat directo con el cliente"
+                              >
+                                <MessageCircle className="w-3 h-3" /> Chatear
+                              </a>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-neutral-400 italic block">Sin teléfono registrado</span>
                           )}
                           {order.notes && (
                             <p className="text-xs text-[#5D6B5C] bg-[#F2EDE4] p-2 rounded-lg mt-1 leading-snug">
@@ -363,25 +378,44 @@ export const DashboardPage: React.FC = () => {
 
                         <td className="px-6 py-4 align-top">
                           {isClosed ? (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              Cerrado
-                            </span>
+                            <div>
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                Cerrado
+                              </span>
+                              {order.closedBy && (
+                                <span className="text-[10px] text-[#556353] block mt-1 font-medium">
+                                  Por: <strong>{order.closedBy}</strong>
+                                </span>
+                              )}
+                            </div>
                           ) : isCancelled ? (
                             <div>
                               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
                                 <Ban className="w-3.5 h-3.5 text-rose-600" />
                                 Cancelado
                               </span>
-                              <span className="text-[10px] text-rose-600 block mt-1 font-medium">
+                              {order.cancelledBy && (
+                                <span className="text-[10px] text-rose-700 block mt-1 font-medium">
+                                  Por: <strong>{order.cancelledBy}</strong>
+                                </span>
+                              )}
+                              <span className="text-[10px] text-rose-600 block mt-0.5 font-medium">
                                 Purga en 7 días
                               </span>
                             </div>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                              <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                              Pendiente
-                            </span>
+                            <div>
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                                Pendiente
+                              </span>
+                              {order.reopenedBy && (
+                                <span className="text-[10px] text-amber-800 block mt-1 font-medium">
+                                  Reabierto: <strong>{order.reopenedBy}</strong>
+                                </span>
+                              )}
+                            </div>
                           )}
                         </td>
 

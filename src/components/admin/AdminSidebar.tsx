@@ -19,14 +19,22 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
     navigate('/admin/login');
   };
 
-  const navItems = [
-    { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Reportes & BI', path: '/admin/reportes', icon: BarChart3 },
-    { label: 'Líneas', path: '/admin/lineas', icon: Layers },
-    { label: 'Productos', path: '/admin/productos', icon: Package },
-    { label: 'Datos Empresa', path: '/admin/empresa', icon: Building2 },
-    { label: 'Usuarios / Accesos', path: '/admin/usuarios', icon: Users },
+  const allNavItems = [
+    { key: 'dashboard', label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+    { key: 'analytics', label: 'Reportes & BI', path: '/admin/reportes', icon: BarChart3 },
+    { key: 'lines', label: 'Líneas', path: '/admin/lineas', icon: Layers },
+    { key: 'products', label: 'Productos', path: '/admin/productos', icon: Package },
+    { key: 'company', label: 'Datos Empresa', path: '/admin/empresa', icon: Building2 },
+    { key: 'users', label: 'Usuarios / Accesos', path: '/admin/usuarios', icon: Users },
   ];
+
+  const userPermissions = user?.permissions || ['all'];
+  const hasAccess = (key: string) => {
+    if (userPermissions.includes('all')) return true;
+    return userPermissions.includes(key);
+  };
+
+  const navItems = allNavItems.filter((item) => hasAccess(item.key));
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-[#1F2720] text-[#E5ECE3] border-r border-[#2D392E]">
@@ -114,7 +122,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
           )}
           <div className="overflow-hidden">
             <p className="text-xs font-semibold text-white truncate">{user?.name || 'Administrador'}</p>
-            <p className="text-[11px] text-[#7E917C] truncate">{user?.email || 'admin@terra.com'}</p>
+            <p className="text-[11px] text-[#7E917C] truncate">{user?.email || `Rol: ${user?.role || 'Admin'}`}</p>
           </div>
         </div>
 

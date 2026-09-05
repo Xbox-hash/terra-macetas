@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Menu, Sprout, Bell } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -40,7 +40,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           <div className="h-6 w-px bg-[#E2DBD0] hidden sm:block" />
           <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-[#465444] bg-[#F4EFE6] px-3 py-1.5 rounded-full border border-[#E4DCCE]">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Mock API Conectada</span>
+            <span>Sistema en línea</span>
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,11 +19,29 @@ public class AuthController : ControllerBase
         _context = context;
     }
 
+    // 🛡️ Memoria para Bloqueo de Fuerza Bruta (Máximo 5 intentos fallidos, bloqueo de 15 min)
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (int FailedAttempts, DateTime LockoutUntil)> _loginAttempts = new();
+
     [HttpPost("login")]
     public async Task<ActionResult<AdminUserDto>> Login([FromBody] LoginRequestDto request)
     {
-        var email = request.Email?.Trim().ToLower() ?? string.Empty;
-        var user = await _context.AdminUsers.FirstOrDefaultAsync(u => u.Email.ToLower() == email && u.Active);
+        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var identifier = (request.Email ?? string.Empty).Trim().ToLower();
+        var key = $"{clientIp}_{identifier}";
+        var now = DateTime.UtcNow;
+
+        // Verificar si está bloqueado temporalmente
+        if (_loginAttempts.TryGetValue(key, out var attemptInfo))
+        {
+            if (attemptInfo.LockoutUntil > now)
+            {
+                var remainingMinutes = Math.Ceiling((attemptInfo.LockoutUntil - now).TotalMinutes);
+                return StatusCode(429, new { message = $"Demasiados intentos fallidos. Acceso bloqueado temporalmente por {remainingMinutes} minuto(s) por seguridad." });
+            }
+        }
+
+        var user = await _context.AdminUsers.FirstOrDefaultAsync(u => 
+            (u.Email.ToLower() == identifier || u.Name.ToLower() == identifier) && u.Active);
 
         // Si no hay usuarios en la base de datos, crear el administrador principal inicial
         if (user == null && !await _context.AdminUsers.AnyAsync())
@@ -31,7 +49,7 @@ public class AuthController : ControllerBase
             user = new AdminUser
             {
                 Id = "USR-ADMIN-1",
-                Name = "Administrador Principal",
+                Name = "admin",
                 Email = "admin@terra.com",
                 PasswordHash = HashPassword("admin123"),
                 Role = "Admin",
@@ -44,8 +62,21 @@ public class AuthController : ControllerBase
 
         if (user == null || !VerifyPassword(request.Password, user.PasswordHash))
         {
-            return Unauthorized(new { message = "Correo electrónico o contraseña incorrectos." });
+            // Registrar intento fallido
+            _loginAttempts.AddOrUpdate(key, 
+                _ => (1, DateTime.MinValue), 
+                (_, old) =>
+                {
+                    var newCount = old.FailedAttempts + 1;
+                    var lockUntil = newCount >= 5 ? now.AddMinutes(15) : DateTime.MinValue;
+                    return (newCount, lockUntil);
+                });
+
+            return Unauthorized(new { message = "Usuario / correo o contraseña incorrectos." });
         }
+
+        // Si el login fue exitoso, limpiar los intentos fallidos
+        _loginAttempts.TryRemove(key, out _);
 
         return Ok(MapToDto(user));
     }
@@ -60,8 +91,20 @@ public class AuthController : ControllerBase
     [HttpPost("users")]
     public async Task<ActionResult<AdminUserDto>> CreateUser([FromBody] CreateAdminUserDto dto)
     {
-        var email = dto.Email.Trim().ToLower();
-        if (await _context.AdminUsers.AnyAsync(u => u.Email.ToLower() == email))
+        var name = dto.Name.Trim();
+        var email = (dto.Email ?? string.Empty).Trim().ToLower();
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return BadRequest(new { message = "El nombre de usuario es obligatorio." });
+        }
+
+        if (await _context.AdminUsers.AnyAsync(u => u.Name.ToLower() == name.ToLower()))
+        {
+            return BadRequest(new { message = "Ya existe un usuario con este nombre de acceso." });
+        }
+
+        if (!string.IsNullOrWhiteSpace(email) && await _context.AdminUsers.AnyAsync(u => u.Email.ToLower() == email))
         {
             return BadRequest(new { message = "Ya existe un usuario con este correo electrónico." });
         }
@@ -69,11 +112,14 @@ public class AuthController : ControllerBase
         var user = new AdminUser
         {
             Id = $"USR-{Guid.NewGuid().ToString("N")[..8].ToUpper()}",
-            Name = dto.Name.Trim(),
-            Email = email,
+            Name = name,
+            Email = !string.IsNullOrWhiteSpace(email) ? email : $"{name.ToLower().Replace(" ", "")}@terra.com",
             PasswordHash = HashPassword(dto.Password),
             Role = dto.Role ?? "Admin",
             AvatarUrl = dto.AvatarUrl,
+            Permissions = dto.Permissions != null && dto.Permissions.Length > 0 
+                ? System.Text.Json.JsonSerializer.Serialize(dto.Permissions) 
+                : "all",
             Active = dto.Active,
             CreatedAt = DateTime.UtcNow
         };
@@ -90,17 +136,36 @@ public class AuthController : ControllerBase
         var user = await _context.AdminUsers.FindAsync(id);
         if (user == null) return NotFound(new { message = "Usuario no encontrado" });
 
-        var email = dto.Email.Trim().ToLower();
-        if (user.Email.ToLower() != email && await _context.AdminUsers.AnyAsync(u => u.Email.ToLower() == email))
+        var name = dto.Name.Trim();
+        var email = (dto.Email ?? string.Empty).Trim().ToLower();
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return BadRequest(new { message = "El nombre de usuario es obligatorio." });
+        }
+
+        if (user.Name.ToLower() != name.ToLower() && await _context.AdminUsers.AnyAsync(u => u.Name.ToLower() == name.ToLower()))
+        {
+            return BadRequest(new { message = "Ya existe otro usuario con este nombre de acceso." });
+        }
+
+        if (!string.IsNullOrWhiteSpace(email) && user.Email.ToLower() != email && await _context.AdminUsers.AnyAsync(u => u.Email.ToLower() == email))
         {
             return BadRequest(new { message = "El correo ya está en uso por otro usuario." });
         }
 
-        user.Name = dto.Name.Trim();
-        user.Email = email;
+        user.Name = name;
+        if (!string.IsNullOrWhiteSpace(email)) user.Email = email;
         user.Role = dto.Role ?? user.Role;
         user.AvatarUrl = dto.AvatarUrl;
         user.Active = dto.Active;
+
+        if (dto.Permissions != null)
+        {
+            user.Permissions = dto.Permissions.Length > 0 
+                ? System.Text.Json.JsonSerializer.Serialize(dto.Permissions) 
+                : "all";
+        }
 
         if (!string.IsNullOrWhiteSpace(dto.NewPassword))
         {
@@ -130,6 +195,30 @@ public class AuthController : ControllerBase
 
     private static AdminUserDto MapToDto(AdminUser u)
     {
+        string[] permissions = Array.Empty<string>();
+        if (!string.IsNullOrWhiteSpace(u.Permissions))
+        {
+            if (u.Permissions.Trim() == "all")
+            {
+                permissions = new[] { "all", "dashboard", "analytics", "lines", "products", "company", "users" };
+            }
+            else
+            {
+                try
+                {
+                    permissions = System.Text.Json.JsonSerializer.Deserialize<string[]>(u.Permissions) ?? Array.Empty<string>();
+                }
+                catch
+                {
+                    permissions = u.Permissions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                }
+            }
+        }
+        else
+        {
+            permissions = new[] { "all", "dashboard", "analytics", "lines", "products", "company", "users" };
+        }
+
         return new AdminUserDto
         {
             Id = u.Id,
@@ -137,6 +226,7 @@ public class AuthController : ControllerBase
             Email = u.Email,
             Role = u.Role,
             AvatarUrl = u.AvatarUrl,
+            Permissions = permissions,
             Active = u.Active,
             CreatedAt = u.CreatedAt
         };

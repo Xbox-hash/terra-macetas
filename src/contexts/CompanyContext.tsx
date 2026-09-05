@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { StoreConfig } from '../types';
 import { companyService } from '../services/companyService';
 import { INITIAL_STORE_CONFIG } from '../data/initialConfig';
@@ -28,6 +28,12 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     refreshConfig();
   }, []);
+
+  useEffect(() => {
+    if (config.storeName) {
+      document.title = `${config.storeName} | ${config.tagline || 'Macetas de Diseño'}`;
+    }
+  }, [config.storeName, config.tagline]);
 
   const updateConfig = async (newConfig: StoreConfig) => {
     const updated = await companyService.updateConfig(newConfig);

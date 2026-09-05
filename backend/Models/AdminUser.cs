@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace TerraMacetas.Api.Models;
 
@@ -22,6 +22,8 @@ public class AdminUser
     public string Role { get; set; } = "Admin"; // "Admin", "Staff"
 
     public string? AvatarUrl { get; set; }
+
+    public string? Permissions { get; set; } = "all"; // "all" or JSON array: ["dashboard", "analytics", "lines", "products", "company", "users"]
 
     public bool Active { get; set; } = true;
 

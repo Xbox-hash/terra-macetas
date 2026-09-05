@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TerraMacetas.Api.Models;
@@ -47,6 +47,18 @@ public class CompanyConfig
 
     [MaxLength(200)]
     public string BusinessHours { get; set; } = "Lunes a Sábados: 09:00 - 18:30 hs";
+
+    // 🤖 WhatsApp Automated Gateway Configuration (Evolution API)
+    public bool WhatsappGatewayEnabled { get; set; } = true;
+
+    [MaxLength(250)]
+    public string? WhatsappApiUrl { get; set; } = "http://localhost:8080";
+
+    [MaxLength(250)]
+    public string? WhatsappApiKey { get; set; } = "TerraSecretApiKey2026_WhatsAppGateway!";
+
+    [MaxLength(100)]
+    public string? WhatsappInstanceName { get; set; } = "terra_bot";
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

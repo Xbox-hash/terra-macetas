@@ -59,25 +59,31 @@ export const orderService = {
     return await res.json();
   },
 
-  async closeOrder(orderId: string): Promise<Order> {
+  async closeOrder(orderId: string, userName?: string): Promise<Order> {
     const res = await fetch(`${API_BASE_URL}/orders/${orderId}/close`, {
       method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user: userName || 'Administrador' }),
     });
     if (!res.ok) throw new Error('Error al cerrar pedido');
     return await res.json();
   },
 
-  async reopenOrder(orderId: string): Promise<Order> {
+  async reopenOrder(orderId: string, userName?: string): Promise<Order> {
     const res = await fetch(`${API_BASE_URL}/orders/${orderId}/reopen`, {
       method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user: userName || 'Administrador' }),
     });
     if (!res.ok) throw new Error('Error al reabrir pedido');
     return await res.json();
   },
 
-  async cancelOrder(orderId: string): Promise<Order> {
+  async cancelOrder(orderId: string, userName?: string): Promise<Order> {
     const res = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
       method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user: userName || 'Administrador' }),
     });
     if (!res.ok) throw new Error('Error al cancelar pedido');
     return await res.json();
