@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Trash2, ShoppingBag, ArrowRight, MessageCircle } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
@@ -23,18 +23,17 @@ export const CartDrawer: React.FC = () => {
 
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
-  if (!isCartDrawerOpen) return null;
-
   return (
     <>
-      <div className="fixed inset-0 z-50 overflow-hidden animate-in fade-in duration-200">
-        <div
-          className="fixed inset-0 bg-[#161D17]/50 backdrop-blur-xs transition-opacity"
-          onClick={closeCartDrawer}
-        />
+      {isCartDrawerOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden animate-in fade-in duration-200">
+          <div
+            className="fixed inset-0 bg-[#161D17]/50 backdrop-blur-xs transition-opacity"
+            onClick={closeCartDrawer}
+          />
 
-        <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-          <div className="w-screen max-w-md bg-[#FAF8F5] shadow-2xl flex flex-col border-l border-[#E3DDD1]">
+          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div className="w-screen max-w-md bg-[#FAF8F5] shadow-2xl flex flex-col border-l border-[#E3DDD1]">
             {/* Header */}
             <div className="p-5 sm:p-6 border-b border-[#EBE5DA] flex items-center justify-between bg-[#F4EFE6]">
               <div className="flex items-center gap-2.5">
@@ -171,6 +170,7 @@ export const CartDrawer: React.FC = () => {
           </div>
         </div>
       </div>
+    )}
 
       {/* Checkout Modal */}
       <CheckoutModal

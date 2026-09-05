@@ -87,26 +87,26 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
             <CheckCircle2 className="w-10 h-10 text-emerald-600" />
           </div>
 
-          <div className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#4A5D4E] bg-[#EAE4D7] px-3 py-1 rounded-full">
-              Pedido #{orderNumber} Registrado
+          <div className="space-y-3">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#4A5D4E] bg-[#EAE4D7] px-4 py-1.5 rounded-full inline-block">
+              ✓ PEDIDO REGISTRADO #{orderNumber}
             </span>
-            <h3 className="font-serif text-2xl sm:text-3xl font-medium text-[#222A21] pt-1">
-              ¡Muchas gracias por realizar tu pedido!
+            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#222A21] pt-1">
+              ¡Muchas gracias por realizar su pedido!
             </h3>
-            <p className="text-sm text-[#5B6858] max-w-sm mx-auto leading-relaxed pt-1">
-              En un momento alguien de <strong>{config.storeName}</strong> se estará contactando con vos a tu WhatsApp o teléfono para coordinar el pago y la entrega.
+            <p className="text-base text-[#3E4E3F] max-w-md mx-auto leading-relaxed font-medium pt-1">
+              En breve, alguien de <strong>{config.storeName}</strong> se estará contactando con usted a su WhatsApp o teléfono para coordinar el pago y la entrega.
             </p>
           </div>
 
-          <div className="p-4 bg-[#F4EFE6] rounded-2xl border border-[#E3DDD1] text-xs text-[#5C6A5A] text-left space-y-2">
-            <div className="flex items-center gap-2">
+          <div className="p-4 bg-[#F4EFE6] rounded-2xl border border-[#E3DDD1] text-xs text-[#5C6A5A] text-left space-y-2.5">
+            <div className="flex items-center gap-2.5">
               <Sparkles className="w-4 h-4 text-[#3E5040] shrink-0" />
-              <span>Tus datos y piezas seleccionadas ya fueron enviados a nuestro taller.</span>
+              <span>Sus datos y piezas seleccionadas ya ingresaron a nuestro sistema de pedidos.</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>También abrimos tu chat de WhatsApp con el resumen de tu compra.</span>
+              <span>La notificación fue despachada automáticamente a nuestro equipo por WhatsApp.</span>
             </div>
           </div>
 
