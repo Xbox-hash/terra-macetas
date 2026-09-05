@@ -83,7 +83,7 @@ export const Header: React.FC = () => {
             {/* Cart Trigger */}
             <button
               onClick={openCartDrawer}
-              className="relative p-2.5 rounded-full text-[#2D3A2F] hover:bg-[#EAE4D7] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
+              className="relative p-2.5 rounded-full text-[#2D3A2F] hover:bg-[#EAE4D7] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2D3A2F] cursor-pointer"
               aria-label="Abrir carrito"
             >
               <ShoppingBag className="w-5 h-5" />
@@ -94,18 +94,10 @@ export const Header: React.FC = () => {
               )}
             </button>
 
-            {/* Admin Link shortcut */}
-            <Link
-              to="/admin/dashboard"
-              className="hidden lg:inline-flex text-xs text-[#7A8677] hover:text-[#2D3A2F] font-medium px-2.5 py-1 rounded-md border border-[#E3DDD1] hover:border-[#CCC4B5] transition-colors"
-            >
-              Acceso Admin
-            </Link>
-
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2.5 rounded-xl text-[#2D3A2F] hover:bg-[#EAE4D7] transition-colors"
+              className="md:hidden p-2.5 rounded-xl text-[#2D3A2F] hover:bg-[#EAE4D7] transition-colors cursor-pointer"
               aria-label="Abrir menú"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -116,7 +108,7 @@ export const Header: React.FC = () => {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-[#EDE7DC] bg-[#FAF8F5] px-4 pt-2 pb-6 space-y-3 animate-in slide-in-from-top duration-200">
+        <div className="md:hidden border-b border-[#EDE7DC] bg-[#FAF8F5] px-4 pt-2 pb-6 space-y-2 animate-in slide-in-from-top duration-200">
           {navLinks.map((link) => (
             <NavLink
               key={link.name}
@@ -127,15 +119,6 @@ export const Header: React.FC = () => {
               {link.name}
             </NavLink>
           ))}
-          <div className="pt-3 border-t border-[#EDE7DC]">
-            <Link
-              to="/admin/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 px-3 text-xs text-[#6B7869] font-medium"
-            >
-              Panel de Administración →
-            </Link>
-          </div>
         </div>
       )}
     </header>

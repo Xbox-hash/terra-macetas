@@ -122,7 +122,6 @@ export const Footer: React.FC = () => {
           <p>© {new Date().getFullYear()} {config.storeName || 'TERRA'} Macetas. Todos los derechos reservados.</p>
           <div className="flex items-center gap-6">
             <Link to="/contacto" className="hover:text-white transition-colors">Términos y Envíos</Link>
-            <Link to="/admin/login" className="hover:text-white transition-colors">Gestión Interna</Link>
           </div>
         </div>
       </div>
