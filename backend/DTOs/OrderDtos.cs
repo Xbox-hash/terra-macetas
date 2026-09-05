@@ -1,4 +1,4 @@
-﻿namespace TerraMacetas.Api.DTOs;
+namespace TerraMacetas.Api.DTOs;
 
 public class OrderItemDto
 {
@@ -24,6 +24,7 @@ public class OrderDto
     public string Channel { get; set; } = "WhatsApp";
     public DateTime CreatedAt { get; set; }
     public DateTime? ClosedAt { get; set; }
+    public DateTime? CancelledAt { get; set; }
 }
 
 public class CreateOrderDto

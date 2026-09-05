@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
@@ -22,6 +22,18 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<DashboardStatsDto>> GetStats()
     {
         var today = DateTime.UtcNow.Date;
+        var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+
+        // Limpiar cancelados de más de 7 días
+        var oldCancelled = await _context.Orders
+            .Where(o => o.Status == "Cancelado" && o.CancelledAt != null && o.CancelledAt < sevenDaysAgo)
+            .ToListAsync();
+
+        if (oldCancelled.Any())
+        {
+            _context.Orders.RemoveRange(oldCancelled);
+            await _context.SaveChangesAsync();
+        }
 
         var totalVisits = await _context.SiteVisits.CountAsync();
         var visitsToday = await _context.SiteVisits.CountAsync(v => v.VisitedAt >= today);
@@ -58,7 +70,8 @@ public class DashboardController : ControllerBase
                 PaymentStatus = o.PaymentStatus,
                 Channel = o.Channel,
                 CreatedAt = o.CreatedAt,
-                ClosedAt = o.ClosedAt
+                ClosedAt = o.ClosedAt,
+                CancelledAt = o.CancelledAt
             };
         }).ToList();
 

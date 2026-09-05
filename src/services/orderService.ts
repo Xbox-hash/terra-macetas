@@ -1,4 +1,4 @@
-﻿import { CartItem, Order } from '../types';
+import { CartItem, Order } from '../types';
 
 const API_BASE_URL = 'http://127.0.0.1:5000/api';
 
@@ -72,6 +72,14 @@ export const orderService = {
       method: 'PATCH',
     });
     if (!res.ok) throw new Error('Error al reabrir pedido');
+    return await res.json();
+  },
+
+  async cancelOrder(orderId: string): Promise<Order> {
+    const res = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
+      method: 'PATCH',
+    });
+    if (!res.ok) throw new Error('Error al cancelar pedido');
     return await res.json();
   },
 

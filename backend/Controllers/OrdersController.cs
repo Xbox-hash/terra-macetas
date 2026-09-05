@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
@@ -29,6 +29,18 @@ public class OrdersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<OrderDto>>> GetAll([FromQuery] string? status = null)
     {
+        // 🕒 Limpieza / Exclusión automática: Pedidos cancelados hace más de 7 días salen del sistema
+        var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+        var oldCancelledOrders = await _context.Orders
+            .Where(o => o.Status == "Cancelado" && o.CancelledAt != null && o.CancelledAt < sevenDaysAgo)
+            .ToListAsync();
+
+        if (oldCancelledOrders.Any())
+        {
+            _context.Orders.RemoveRange(oldCancelledOrders);
+            await _context.SaveChangesAsync();
+        }
+
         var query = _context.Orders.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(status) && status != "all" && status != "todos")
@@ -96,6 +108,21 @@ public class OrdersController : ControllerBase
 
         order.Status = "Cerrado";
         order.ClosedAt = DateTime.UtcNow;
+        order.CancelledAt = null;
+        await _context.SaveChangesAsync();
+
+        return Ok(MapToDto(order));
+    }
+
+    [HttpPatch("{id}/cancel")]
+    public async Task<ActionResult<OrderDto>> CancelOrder(string id)
+    {
+        var order = await _context.Orders.FindAsync(id);
+        if (order == null) return NotFound(new { message = "Pedido no encontrado" });
+
+        order.Status = "Cancelado";
+        order.CancelledAt = DateTime.UtcNow;
+        order.ClosedAt = null;
         await _context.SaveChangesAsync();
 
         return Ok(MapToDto(order));
@@ -109,6 +136,7 @@ public class OrdersController : ControllerBase
 
         order.Status = "Pendiente";
         order.ClosedAt = null;
+        order.CancelledAt = null;
         await _context.SaveChangesAsync();
 
         return Ok(MapToDto(order));
@@ -151,7 +179,8 @@ public class OrdersController : ControllerBase
             PaymentStatus = o.PaymentStatus,
             Channel = o.Channel,
             CreatedAt = o.CreatedAt,
-            ClosedAt = o.ClosedAt
+            ClosedAt = o.ClosedAt,
+            CancelledAt = o.CancelledAt
         };
     }
 }

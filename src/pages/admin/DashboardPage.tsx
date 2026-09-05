@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { 
   Eye, 
@@ -16,7 +16,8 @@ import {
   MessageCircle, 
   Sparkles,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Ban
 } from 'lucide-react';
 import { AdminHeader } from '../../components/admin/AdminHeader';
 import { Button } from '../../components/common/Button';
@@ -41,7 +42,7 @@ export const DashboardPage: React.FC = () => {
     recentOrders: [],
   });
 
-  const [filterStatus, setFilterStatus] = useState<'all' | 'Pendiente' | 'Cerrado'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'Pendiente' | 'Cerrado' | 'Cancelado'>('all');
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
@@ -67,6 +68,22 @@ export const DashboardPage: React.FC = () => {
       loadDashboardData();
     } catch (err: any) {
       showToast('Error al cerrar pedido', 'error');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!confirm('¿Desea cancelar este pedido? Permanecerá visible durante 7 días y luego se purgará automáticamente.')) {
+      return;
+    }
+    setActionLoadingId(orderId);
+    try {
+      await orderService.cancelOrder(orderId);
+      showToast(`Pedido #${orderId.substring(0, 8)} CANCELADO (saldrá en 7 días).`, 'info');
+      loadDashboardData();
+    } catch (err: any) {
+      showToast('Error al cancelar pedido', 'error');
     } finally {
       setActionLoadingId(null);
     }
@@ -231,6 +248,16 @@ export const DashboardPage: React.FC = () => {
               >
                 Cerrados ({stats.closedOrders})
               </button>
+              <button
+                onClick={() => setFilterStatus('Cancelado')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  filterStatus === 'Cancelado'
+                    ? 'bg-rose-700 text-white shadow-xs'
+                    : 'text-[#586656] hover:text-rose-700'
+                }`}
+              >
+                Cancelados ({stats.recentOrders.filter(o => o.status.toLowerCase() === 'cancelado').length})
+              </button>
             </div>
           </div>
 
@@ -244,7 +271,7 @@ export const DashboardPage: React.FC = () => {
                   <th className="px-6 py-4">Productos</th>
                   <th className="px-6 py-4">Total</th>
                   <th className="px-6 py-4">Estado</th>
-                  <th className="px-6 py-4 text-right">Acción</th>
+                  <th className="px-6 py-4 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F2ECE2]">
@@ -261,7 +288,7 @@ export const DashboardPage: React.FC = () => {
                         <ShoppingBag className="w-8 h-8 opacity-40 mx-auto text-[#4A5D4E]" />
                         <p className="font-semibold text-sm text-[#222A21]">No hay pedidos con este filtro</p>
                         <p className="text-xs text-[#7A8877]">
-                          Cuando los clientes agreguen macetas al carrito y presionen "Enviar por WhatsApp", aparecerán automáticamente aquí.
+                          Cuando los clientes agreguen macetas al carrito y confirmen, aparecerán automáticamente aquí.
                         </p>
                       </div>
                     </td>
@@ -269,6 +296,7 @@ export const DashboardPage: React.FC = () => {
                 ) : (
                   filteredOrders.map((order) => {
                     const isClosed = order.status.toLowerCase() === 'cerrado';
+                    const isCancelled = order.status.toLowerCase() === 'cancelado';
 
                     return (
                       <tr key={order.id} className="hover:bg-[#FAF8F4] transition-colors">
@@ -291,6 +319,11 @@ export const DashboardPage: React.FC = () => {
                           <span className="font-bold text-sm text-[#222A21] block">
                             {order.customerName || 'Cliente WhatsApp'}
                           </span>
+                          {order.customerPhone && (
+                            <span className="text-xs text-[#4A5D4E] font-medium block">
+                              📱 {order.customerPhone}
+                            </span>
+                          )}
                           {order.notes && (
                             <p className="text-xs text-[#5D6B5C] bg-[#F2EDE4] p-2 rounded-lg mt-1 leading-snug">
                               {order.notes}
@@ -332,6 +365,16 @@ export const DashboardPage: React.FC = () => {
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                               Cerrado
                             </span>
+                          ) : isCancelled ? (
+                            <div>
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                                <Ban className="w-3.5 h-3.5 text-rose-600" />
+                                Cancelado
+                              </span>
+                              <span className="text-[10px] text-rose-600 block mt-1 font-medium">
+                                Purga en 7 días
+                              </span>
+                            </div>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
                               <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
@@ -341,24 +384,46 @@ export const DashboardPage: React.FC = () => {
                         </td>
 
                         <td className="px-6 py-4 align-top text-right">
-                          {isClosed ? (
-                            <button
-                              onClick={() => handleReopenOrder(order.id)}
-                              disabled={actionLoadingId === order.id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#D5CEC2] hover:bg-[#EAE4D7] text-xs font-semibold text-[#5A6858] transition-colors cursor-pointer"
-                              title="Reabrir a estado pendiente"
-                            >
-                              <RotateCcw className="w-3.5 h-3.5" /> Reabrir
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleCloseOrder(order.id)}
-                              disabled={actionLoadingId === order.id}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                            >
-                              <Check className="w-4 h-4" /> Dar por Cerrado
-                            </button>
-                          )}
+                          <div className="flex items-center justify-end gap-1.5">
+                            {isClosed ? (
+                              <button
+                                onClick={() => handleReopenOrder(order.id)}
+                                disabled={actionLoadingId === order.id}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-[#D5CEC2] hover:bg-[#EAE4D7] text-xs font-semibold text-[#5A6858] transition-colors cursor-pointer"
+                                title="Reabrir a estado pendiente"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" /> Reabrir
+                              </button>
+                            ) : isCancelled ? (
+                              <button
+                                onClick={() => handleReopenOrder(order.id)}
+                                disabled={actionLoadingId === order.id}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-[#D5CEC2] hover:bg-[#EAE4D7] text-xs font-semibold text-[#5A6858] transition-colors cursor-pointer"
+                                title="Restaurar a estado pendiente"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" /> Restaurar
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleCloseOrder(order.id)}
+                                  disabled={actionLoadingId === order.id}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                                  title="Marcar pedido como completado/cerrado"
+                                >
+                                  <Check className="w-3.5 h-3.5" /> Cerrar
+                                </button>
+                                <button
+                                  onClick={() => handleCancelOrder(order.id)}
+                                  disabled={actionLoadingId === order.id}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-colors cursor-pointer"
+                                  title="Cancelar pedido (se eliminará automáticamente pasados 7 días)"
+                                >
+                                  <Ban className="w-3.5 h-3.5" /> Cancelar
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );

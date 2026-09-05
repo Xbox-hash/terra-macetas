@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TerraMacetas.Api.Models;
@@ -34,6 +34,8 @@ public class Order
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? ClosedAt { get; set; }
+
+    public DateTime? CancelledAt { get; set; }
 }
 
 public class SiteVisit
