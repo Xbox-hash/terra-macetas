@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, ArrowLeft, Trash2, MessageCircle, Sparkles, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
@@ -13,7 +13,7 @@ export const CartPage: React.FC = () => {
   const { config } = useCompany();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
-  if (items.length === 0) {
+  if (items.length === 0 && !isCheckoutOpen) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-24 text-center space-y-6">
         <div className="w-20 h-20 rounded-full bg-[#EAE4D7] text-[#4A5D4E] flex items-center justify-center mx-auto">
