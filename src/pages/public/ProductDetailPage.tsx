@@ -40,6 +40,11 @@ export const ProductDetailPage: React.FC = () => {
           setProduct(prod);
           setSelectedImageIndex(0);
           setQuantity(1);
+          if (prod.colors && prod.colors.length > 0) {
+            setSelectedColor(prod.colors[0]);
+          } else {
+            setSelectedColor(DEFAULT_POT_PALETTE[0]);
+          }
 
           const [lineData, related] = await Promise.all([
             lineService.getById(prod.lineId),

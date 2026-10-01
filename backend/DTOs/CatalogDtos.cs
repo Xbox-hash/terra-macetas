@@ -1,4 +1,4 @@
-﻿namespace TerraMacetas.Api.DTOs;
+namespace TerraMacetas.Api.DTOs;
 
 public class ProductLineDto
 {
@@ -30,6 +30,14 @@ public class UpdateProductLineDto
     public bool Featured { get; set; }
 }
 
+public class ProductColorDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Hex { get; set; } = string.Empty;
+    public string? Image { get; set; }
+}
+
 public class ProductDto
 {
     public string Id { get; set; } = string.Empty;
@@ -43,6 +51,7 @@ public class ProductDto
     public string? Dimensions { get; set; }
     public string? Material { get; set; }
     public string? Finish { get; set; }
+    public List<ProductColorDto> Colors { get; set; } = new();
     public bool Active { get; set; }
     public bool Featured { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -58,6 +67,7 @@ public class CreateProductDto
     public string? Dimensions { get; set; }
     public string? Material { get; set; }
     public string? Finish { get; set; }
+    public List<ProductColorDto>? Colors { get; set; }
     public bool Active { get; set; } = true;
     public bool Featured { get; set; } = false;
 }
@@ -72,6 +82,7 @@ public class UpdateProductDto
     public string? Dimensions { get; set; }
     public string? Material { get; set; }
     public string? Finish { get; set; }
+    public List<ProductColorDto>? Colors { get; set; }
     public bool Active { get; set; }
     public bool Featured { get; set; }
 }

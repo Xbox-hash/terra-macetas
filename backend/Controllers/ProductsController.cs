@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
@@ -104,6 +104,7 @@ public class ProductsController : ControllerBase
             Dimensions = dto.Dimensions?.Trim(),
             Material = dto.Material?.Trim(),
             Finish = dto.Finish?.Trim(),
+            ColorsJson = JsonSerializer.Serialize(dto.Colors ?? new List<ProductColorDto>()),
             Active = dto.Active,
             Featured = dto.Featured,
             CreatedAt = DateTime.UtcNow
@@ -138,6 +139,7 @@ public class ProductsController : ControllerBase
         product.Dimensions = dto.Dimensions?.Trim();
         product.Material = dto.Material?.Trim();
         product.Finish = dto.Finish?.Trim();
+        if (dto.Colors != null) product.ColorsJson = JsonSerializer.Serialize(dto.Colors);
         product.Active = dto.Active;
         product.Featured = dto.Featured;
 
@@ -182,6 +184,18 @@ public class ProductsController : ControllerBase
             imagesList = new List<string>();
         }
 
+        List<ProductColorDto> colorsList;
+        try
+        {
+            colorsList = !string.IsNullOrWhiteSpace(product.ColorsJson) 
+                ? JsonSerializer.Deserialize<List<ProductColorDto>>(product.ColorsJson) ?? new List<ProductColorDto>() 
+                : new List<ProductColorDto>();
+        }
+        catch
+        {
+            colorsList = new List<ProductColorDto>();
+        }
+
         return new ProductDto
         {
             Id = product.Id,
@@ -195,6 +209,7 @@ public class ProductsController : ControllerBase
             Dimensions = product.Dimensions,
             Material = product.Material,
             Finish = product.Finish,
+            Colors = colorsList,
             Active = product.Active,
             Featured = product.Featured,
             CreatedAt = product.CreatedAt

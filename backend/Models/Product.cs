@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TerraMacetas.Api.Models;
@@ -38,6 +38,8 @@ public class Product
 
     [MaxLength(200)]
     public string? Finish { get; set; }
+
+    public string ColorsJson { get; set; } = "[]";
 
     public bool Active { get; set; } = true;
 

@@ -1,7 +1,7 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Power, Search, Filter, Sparkles, X, Package } from 'lucide-react';
-import { Product, ProductLine } from '../../types';
+import { Plus, Edit2, Trash2, Power, Search, Filter, Sparkles, X, Package, Check, Palette } from 'lucide-react';
+import { Product, ProductLine, ProductColor } from '../../types';
 import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
 import { AdminHeader } from '../../components/admin/AdminHeader';
@@ -13,6 +13,7 @@ import { ImageUploader } from '../../components/common/ImageUploader';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { formatPrice } from '../../utils';
 import { useToast } from '../../contexts/ToastContext';
+import { DEFAULT_POT_PALETTE } from '../../data/potColors';
 
 export const ProductsAdminPage: React.FC = () => {
   const { openMobileSidebar } = useOutletContext<{ openMobileSidebar: () => void }>();
@@ -40,6 +41,7 @@ export const ProductsAdminPage: React.FC = () => {
     dimensions: '',
     material: '',
     finish: '',
+    colors: [] as ProductColor[],
     active: true,
     featured: false,
   });
@@ -111,6 +113,7 @@ export const ProductsAdminPage: React.FC = () => {
       dimensions: 'Ø 20 cm x Alto 22 cm',
       material: 'Cerámica cocida de taller',
       finish: 'Mate artesanal',
+      colors: [],
       active: true,
       featured: false,
     });
@@ -128,6 +131,7 @@ export const ProductsAdminPage: React.FC = () => {
       dimensions: prod.dimensions || '',
       material: prod.material || '',
       finish: prod.finish || '',
+      colors: prod.colors || [],
       active: prod.active,
       featured: !!prod.featured,
     });
@@ -151,6 +155,7 @@ export const ProductsAdminPage: React.FC = () => {
         dimensions: formData.dimensions,
         material: formData.material,
         finish: formData.finish,
+        colors: formData.colors,
         active: formData.active,
         featured: formData.featured,
       };
@@ -317,6 +322,25 @@ export const ProductsAdminPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 max-w-xs">
                         <span className="font-bold text-sm text-[#222A21] block">{product.name}</span>
+                        {product.colors && product.colors.length > 0 ? (
+                          <div className="flex items-center gap-1 mt-1">
+                            <div className="flex -space-x-1">
+                              {product.colors.slice(0, 5).map((c) => (
+                                <span
+                                  key={c.id}
+                                  className="w-3.5 h-3.5 rounded-full border border-white shadow-2xs inline-block"
+                                  style={{ backgroundColor: c.hex }}
+                                  title={c.name}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-[10px] text-[#768474] font-medium ml-1">
+                              {product.colors.length} {product.colors.length === 1 ? 'color' : 'colores'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-[#8C988A] block mt-0.5">Paleta completa</span>
+                        )}
                         {product.featured && (
                           <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full inline-block mt-1">
                             ⭐ Destacado en Home
@@ -432,6 +456,95 @@ export const ProductsAdminPage: React.FC = () => {
               value={formData.finish}
               onChange={(e) => setFormData({ ...formData, finish: e.target.value })}
             />
+          </div>
+
+          {/* Selector de Colores Disponibles */}
+          <div className="space-y-2.5 text-left bg-[#F4EFE6] p-3.5 rounded-2xl border border-[#E3DDD1]">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#475446] flex items-center gap-1.5">
+                  <Palette className="w-3.5 h-3.5 text-[#4A5D4E]" />
+                  Colores disponibles ({formData.colors.length} seleccionados)
+                </label>
+                <p className="text-[11px] text-[#6E7B6C] mt-0.5">
+                  Elige los colores específicos para esta maceta (ej: 3, 4 colores o los que fabrique el cliente).
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, colors: [...DEFAULT_POT_PALETTE] })}
+                  className="text-[11px] font-semibold text-[#4A5D4E] hover:underline cursor-pointer"
+                >
+                  Marcar todos
+                </button>
+                <span className="text-[10px] text-[#A9BCA1]">|</span>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, colors: [] })}
+                  className="text-[11px] font-semibold text-[#8C988A] hover:underline cursor-pointer"
+                >
+                  Limpiar
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-6 sm:grid-cols-9 gap-2 pt-1">
+              {DEFAULT_POT_PALETTE.map((color) => {
+                const isSelected = formData.colors.some((c) => c.id === color.id);
+                return (
+                  <button
+                    key={color.id}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        setFormData({
+                          ...formData,
+                          colors: formData.colors.filter((c) => c.id !== color.id),
+                        });
+                      } else {
+                        setFormData({
+                          ...formData,
+                          colors: [...formData.colors, color],
+                        });
+                      }
+                    }}
+                    title={color.name}
+                    aria-label={`Color ${color.name}`}
+                    className={`relative aspect-square rounded-xl transition-all cursor-pointer flex items-center justify-center border ${
+                      isSelected
+                        ? 'ring-2 ring-[#222A21] ring-offset-2 scale-105 shadow-sm border-white/60'
+                        : 'border-black/10 opacity-35 hover:opacity-90 hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: color.hex }}
+                  >
+                    {isSelected && (
+                      <span className="p-0.5 rounded-full bg-black/40 text-white backdrop-blur-xs">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {formData.colors.length === 0 ? (
+              <p className="text-[11px] text-amber-700 font-medium pt-0.5">
+                * Si no seleccionas ninguno específico, se habilitará la paleta completa en la tienda.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {formData.colors.map((c) => (
+                  <span
+                    key={c.id}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-white border border-[#DDD6C8] text-[#2D3A2F]"
+                  >
+                    <span className="w-2 h-2 rounded-full border border-black/20" style={{ backgroundColor: c.hex }} />
+                    {c.name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5 text-left">
