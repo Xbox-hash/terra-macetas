@@ -20,9 +20,17 @@ export interface Product {
   dimensions?: string;
   material?: string;
   finish?: string;
+  colors?: ProductColor[];
   active: boolean;
   featured?: boolean;
   createdAt: string;
+}
+
+export interface ProductColor {
+  id: string;
+  name: string;
+  hex: string;
+  image?: string;
 }
 
 // Shopping Cart & Order Architecture
@@ -30,6 +38,7 @@ export interface CartItem {
   product: Product;
   quantity: number;
   subtotal: number;
+  selectedColor?: string;
 }
 
 export type OrderStatus = 'pending' | 'confirmed' | 'delivered' | 'cancelled';

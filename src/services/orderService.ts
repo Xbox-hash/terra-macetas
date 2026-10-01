@@ -1,6 +1,7 @@
 import { CartItem, Order } from '../types';
+import { API_BASE } from './apiConfig';
 
-const API_BASE_URL = 'http://127.0.0.1:5000/api';
+const API_BASE_URL = API_BASE;
 
 export interface DashboardStats {
   totalVisits: number;
@@ -35,7 +36,7 @@ export const orderService = {
   }): Promise<Order> {
     const formattedItems = payload.items.map((item) => ({
       productId: item.product.id,
-      productName: item.product.name,
+      productName: item.selectedColor ? `${item.product.name} (Color: ${item.selectedColor})` : item.product.name,
       productImage: item.product.images[0] || '',
       price: item.product.price,
       quantity: item.quantity,

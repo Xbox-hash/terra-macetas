@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag, MessageCircle, Truck, Sparkles, Shield, Check, Info } from 'lucide-react';
-import { Product, ProductLine } from '../../types';
+import { Product, ProductLine, ProductColor } from '../../types';
 import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
 import { useCart } from '../../contexts/CartContext';
@@ -11,6 +11,8 @@ import { formatPrice, getWhatsAppUrl } from '../../utils';
 import { Button } from '../../components/common/Button';
 import { QuantitySelector } from '../../components/common/QuantitySelector';
 import { ProductCard } from '../../components/public/ProductCard';
+import { ColorPaletteSelector } from '../../components/public/ColorPaletteSelector';
+import { DEFAULT_POT_PALETTE } from '../../data/potColors';
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +26,8 @@ export const ProductDetailPage: React.FC = () => {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [selectedColor, setSelectedColor] = useState<ProductColor>(DEFAULT_POT_PALETTE[0]);
+  const [isColorTransitioning, setIsColorTransitioning] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -75,14 +79,23 @@ export const ProductDetailPage: React.FC = () => {
     );
   }
 
+  const handleColorChange = (newColor: ProductColor) => {
+    if (newColor.id === selectedColor.id) return;
+    setIsColorTransitioning(true);
+    setSelectedColor(newColor);
+    setTimeout(() => {
+      setIsColorTransitioning(false);
+    }, 350);
+  };
+
   const handleAddToCart = () => {
-    addToCart(product, quantity);
-    showToast(`¡Agregaste ${quantity}x "${product.name}" al carrito!`);
+    addToCart(product, quantity, selectedColor.name);
+    showToast(`¡Agregaste ${quantity}x "${product.name}" (${selectedColor.name}) al carrito!`);
     openCartDrawer();
   };
 
   const handleQuickWhatsApp = () => {
-    const message = `🌿 *¡Hola ${config.storeName}!* Me interesa pedir directamente esta pieza:\n\n🪴 *${product.name}*\n   • Cantidad: ${quantity}\n   • Precio unitario: ${formatPrice(product.price)}\n   • Total estimado: ${formatPrice(product.price * quantity)}\n\n¿Tienen disponibilidad y cómo coordinamos la entrega? ¡Muchas gracias!`;
+    const message = `🌿 *¡Hola ${config.storeName}!* Me interesa pedir directamente esta pieza:\n\n🪴 *${product.name}*\n🎨 *Color seleccionado:* ${selectedColor.name}\n   • Cantidad: ${quantity}\n   • Precio unitario: ${formatPrice(product.price)}\n   • Total estimado: ${formatPrice(product.price * quantity)}\n\n¿Tienen disponibilidad y cómo coordinamos la entrega? ¡Muchas gracias!`;
     const targetNumber = config.whatsappNumber?.replace(/\D/g, '') || '595981234567';
     const url = `https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -105,18 +118,37 @@ export const ProductDetailPage: React.FC = () => {
         {/* Left Column: Big Image & Thumbnails */}
         <div className="lg:col-span-7 space-y-4">
           {/* Main Large Image Container */}
-          <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-[#F1EDE5] border border-[#E6E0D4] shadow-sm">
+          <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-[#F1EDE5] border border-[#E6E0D4] shadow-sm group">
             <img
-              src={product.images[selectedImageIndex] || product.images[0]}
-              alt={product.name}
-              className="w-full h-full object-cover object-center transition-all duration-500"
+              src={selectedColor.image || product.images[selectedImageIndex] || product.images[0]}
+              alt={`${product.name} - ${selectedColor.name}`}
+              className={`w-full h-full object-cover object-center transition-all duration-500 ease-out ${
+                isColorTransitioning ? 'opacity-30 scale-95 blur-[2px]' : 'opacity-100 scale-100 blur-0'
+              }`}
+            />
+
+            {/* Subtle Dynamic Color Tone Overlay */}
+            <div
+              className={`absolute inset-0 pointer-events-none mix-blend-color transition-all duration-700 ease-in-out ${
+                selectedColor.image ? 'opacity-0' : 'opacity-35'
+              }`}
+              style={{ backgroundColor: selectedColor.hex }}
             />
 
             {product.featured && (
-              <span className="absolute top-4 left-4 bg-[#2D3A2F]/90 backdrop-blur-xs text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
+              <span className="absolute top-4 left-4 bg-[#2D3A2F]/90 backdrop-blur-xs text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md z-10">
                 Pieza Destacada
               </span>
             )}
+
+            {/* Active Selected Color Pill Badge */}
+            <div className="absolute bottom-4 left-4 z-10 bg-[#1E261F]/85 backdrop-blur-md text-white text-xs px-3.5 py-1.5 rounded-full flex items-center gap-2 border border-white/10 shadow-lg">
+              <span
+                className="w-3.5 h-3.5 rounded-full border border-white/50 shadow-xs"
+                style={{ backgroundColor: selectedColor.hex }}
+              />
+              <span className="font-medium text-[11px] sm:text-xs">Color: {selectedColor.name}</span>
+            </div>
           </div>
 
           {/* Gallery Thumbnails */}
@@ -191,6 +223,13 @@ export const ProductDetailPage: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Color Palette Selector (Vaso & Cor inspired) */}
+          <ColorPaletteSelector
+            colors={product.colors && product.colors.length > 0 ? product.colors : DEFAULT_POT_PALETTE}
+            selectedColor={selectedColor}
+            onSelectColor={handleColorChange}
+          />
 
           {/* Quantity and Actions */}
           <div className="space-y-4 pt-4">

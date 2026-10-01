@@ -1,6 +1,7 @@
 import { User, AuthState } from '../types';
+import { API_BASE } from './apiConfig';
 
-const API_BASE_URL = 'http://127.0.0.1:5000/api/auth';
+const API_BASE_URL = `${API_BASE}/auth`;
 const AUTH_STORAGE_KEY = 'terra_auth_state';
 
 export interface CreateUserData {

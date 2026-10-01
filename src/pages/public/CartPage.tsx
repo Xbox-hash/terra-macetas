@@ -61,7 +61,7 @@ export const CartPage: React.FC = () => {
           <div className="lg:col-span-8 space-y-4">
             <div className="bg-white rounded-2xl border border-[#E9E4DB] overflow-hidden shadow-xs divide-y divide-[#F0EAE0]">
               {items.map((item) => (
-                <div key={item.product.id} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-5 items-center sm:items-start">
+                <div key={`${item.product.id}_${item.selectedColor || 'default'}`} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-5 items-center sm:items-start">
                   <Link to={`/producto/${item.product.id}`} className="shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-[#F3EFE9] border border-[#EBE5DB]">
                     <img
                       src={item.product.images[0]}
@@ -78,13 +78,18 @@ export const CartPage: React.FC = () => {
                             {item.product.name}
                           </h3>
                         </Link>
-                        <p className="text-xs text-[#6F7B6D] mt-0.5">
+                        {item.selectedColor && (
+                          <span className="inline-block mt-1 text-xs font-semibold text-[#4A5D4E] bg-[#EAE4D7] px-2.5 py-0.5 rounded-md">
+                            Color: {item.selectedColor}
+                          </span>
+                        )}
+                        <p className="text-xs text-[#6F7B6D] mt-1">
                           Precio Unitario: <span className="font-medium text-[#2D3A2F]">{formatPrice(item.product.price)}</span>
                         </p>
                       </div>
 
                       <button
-                        onClick={() => removeFromCart(item.product.id)}
+                        onClick={() => removeFromCart(item.product.id, item.selectedColor)}
                         className="text-[#9CA799] hover:text-rose-600 p-1 rounded-lg transition-colors cursor-pointer"
                         title="Eliminar producto"
                       >
@@ -95,8 +100,8 @@ export const CartPage: React.FC = () => {
                     <div className="flex items-center justify-between pt-2">
                       <QuantitySelector
                         quantity={item.quantity}
-                        onIncrease={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        onDecrease={() => updateQuantity(item.product.id, item.quantity - 1)}
+                        onIncrease={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedColor)}
+                        onDecrease={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedColor)}
                       />
                       <div className="text-right">
                         <span className="text-[10px] uppercase font-bold text-[#8C988A] block">Subtotal</span>

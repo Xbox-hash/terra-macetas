@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, CartItem } from '../types';
 
 interface CartContextType {
@@ -8,9 +8,9 @@ interface CartContextType {
   isCartDrawerOpen: boolean;
   openCartDrawer: () => void;
   closeCartDrawer: () => void;
-  addToCart: (product: Product, quantity?: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addToCart: (product: Product, quantity?: number, selectedColor?: string) => void;
+  removeFromCart: (productId: string, selectedColor?: string) => void;
+  updateQuantity: (productId: string, quantity: number, selectedColor?: string) => void;
   clearCart: () => void;
 }
 
@@ -37,9 +37,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (product: Product, quantity = 1) => {
+  const addToCart = (product: Product, quantity = 1, selectedColor?: string) => {
     setItems((prevItems) => {
-      const existingIndex = prevItems.findIndex((item) => item.product.id === product.id);
+      const existingIndex = prevItems.findIndex(
+        (item) => item.product.id === product.id && item.selectedColor === selectedColor
+      );
       if (existingIndex > -1) {
         const updated = [...prevItems];
         const newQty = updated[existingIndex].quantity + quantity;
@@ -56,24 +58,29 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             product,
             quantity,
             subtotal: quantity * product.price,
+            selectedColor,
           },
         ];
       }
     });
   };
 
-  const removeFromCart = (productId: string) => {
-    setItems((prev) => prev.filter((item) => item.product.id !== productId));
+  const removeFromCart = (productId: string, selectedColor?: string) => {
+    setItems((prev) =>
+      prev.filter(
+        (item) => !(item.product.id === productId && (!selectedColor || item.selectedColor === selectedColor))
+      )
+    );
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (productId: string, quantity: number, selectedColor?: string) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(productId, selectedColor);
       return;
     }
     setItems((prev) =>
       prev.map((item) => {
-        if (item.product.id === productId) {
+        if (item.product.id === productId && (!selectedColor || item.selectedColor === selectedColor)) {
           return {
             ...item,
             quantity,

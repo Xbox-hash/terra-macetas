@@ -1,6 +1,7 @@
-﻿import { Product } from '../types';
+import { Product } from '../types';
+import { API_BASE } from './apiConfig';
 
-const API_BASE_URL = 'http://127.0.0.1:5000/api/products';
+const API_BASE_URL = `${API_BASE}/products`;
 
 export const productService = {
   async getAll(): Promise<Product[]> {

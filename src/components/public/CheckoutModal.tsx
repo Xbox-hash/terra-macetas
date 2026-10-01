@@ -24,6 +24,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
+  const [whatsappDirectUrl, setWhatsappDirectUrl] = useState('');
 
   if (!isOpen) return null;
 
@@ -47,7 +48,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       const orderId = createdOrder.id || `ORD-${Date.now().toString().slice(-6)}`;
       setOrderNumber(orderId);
 
-      // 2. Preparar el mensaje de WhatsApp estructurado (sin el campo de aclaración)
+      // 2. Preparar el mensaje de WhatsApp estructurado con colores
       let message = `🌿 *¡Hola ${config.storeName}! Quiero realizar un pedido:*\n\n`;
       message += `👤 *Cliente:* ${name.trim()}\n`;
       message += `📱 *Teléfono / WhatsApp:* ${phone.trim()}\n`;
@@ -55,14 +56,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       message += `📦 *DETALLE DEL PEDIDO (#${orderId}):*\n`;
       
       items.forEach((item) => {
-        message += `   • ${item.quantity}x *${item.product.name}* (${formatPrice(item.subtotal)})\n`;
+        const colorLabel = item.selectedColor ? ` [Color: ${item.selectedColor}]` : '';
+        message += `   • ${item.quantity}x *${item.product.name}*${colorLabel} (${formatPrice(item.subtotal)})\n`;
       });
 
       message += `\n━━━━━━━━━━━━━━━━━━━━\n`;
       message += `💰 *TOTAL A ABONAR: ${formatPrice(totalAmount)}*\n\n`;
       message += `Quedo a la espera de su confirmación para coordinar el pago y el envío. ¡Muchas gracias!`;
 
-      // 3. Limpiar carrito y mostrar pantalla de éxito directo (sin abrir ventana de WhatsApp web)
+      const targetPhone = config.whatsappNumber?.replace(/\D/g, '') || '595982615140';
+      setWhatsappDirectUrl(`https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`);
+
+      // 3. Limpiar carrito y mostrar pantalla de éxito
       clearCart();
       if (closeCartDrawer) closeCartDrawer();
       setOrderSuccess(true);
@@ -102,16 +107,27 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
           <div className="p-4 bg-[#F4EFE6] rounded-2xl border border-[#E3DDD1] text-xs text-[#5C6A5A] text-left space-y-2.5">
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-4 h-4 text-[#3E5040] shrink-0" />
-              <span>Sus datos y piezas seleccionadas ya ingresaron a nuestro sistema de pedidos.</span>
+              <span>Sus datos, colores elegidos y piezas ya ingresaron a nuestro sistema.</span>
             </div>
             <div className="flex items-center gap-2.5">
               <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>La notificación fue despachada automáticamente a nuestro equipo por WhatsApp.</span>
+              <span>Podés enviar el comprobante directamente a nuestro WhatsApp con un clic.</span>
             </div>
           </div>
 
-          <div className="pt-2">
-            <Button variant="primary" size="lg" className="w-full justify-center" onClick={handleFinish}>
+          <div className="pt-2 flex flex-col sm:flex-row gap-3">
+            {whatsappDirectUrl && (
+              <a
+                href={whatsappDirectUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-semibold text-sm transition-all shadow-md active:scale-98"
+              >
+                <MessageCircle className="w-5 h-5 fill-current" />
+                Enviar a nuestro WhatsApp
+              </a>
+            )}
+            <Button variant="outline" size="lg" className="justify-center" onClick={handleFinish}>
               Volver a la tienda
             </Button>
           </div>

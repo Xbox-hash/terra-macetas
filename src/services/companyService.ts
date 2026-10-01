@@ -1,7 +1,8 @@
-﻿import { StoreConfig } from '../types';
+import { StoreConfig } from '../types';
 import { INITIAL_STORE_CONFIG } from '../data/initialConfig';
+import { API_BASE } from './apiConfig';
 
-const API_BASE_URL = 'http://127.0.0.1:5000/api/company';
+const API_BASE_URL = `${API_BASE}/company`;
 const LOCAL_STORAGE_KEY = 'terra_company_config';
 
 export const companyService = {

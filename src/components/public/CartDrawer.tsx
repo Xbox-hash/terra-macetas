@@ -73,7 +73,7 @@ export const CartDrawer: React.FC = () => {
               ) : (
                 items.map((item) => (
                   <div
-                    key={item.product.id}
+                    key={`${item.product.id}_${item.selectedColor || 'default'}`}
                     className="flex gap-4 p-3.5 bg-white rounded-xl border border-[#E9E4DB] shadow-2xs"
                   >
                     <img
@@ -83,11 +83,18 @@ export const CartDrawer: React.FC = () => {
                     />
                     <div className="flex-1 flex flex-col justify-between">
                       <div className="flex justify-between items-start gap-2">
-                        <h4 className="font-serif font-semibold text-sm text-[#2D3A2F] line-clamp-1">
-                          {item.product.name}
-                        </h4>
+                        <div>
+                          <h4 className="font-serif font-semibold text-sm text-[#2D3A2F] line-clamp-1">
+                            {item.product.name}
+                          </h4>
+                          {item.selectedColor && (
+                            <span className="inline-block mt-0.5 text-[11px] font-medium text-[#4A5D4E] bg-[#EAE4D7] px-2 py-0.5 rounded-md">
+                              Color: {item.selectedColor}
+                            </span>
+                          )}
+                        </div>
                         <button
-                          onClick={() => removeFromCart(item.product.id)}
+                          onClick={() => removeFromCart(item.product.id, item.selectedColor)}
                           className="text-[#9CA799] hover:text-rose-600 transition-colors p-1 cursor-pointer"
                           aria-label="Eliminar"
                         >
@@ -103,8 +110,8 @@ export const CartDrawer: React.FC = () => {
                         <QuantitySelector
                           size="sm"
                           quantity={item.quantity}
-                          onIncrease={() => updateQuantity(item.product.id, item.quantity + 1)}
-                          onDecrease={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          onIncrease={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedColor)}
+                          onDecrease={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedColor)}
                         />
                         <span className="text-sm font-bold text-[#2D3A2F]">
                           {formatPrice(item.subtotal)}
