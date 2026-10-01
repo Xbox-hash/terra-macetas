@@ -27,6 +27,7 @@ export const ProductDetailPage: React.FC = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState<ProductColor>(DEFAULT_POT_PALETTE[0]);
+  const [activeImage, setActiveImage] = useState<string>('');
   const [isColorTransitioning, setIsColorTransitioning] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -42,8 +43,10 @@ export const ProductDetailPage: React.FC = () => {
           setQuantity(1);
           if (prod.colors && prod.colors.length > 0) {
             setSelectedColor(prod.colors[0]);
+            setActiveImage(prod.colors[0].image || prod.images[0] || '');
           } else {
             setSelectedColor(DEFAULT_POT_PALETTE[0]);
+            setActiveImage(prod.images[0] || '');
           }
 
           const [lineData, related] = await Promise.all([
@@ -88,6 +91,11 @@ export const ProductDetailPage: React.FC = () => {
     if (newColor.id === selectedColor.id) return;
     setIsColorTransitioning(true);
     setSelectedColor(newColor);
+    if (newColor.image) {
+      setActiveImage(newColor.image);
+    } else {
+      setActiveImage(product.images[selectedImageIndex] || product.images[0] || '');
+    }
     setTimeout(() => {
       setIsColorTransitioning(false);
     }, 350);
@@ -125,7 +133,7 @@ export const ProductDetailPage: React.FC = () => {
           {/* Main Large Image Container */}
           <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-[#F1EDE5] border border-[#E6E0D4] shadow-sm group">
             <img
-              src={selectedColor.image || product.images[selectedImageIndex] || product.images[0]}
+              src={activeImage || selectedColor.image || product.images[selectedImageIndex] || product.images[0]}
               alt={`${product.name} - ${selectedColor.name}`}
               className={`w-full h-full object-cover object-center transition-all duration-500 ease-out ${
                 isColorTransitioning ? 'opacity-30 scale-95 blur-[2px]' : 'opacity-100 scale-100 blur-0'
@@ -135,7 +143,7 @@ export const ProductDetailPage: React.FC = () => {
             {/* Subtle Dynamic Color Tone Overlay */}
             <div
               className={`absolute inset-0 pointer-events-none mix-blend-color transition-all duration-700 ease-in-out ${
-                selectedColor.image ? 'opacity-0' : 'opacity-35'
+                selectedColor.image && activeImage === selectedColor.image ? 'opacity-0' : 'opacity-35'
               }`}
               style={{ backgroundColor: selectedColor.hex }}
             />
@@ -162,9 +170,12 @@ export const ProductDetailPage: React.FC = () => {
               {product.images.map((img, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setSelectedImageIndex(idx)}
+                  onClick={() => {
+                    setSelectedImageIndex(idx);
+                    setActiveImage(img);
+                  }}
                   className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
-                    selectedImageIndex === idx
+                    activeImage === img
                       ? 'border-[#2D3A2F] scale-95 shadow-md'
                       : 'border-transparent opacity-70 hover:opacity-100'
                   }`}

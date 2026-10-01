@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Power, Search, Filter, Sparkles, X, Package, Check, Palette } from 'lucide-react';
+import { Plus, Edit2, Trash2, Power, Search, Filter, Sparkles, X, Package, Check, Palette, Camera, UploadCloud } from 'lucide-react';
 import { Product, ProductLine, ProductColor } from '../../types';
 import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
@@ -46,6 +46,34 @@ export const ProductsAdminPage: React.FC = () => {
     featured: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeColorPhotoId, setActiveColorPhotoId] = useState<string | null>(null);
+  const [tempUrlMap, setTempUrlMap] = useState<Record<string, string>>({});
+
+  const handleSetColorImage = (colorId: string, imageUrl?: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      colors: prev.colors.map((c) =>
+        c.id === colorId ? { ...c, image: imageUrl || undefined } : c
+      ),
+    }));
+  };
+
+  const handleColorFileUpload = (colorId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+      const base64 = loadEvent.target?.result as string;
+      if (base64) {
+        handleSetColorImage(colorId, base64);
+        setActiveColorPhotoId(null);
+        showToast('Foto asignada al color seleccionado.');
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   // Delete confirm dialog
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
@@ -337,6 +365,14 @@ export const ProductsAdminPage: React.FC = () => {
                             <span className="text-[10px] text-[#768474] font-medium ml-1">
                               {product.colors.length} {product.colors.length === 1 ? 'color' : 'colores'}
                             </span>
+                            {product.colors.some((c) => !!c.image) && (
+                              <span
+                                className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-[#3C6E3D] bg-[#E3F2E4] px-1.5 py-0.5 rounded-full ml-1"
+                                title="Tiene fotos asignadas por color"
+                              >
+                                <Camera className="w-2.5 h-2.5" /> con fotos
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <span className="text-[10px] text-[#8C988A] block mt-0.5">Paleta completa</span>
@@ -543,6 +579,163 @@ export const ProductsAdminPage: React.FC = () => {
                     {c.name}
                   </span>
                 ))}
+              </div>
+            )}
+
+            {/* Fotos específicas por cada color */}
+            {formData.colors.length > 0 && (
+              <div className="pt-2.5 border-t border-[#E3DDD1] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#475446] flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-[#4A5D4E]" />
+                    Fotos por color (opcional)
+                  </span>
+                  <span className="text-[10px] text-[#7A8878] font-medium">
+                    {formData.colors.filter((c) => !!c.image).length} de {formData.colors.length} con foto
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#6E7B6C]">
+                  Asigna la foto real de la maceta para cada color. Al elegir el color en la tienda, cambiará automáticamente a su foto respectiva.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1 pt-1">
+                  {formData.colors.map((color) => {
+                    const isConfiguring = activeColorPhotoId === color.id;
+                    return (
+                      <div
+                        key={color.id}
+                        className={`p-2 rounded-xl border transition-all ${
+                          isConfiguring
+                            ? 'bg-white border-[#2D3A2F] shadow-sm ring-1 ring-[#2D3A2F]/20'
+                            : color.image
+                            ? 'bg-white border-[#C9DFCA]'
+                            : 'bg-white/80 border-[#E5DFD4]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              className="w-4 h-4 rounded-full border border-black/20 shrink-0 shadow-xs"
+                              style={{ backgroundColor: color.hex }}
+                            />
+                            <span className="text-xs font-semibold text-[#2D3A2F] truncate">
+                              {color.name}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {color.image ? (
+                              <div className="flex items-center gap-1.5">
+                                <img
+                                  src={color.image}
+                                  alt={color.name}
+                                  className="w-7 h-7 rounded-lg object-cover border border-[#D5CEC2]"
+                                />
+                                <button
+                                  type="button"
+                                  title="Cambiar foto"
+                                  onClick={() => setActiveColorPhotoId(isConfiguring ? null : color.id)}
+                                  className="text-[10px] text-[#4A5D4E] hover:underline font-medium cursor-pointer"
+                                >
+                                  {isConfiguring ? 'Cerrar' : 'Cambiar'}
+                                </button>
+                                <button
+                                  type="button"
+                                  title="Quitar foto"
+                                  onClick={() => handleSetColorImage(color.id, undefined)}
+                                  className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setActiveColorPhotoId(isConfiguring ? null : color.id)}
+                                className="text-[10px] font-semibold text-[#4A5D4E] bg-[#EAE4D7] hover:bg-[#DDD6C8] px-2 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer"
+                              >
+                                <Camera className="w-3 h-3" />
+                                {isConfiguring ? 'Cancelar' : 'Asignar foto'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Panel de carga para este color */}
+                        {isConfiguring && (
+                          <div className="mt-2.5 pt-2 border-t border-[#EFECE6] space-y-2 text-left">
+                            <div className="flex items-center gap-2">
+                              <label className="text-[11px] font-medium bg-[#2D3A2F] hover:bg-[#3D4D3F] text-white px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs">
+                                <UploadCloud className="w-3.5 h-3.5" />
+                                <span>Subir de mi PC</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => handleColorFileUpload(color.id, e)}
+                                />
+                              </label>
+                            </div>
+
+                            {formData.images.length > 0 && (
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-medium text-[#768474]">
+                                  O seleccionar de las fotos del producto:
+                                </span>
+                                <div className="flex gap-1.5 overflow-x-auto py-0.5">
+                                  {formData.images.map((imgUrl, imgIdx) => (
+                                    <button
+                                      key={imgIdx}
+                                      type="button"
+                                      onClick={() => {
+                                        handleSetColorImage(color.id, imgUrl);
+                                        setActiveColorPhotoId(null);
+                                      }}
+                                      className={`w-9 h-9 rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
+                                        color.image === imgUrl
+                                          ? 'border-[#2D3A2F] ring-1 ring-[#2D3A2F]'
+                                          : 'border-transparent opacity-80 hover:opacity-100 hover:scale-105'
+                                      }`}
+                                    >
+                                      <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-1 pt-0.5">
+                              <input
+                                type="url"
+                                placeholder="O pega enlace web (https://...)"
+                                value={tempUrlMap[color.id] || ''}
+                                onChange={(e) =>
+                                  setTempUrlMap({ ...tempUrlMap, [color.id]: e.target.value })
+                                }
+                                className="w-full px-2 py-1 text-xs bg-[#FAF8F5] border border-[#D9D3C7] rounded-md focus:outline-none focus:ring-1 focus:ring-[#2D3A2F]"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const url = tempUrlMap[color.id]?.trim();
+                                  if (url) {
+                                    handleSetColorImage(color.id, url);
+                                    setActiveColorPhotoId(null);
+                                  }
+                                }}
+                                className="text-[10px] py-1 px-2.5 shrink-0"
+                              >
+                                Usar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
