@@ -13,6 +13,9 @@ export const ColorPaletteSelector: React.FC<ColorPaletteSelectorProps> = ({
   selectedColor,
   onSelectColor,
 }) => {
+  const [hoveredColor, setHoveredColor] = React.useState<ProductColor | null>(null);
+  const activeColor = hoveredColor || selectedColor;
+
   return (
     <div className="space-y-3.5 pt-2">
       {/* Label and Selected Color Name */}
@@ -22,11 +25,11 @@ export const ColorPaletteSelector: React.FC<ColorPaletteSelectorProps> = ({
         </span>
         <div className="flex items-center gap-2">
           <span
-            className="w-3.5 h-3.5 rounded-full border border-black/15 shadow-2xs"
-            style={{ backgroundColor: selectedColor.hex }}
+            className="w-3.5 h-3.5 rounded-full border border-black/15 shadow-2xs transition-colors duration-200"
+            style={{ backgroundColor: activeColor.hex }}
           />
-          <span className="font-bold text-[#222A21] text-sm">
-            {selectedColor.name}
+          <span className="font-bold text-[#222A21] text-sm transition-all duration-200">
+            {activeColor.name}
           </span>
         </div>
       </div>
@@ -40,9 +43,11 @@ export const ColorPaletteSelector: React.FC<ColorPaletteSelectorProps> = ({
               key={color.id}
               type="button"
               onClick={() => onSelectColor(color)}
+              onMouseEnter={() => setHoveredColor(color)}
+              onMouseLeave={() => setHoveredColor(null)}
               title={color.name}
               aria-label={`Seleccionar color ${color.name}`}
-              className={`group relative aspect-square rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center border ${
+              className={`relative aspect-square rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center border ${
                 isSelected
                   ? 'ring-2 ring-[#222A21] ring-offset-2 scale-105 shadow-sm border-white/50'
                   : 'border-black/10 hover:scale-105 hover:shadow-xs active:scale-95'
@@ -54,11 +59,6 @@ export const ColorPaletteSelector: React.FC<ColorPaletteSelectorProps> = ({
                   <Check className="w-3.5 h-3.5 stroke-[3]" />
                 </span>
               )}
-
-              {/* Tooltip on Hover */}
-              <span className="pointer-events-none absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#1F2720] text-white px-2 py-0.5 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-md">
-                {color.name}
-              </span>
             </button>
           );
         })}
