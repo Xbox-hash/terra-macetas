@@ -281,7 +281,7 @@ export const ProductsAdminPage: React.FC = () => {
           }
         />
 
-        <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto pb-24">
+        <main className="flex-1 px-4 sm:px-8 py-6 w-full pb-24">
           <form id="product-full-form" onSubmit={handleSave} className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               
@@ -803,40 +803,40 @@ export const ProductsAdminPage: React.FC = () => {
         }
       />
 
-      <main className="flex-1 p-4 sm:p-8 space-y-6 max-w-7xl w-full mx-auto">
+      <main className="flex-1 px-4 sm:px-8 py-6 space-y-6 w-full">
         {/* Filters Toolbar */}
-        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#E5DFD4] shadow-xs space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-4">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E5DFD4] shadow-xs space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-4">
           {/* Search bar */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-lg">
             <Search className="w-4 h-4 text-[#7A8878] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Buscar por nombre o descripción..."
+              placeholder="Buscar maceta por nombre o descripción..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 bg-[#FAF8F5] border border-[#D9D2C5] rounded-xl text-xs text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
+              className="w-full pl-10 pr-9 py-2.5 bg-[#FAF8F5] border border-[#D9D2C5] rounded-xl text-sm text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A8878] hover:text-[#2D3A2F]"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
 
           {/* Select filters */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5 text-xs text-[#5D6B5C]">
-              <Filter className="w-3.5 h-3.5" />
-              <span>Línea:</span>
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2 text-sm text-[#5D6B5C]">
+              <Filter className="w-4 h-4" />
+              <span className="font-medium">Línea:</span>
               <select
                 value={selectedLineFilter}
                 onChange={(e) => setSelectedLineFilter(e.target.value)}
-                className="text-xs bg-[#FAF8F5] border border-[#D9D2C5] rounded-xl px-2.5 py-1.5 text-[#2D3A2F] focus:outline-none focus:ring-1 focus:ring-[#2D3A2F]"
+                className="text-sm bg-[#FAF8F5] border border-[#D9D2C5] rounded-xl px-3 py-2 text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
               >
-                <option value="all">Todas ({products.length})</option>
+                <option value="all">Todas las líneas ({products.length})</option>
                 {lines.map((l) => (
                   <option key={l.id} value={l.id}>
                     {l.name}
@@ -845,14 +845,14 @@ export const ProductsAdminPage: React.FC = () => {
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5 text-xs text-[#5D6B5C]">
-              <span>Estado:</span>
+            <div className="flex items-center gap-2 text-sm text-[#5D6B5C]">
+              <span className="font-medium">Estado:</span>
               <select
                 value={selectedStatusFilter}
                 onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                className="text-xs bg-[#FAF8F5] border border-[#D9D2C5] rounded-xl px-2.5 py-1.5 text-[#2D3A2F] focus:outline-none focus:ring-1 focus:ring-[#2D3A2F]"
+                className="text-sm bg-[#FAF8F5] border border-[#D9D2C5] rounded-xl px-3 py-2 text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
               >
-                <option value="all">Todos</option>
+                <option value="all">Todos los estados</option>
                 <option value="active">Activos</option>
                 <option value="inactive">Inactivos</option>
               </select>
@@ -864,33 +864,33 @@ export const ProductsAdminPage: React.FC = () => {
         <div className="bg-white rounded-2xl border border-[#E5DFD4] shadow-xs overflow-hidden">
           <div className="p-5 sm:p-6 border-b border-[#EFE9DE] flex items-center justify-between">
             <div>
-              <h2 className="font-serif text-lg font-bold text-[#222A21]">Listado de Modelos</h2>
-              <p className="text-xs text-[#6F7B6D] mt-0.5">Mostrando {filteredProducts.length} productos</p>
+              <h2 className="font-serif text-xl font-bold text-[#222A21]">Listado de Modelos</h2>
+              <p className="text-xs text-[#6F7B6D] mt-0.5">Mostrando {filteredProducts.length} productos en catálogo</p>
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-[#2D3A2F]">
-              <thead className="bg-[#F8F5EE] text-[#556253] uppercase text-[10px] font-bold tracking-wider border-b border-[#EFE9DE]">
+            <table className="w-full text-left text-sm text-[#2D3A2F]">
+              <thead className="bg-[#F8F5EE] text-[#475546] uppercase text-xs font-bold tracking-wider border-b border-[#EFE9DE]">
                 <tr>
-                  <th className="px-6 py-3.5">Imagen</th>
-                  <th className="px-6 py-3.5">Producto</th>
-                  <th className="px-6 py-3.5">Línea</th>
-                  <th className="px-6 py-3.5">Precio</th>
-                  <th className="px-6 py-3.5">Estado</th>
-                  <th className="px-6 py-3.5 text-right">Acciones</th>
+                  <th className="px-6 py-4">Imagen</th>
+                  <th className="px-6 py-4">Producto y Variantes</th>
+                  <th className="px-6 py-4">Línea de Diseño</th>
+                  <th className="px-6 py-4">Precio de Venta</th>
+                  <th className="px-6 py-4">Estado</th>
+                  <th className="px-6 py-4 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F2ECE2]">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-[#7E8B7D]">
+                    <td colSpan={6} className="px-6 py-14 text-center text-[#7E8B7D]">
                       Cargando productos...
                     </td>
                   </tr>
                 ) : filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-[#7E8B7D]">
+                    <td colSpan={6} className="px-6 py-14 text-center text-[#7E8B7D]">
                       No hay productos que coincidan con los filtros.
                     </td>
                   </tr>
@@ -901,71 +901,71 @@ export const ProductsAdminPage: React.FC = () => {
                         <img
                           src={product.images[0] || 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=1000&q=80'}
                           alt={product.name}
-                          className="w-14 h-14 rounded-xl object-cover bg-[#F0ECE4] border border-[#E8E2D7]"
+                          className="w-16 h-16 rounded-xl object-cover bg-[#F0ECE4] border border-[#E8E2D7] shadow-2xs"
                         />
                       </td>
-                      <td className="px-6 py-4 max-w-xs">
-                        <span className="font-bold text-sm text-[#222A21] block">{product.name}</span>
+                      <td className="px-6 py-4 max-w-sm">
+                        <span className="font-bold text-base text-[#222A21] block leading-snug">{product.name}</span>
                         {product.colors && product.colors.length > 0 ? (
-                          <div className="flex items-center gap-1 mt-1">
+                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                             <div className="flex -space-x-1">
-                              {product.colors.slice(0, 5).map((c) => (
+                              {product.colors.slice(0, 6).map((c) => (
                                 <span
                                   key={c.id}
-                                  className="w-3.5 h-3.5 rounded-full border border-white shadow-2xs inline-block"
+                                  className="w-4 h-4 rounded-full border border-white shadow-2xs inline-block"
                                   style={{ backgroundColor: c.hex }}
                                   title={c.name}
                                 />
                               ))}
                             </div>
-                            <span className="text-[10px] text-[#768474] font-medium ml-1">
+                            <span className="text-xs text-[#768474] font-medium ml-1">
                               {product.colors.length} {product.colors.length === 1 ? 'color' : 'colores'}
                             </span>
                             {product.colors.some((c) => !!c.image) && (
                               <span
-                                className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-[#3C6E3D] bg-[#E3F2E4] px-1.5 py-0.5 rounded-full ml-1"
+                                className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#3C6E3D] bg-[#E3F2E4] px-2 py-0.5 rounded-full"
                                 title="Tiene fotos asignadas por color"
                               >
-                                <Camera className="w-2.5 h-2.5" /> con fotos
+                                <Camera className="w-3 h-3" /> con fotos
                               </span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-[10px] text-[#8C988A] block mt-0.5">Paleta completa</span>
+                          <span className="text-xs text-[#8C988A] block mt-1">Paleta completa</span>
                         )}
                         {product.featured && (
-                          <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full inline-block mt-1">
+                          <span className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-full inline-block mt-1.5">
                             ⭐ Destacado en Home
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-[#5B6858]">{getLineName(product.lineId)}</td>
-                      <td className="px-6 py-4 font-bold text-sm text-[#222A21]">{formatPrice(product.price)}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-[#4A5749]">{getLineName(product.lineId)}</td>
+                      <td className="px-6 py-4 font-bold text-base text-[#222A21]">{formatPrice(product.price)}</td>
                       <td className="px-6 py-4">
                         <StatusBadge active={product.active} />
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="inline-flex items-center gap-1.5">
+                        <div className="inline-flex items-center gap-2">
                           <button
                             onClick={() => handleToggleStatus(product)}
-                            className="p-1.5 rounded-lg text-[#556353] hover:text-[#222A21] hover:bg-[#EDE7DC] transition-colors"
+                            className="p-2 rounded-xl text-[#556353] hover:text-[#222A21] hover:bg-[#EDE7DC] transition-colors"
                             title={product.active ? 'Pausar producto' : 'Activar producto'}
                           >
-                            <Power className="w-4 h-4" />
+                            <Power className="w-4.5 h-4.5" />
                           </button>
                           <button
                             onClick={() => handleOpenEdit(product)}
-                            className="p-1.5 rounded-lg text-[#556353] hover:text-[#222A21] hover:bg-[#EDE7DC] transition-colors"
+                            className="p-2 rounded-xl text-[#556353] hover:text-[#222A21] hover:bg-[#EDE7DC] transition-colors"
                             title="Editar"
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit2 className="w-4.5 h-4.5" />
                           </button>
                           <button
                             onClick={() => setDeleteTarget(product)}
-                            className="p-1.5 rounded-lg text-[#556353] hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            className="p-2 rounded-xl text-[#556353] hover:text-rose-600 hover:bg-rose-50 transition-colors"
                             title="Eliminar"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4.5 h-4.5" />
                           </button>
                         </div>
                       </td>
