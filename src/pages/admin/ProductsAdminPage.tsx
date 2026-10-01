@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Power, Search, Filter, Sparkles, X, Package, Check, Palette, Camera, UploadCloud } from 'lucide-react';
+import { Plus, Edit2, Trash2, Power, Search, Filter, Sparkles, X, Package, Check, Palette, Camera, UploadCloud, ArrowLeft, Save, Eye } from 'lucide-react';
 import { Product, ProductLine, ProductColor } from '../../types';
 import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
 import { AdminHeader } from '../../components/admin/AdminHeader';
 import { Button } from '../../components/common/Button';
-import { Modal } from '../../components/common/Modal';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { FormInput } from '../../components/common/FormInput';
 import { ImageUploader } from '../../components/common/ImageUploader';
@@ -29,8 +28,8 @@ export const ProductsAdminPage: React.FC = () => {
   const [selectedLineFilter, setSelectedLineFilter] = useState('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('all');
 
-  // Modal / Form state
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Full-page Form view state ('list' | 'form')
+  const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -145,7 +144,9 @@ export const ProductsAdminPage: React.FC = () => {
       active: true,
       featured: false,
     });
-    setIsModalOpen(true);
+    setActiveColorPhotoId(null);
+    setViewMode('form');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleOpenEdit = (prod: Product) => {
@@ -163,12 +164,17 @@ export const ProductsAdminPage: React.FC = () => {
       active: prod.active,
       featured: !!prod.featured,
     });
-    setIsModalOpen(true);
+    setActiveColorPhotoId(null);
+    setViewMode('form');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || formData.price <= 0) return;
+    if (!formData.name.trim() || formData.price <= 0) {
+      showToast('Por favor completa el nombre y un precio válido.', 'error');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -196,7 +202,8 @@ export const ProductsAdminPage: React.FC = () => {
         showToast(`Nuevo producto "${formData.name}" creado.`);
       }
 
-      setIsModalOpen(false);
+      setViewMode('list');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       loadData();
     } catch (err: any) {
       showToast(err.message || 'Error al guardar producto', 'error');
@@ -233,6 +240,555 @@ export const ProductsAdminPage: React.FC = () => {
   const getLineName = (lineId: string) => {
     return lines.find((l) => l.id === lineId)?.name || 'Sin línea';
   };
+
+  // FULL-PAGE CREATE / EDIT VIEW
+  if (viewMode === 'form') {
+    return (
+      <div className="flex-1 flex flex-col min-h-screen bg-[#F7F5F0]">
+        <AdminHeader
+          title={editingProduct ? `Editar Producto: ${editingProduct.name}` : 'Crear Nuevo Producto'}
+          subtitle={
+            editingProduct
+              ? 'Modifica las características, paleta de colores y fotografías de este modelo'
+              : 'Completa las especificaciones para publicar una nueva maceta en el catálogo'
+          }
+          onOpenMobileSidebar={openMobileSidebar}
+          actions={
+            <div className="flex items-center gap-2.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setViewMode('list');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                leftIcon={<ArrowLeft className="w-4 h-4" />}
+              >
+                Volver al listado
+              </Button>
+              <Button
+                type="submit"
+                form="product-full-form"
+                variant="primary"
+                size="sm"
+                isLoading={isSubmitting}
+                leftIcon={<Save className="w-4 h-4" />}
+              >
+                {editingProduct ? 'Guardar Cambios' : 'Publicar Producto'}
+              </Button>
+            </div>
+          }
+        />
+
+        <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto pb-24">
+          <form id="product-full-form" onSubmit={handleSave} className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              
+              {/* Columna Izquierda: Datos principales, Colores & Fotos, Ficha técnica */}
+              <div className="lg:col-span-8 space-y-6">
+
+                {/* CARD 1: INFORMACIÓN PRINCIPAL */}
+                <div className="bg-white p-6 sm:p-7 rounded-2xl border border-[#E5DFD4] shadow-xs space-y-5">
+                  <div className="border-b border-[#F0EBE1] pb-3 flex items-center justify-between">
+                    <h3 className="font-serif text-base font-bold text-[#222A21] flex items-center gap-2">
+                      <Package className="w-4 h-4 text-[#4A5D4E]" />
+                      Información Básica del Producto
+                    </h3>
+                    <span className="text-[11px] text-[#7F8D7E]">* Campos requeridos</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <FormInput
+                      label="Nombre del modelo"
+                      required
+                      placeholder="Ej: Maceta Roma Terracota"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
+
+                    <div className="space-y-1.5 text-left">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-[#475446]">
+                        Línea de diseño
+                      </label>
+                      <select
+                        required
+                        value={formData.lineId}
+                        onChange={(e) => setFormData({ ...formData, lineId: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-[#FAF8F5] border border-[#D9D3C7] rounded-xl text-sm text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
+                      >
+                        {lines.map((l) => (
+                          <option key={l.id} value={l.id}>
+                            {l.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <FormInput
+                      label="Precio de Venta (Guaraníes ₲)"
+                      type="number"
+                      required
+                      min={1000}
+                      step={1000}
+                      placeholder="85000"
+                      value={formData.price || ''}
+                      onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                    />
+
+                    <div className="space-y-1.5 text-left">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-[#475446]">
+                        Precio formateado
+                      </label>
+                      <div className="px-3.5 py-2.5 bg-[#F6F4EF] rounded-xl border border-[#E8E2D7] text-sm font-bold text-[#2D3A2F]">
+                        {formatPrice(formData.price || 0)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 text-left">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#475446]">
+                      Descripción artesanal
+                    </label>
+                    <textarea
+                      rows={4}
+                      required
+                      placeholder="Describí para qué plantas es ideal, detalles de drenaje, estilo de cocción y estética..."
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-[#FAF8F5] border border-[#D9D3C7] rounded-xl text-sm text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
+                    />
+                  </div>
+                </div>
+
+                {/* CARD 2: PALETA DE COLORES Y FOTOS POR COLOR (AMPLIA Y CÓMODA) */}
+                <div className="bg-white p-6 sm:p-7 rounded-2xl border border-[#E5DFD4] shadow-xs space-y-6">
+                  <div className="border-b border-[#F0EBE1] pb-3 flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <h3 className="font-serif text-base font-bold text-[#222A21] flex items-center gap-2">
+                        <Palette className="w-4 h-4 text-[#4A5D4E]" />
+                        Colores de Fabricación y Variantes ({formData.colors.length} seleccionados)
+                      </h3>
+                      <p className="text-xs text-[#6E7B6C] mt-0.5">
+                        Selecciona los colores en que se produce esta maceta. Si subes fotos individuales, la tienda cambiará a esa foto al seleccionarlo.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, colors: [...DEFAULT_POT_PALETTE] })}
+                        className="text-xs font-semibold text-[#4A5D4E] hover:underline cursor-pointer bg-[#F2EFE8] px-2.5 py-1 rounded-lg"
+                      >
+                        Marcar todos (17)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, colors: [] })}
+                        className="text-xs font-semibold text-[#8C988A] hover:underline cursor-pointer bg-[#F2EFE8] px-2.5 py-1 rounded-lg"
+                      >
+                        Limpiar
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Grid grande de selección de colores */}
+                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-9 gap-3">
+                    {DEFAULT_POT_PALETTE.map((color) => {
+                      const isSelected = formData.colors.some((c) => c.id === color.id);
+                      return (
+                        <button
+                          key={color.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setFormData({
+                                ...formData,
+                                colors: formData.colors.filter((c) => c.id !== color.id),
+                              });
+                            } else {
+                              setFormData({
+                                ...formData,
+                                colors: [...formData.colors, color],
+                              });
+                            }
+                          }}
+                          className={`group flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all cursor-pointer border ${
+                            isSelected
+                              ? 'bg-[#F5F2EB] border-[#2D3A2F] ring-2 ring-[#2D3A2F] shadow-sm'
+                              : 'bg-white border-[#E7E1D4] opacity-60 hover:opacity-100 hover:border-[#2D3A2F]/40'
+                          }`}
+                        >
+                          <div
+                            className="w-10 h-10 rounded-full border border-black/20 flex items-center justify-center shadow-xs transition-transform group-hover:scale-105"
+                            style={{ backgroundColor: color.hex }}
+                          >
+                            {isSelected && (
+                              <span className="p-0.5 rounded-full bg-black/50 text-white backdrop-blur-xs">
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] font-semibold text-[#2D3A2F] text-center leading-tight line-clamp-1">
+                            {color.name}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Subpanel de Fotos por cada color seleccionado */}
+                  {formData.colors.length === 0 ? (
+                    <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800">
+                      💡 Si no seleccionas colores específicos, se habilitará la paleta completa con tonos artesanales dinámicos.
+                    </div>
+                  ) : (
+                    <div className="pt-4 border-t border-[#F0EBE1] space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-[#475446] flex items-center gap-2">
+                            <Camera className="w-4 h-4 text-[#4A5D4E]" />
+                            Asignación de Fotografías por Variante de Color
+                          </h4>
+                          <p className="text-xs text-[#6E7B6C] mt-0.5">
+                            Para cada color, podés adjuntar la foto real de la maceta. El comprador la verá de inmediato al hacer clic en ese color.
+                          </p>
+                        </div>
+                        <span className="text-xs font-bold text-[#3C6E3D] bg-[#E5F2E6] px-2.5 py-1 rounded-full shrink-0">
+                          {formData.colors.filter((c) => !!c.image).length} de {formData.colors.length} con foto
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+                        {formData.colors.map((color) => {
+                          const isConfiguring = activeColorPhotoId === color.id;
+                          return (
+                            <div
+                              key={color.id}
+                              className={`p-3.5 rounded-2xl border transition-all ${
+                                isConfiguring
+                                  ? 'bg-white border-[#2D3A2F] ring-2 ring-[#2D3A2F]/20 shadow-md'
+                                  : color.image
+                                  ? 'bg-[#FCFBF8] border-[#BCD4BE]'
+                                  : 'bg-[#FAF8F5] border-[#E5DFD4]'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <span
+                                    className="w-6 h-6 rounded-full border border-black/20 shrink-0 shadow-xs"
+                                    style={{ backgroundColor: color.hex }}
+                                  />
+                                  <div className="truncate">
+                                    <span className="text-xs font-bold text-[#2D3A2F] block truncate">
+                                      {color.name}
+                                    </span>
+                                    <span className="text-[11px] text-[#7A8878]">
+                                      {color.image ? 'Foto real asignada' : 'Tono cerámico interactivo'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {color.image ? (
+                                    <div className="flex items-center gap-2">
+                                      <img
+                                        src={color.image}
+                                        alt={color.name}
+                                        className="w-11 h-11 rounded-xl object-cover border border-[#D5CEC2] shadow-2xs"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => setActiveColorPhotoId(isConfiguring ? null : color.id)}
+                                        className="text-xs font-semibold text-[#4A5D4E] hover:underline cursor-pointer"
+                                      >
+                                        {isConfiguring ? 'Cerrar' : 'Cambiar'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        title="Quitar foto"
+                                        onClick={() => handleSetColorImage(color.id, undefined)}
+                                        className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => setActiveColorPhotoId(isConfiguring ? null : color.id)}
+                                      className="text-xs font-semibold text-[#2D3A2F] bg-white hover:bg-[#EAE4D7] border border-[#D9D3C7] px-3 py-1.5 rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                      <Camera className="w-3.5 h-3.5 text-[#4A5D4E]" />
+                                      {isConfiguring ? 'Cancelar' : 'Asignar foto'}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Panel Desplegable para Asignar Foto */}
+                              {isConfiguring && (
+                                <div className="mt-3 pt-3 border-t border-[#EFECE6] space-y-3 text-left">
+                                  <div className="flex items-center gap-2">
+                                    <label className="text-xs font-medium bg-[#2D3A2F] hover:bg-[#3D4D3F] text-white px-3 py-2 rounded-xl flex items-center gap-2 cursor-pointer transition-all shadow-xs">
+                                      <UploadCloud className="w-4 h-4" />
+                                      <span>Subir archivo desde mi PC</span>
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => handleColorFileUpload(color.id, e)}
+                                      />
+                                    </label>
+                                  </div>
+
+                                  {formData.images.length > 0 && (
+                                    <div className="space-y-1.5">
+                                      <span className="text-[11px] font-medium text-[#768474] block">
+                                        O seleccionar de las fotos cargadas en este producto:
+                                      </span>
+                                      <div className="flex gap-2 overflow-x-auto py-1">
+                                        {formData.images.map((imgUrl, imgIdx) => (
+                                          <button
+                                            key={imgIdx}
+                                            type="button"
+                                            onClick={() => {
+                                              handleSetColorImage(color.id, imgUrl);
+                                              setActiveColorPhotoId(null);
+                                            }}
+                                            className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
+                                              color.image === imgUrl
+                                                ? 'border-[#2D3A2F] ring-2 ring-[#2D3A2F]'
+                                                : 'border-transparent opacity-80 hover:opacity-100 hover:scale-105'
+                                            }`}
+                                          >
+                                            <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <div className="space-y-1">
+                                    <span className="text-[11px] font-medium text-[#768474] block">
+                                      O pegar enlace web directo:
+                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                      <input
+                                        type="url"
+                                        placeholder="https://images.unsplash.com/..."
+                                        value={tempUrlMap[color.id] || ''}
+                                        onChange={(e) =>
+                                          setTempUrlMap({ ...tempUrlMap, [color.id]: e.target.value })
+                                        }
+                                        className="w-full px-3 py-1.5 text-xs bg-white border border-[#D9D3C7] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#2D3A2F]"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          const url = tempUrlMap[color.id]?.trim();
+                                          if (url) {
+                                            handleSetColorImage(color.id, url);
+                                            setActiveColorPhotoId(null);
+                                          }
+                                        }}
+                                        className="text-xs px-3 py-1.5 shrink-0"
+                                      >
+                                        Asignar
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* CARD 3: ESPECIFICACIONES TÉCNICAS */}
+                <div className="bg-white p-6 sm:p-7 rounded-2xl border border-[#E5DFD4] shadow-xs space-y-5">
+                  <div className="border-b border-[#F0EBE1] pb-3">
+                    <h3 className="font-serif text-base font-bold text-[#222A21]">
+                      Ficha Técnica y Dimensiones (Opcional)
+                    </h3>
+                    <p className="text-xs text-[#6E7B6C] mt-0.5">
+                      Detalles constructivos que se muestran en la pestaña de especificaciones en la tienda.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <FormInput
+                      label="Dimensiones"
+                      placeholder="Ej: Ø 24 cm x Alto 28 cm"
+                      value={formData.dimensions}
+                      onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
+                    />
+
+                    <FormInput
+                      label="Material de fabricación"
+                      placeholder="Ej: Cerámica refractaria"
+                      value={formData.material}
+                      onChange={(e) => setFormData({ ...formData, material: e.target.value })}
+                    />
+
+                    <FormInput
+                      label="Acabado y textura"
+                      placeholder="Ej: Esmalte satinado al horno"
+                      value={formData.finish}
+                      onChange={(e) => setFormData({ ...formData, finish: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Columna Derecha: Galería Principal, Toggles y Live Preview */}
+              <div className="lg:col-span-4 space-y-6">
+
+                {/* CARD FOTOGRAFÍAS GENERALES */}
+                <div className="bg-white p-6 rounded-2xl border border-[#E5DFD4] shadow-xs space-y-4">
+                  <div className="border-b border-[#F0EBE1] pb-3">
+                    <h3 className="font-serif text-base font-bold text-[#222A21] flex items-center gap-2">
+                      <Camera className="w-4 h-4 text-[#4A5D4E]" />
+                      Galería Principal (Hasta 4 fotos)
+                    </h3>
+                    <p className="text-xs text-[#6E7B6C] mt-0.5">
+                      Vistas generales para el catálogo y el carrusel de imágenes.
+                    </p>
+                  </div>
+
+                  <ImageUploader
+                    maxImages={4}
+                    value={formData.images}
+                    onChange={(imgs) => setFormData({ ...formData, images: imgs })}
+                  />
+                </div>
+
+                {/* CARD VISIBILIDAD & ESTADO */}
+                <div className="bg-white p-6 rounded-2xl border border-[#E5DFD4] shadow-xs space-y-4">
+                  <h3 className="font-serif text-base font-bold text-[#222A21] border-b border-[#F0EBE1] pb-3">
+                    Visibilidad en la Tienda
+                  </h3>
+
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3 p-3 rounded-xl bg-[#FAF8F5] border border-[#EAE4D7] cursor-pointer hover:bg-[#F4EFE6] transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={formData.active}
+                        onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                        className="w-4 h-4 rounded text-[#2D3A2F] focus:ring-[#2D3A2F] border-[#D9D3C7]"
+                      />
+                      <div>
+                        <span className="text-xs font-bold text-[#2D3A2F] block">Producto Activo</span>
+                        <span className="text-[11px] text-[#6E7B6C]">Visible para compra y consulta en el catálogo</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 rounded-xl bg-[#FAF8F5] border border-[#EAE4D7] cursor-pointer hover:bg-[#F4EFE6] transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={formData.featured}
+                        onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                        className="w-4 h-4 rounded text-[#2D3A2F] focus:ring-[#2D3A2F] border-[#D9D3C7]"
+                      />
+                      <div>
+                        <span className="text-xs font-bold text-[#2D3A2F] block">⭐ Destacar en Home</span>
+                        <span className="text-[11px] text-[#6E7B6C]">Aparece en la sección destacada de la portada</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* CARD VISTA PREVIA EN VIVO */}
+                <div className="bg-white p-6 rounded-2xl border border-[#E5DFD4] shadow-xs space-y-3">
+                  <h3 className="font-serif text-xs font-bold uppercase tracking-wider text-[#475446] flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5 text-[#4A5D4E]" />
+                    Vista Previa en Tienda
+                  </h3>
+
+                  <div className="rounded-2xl overflow-hidden border border-[#E5DFD4] bg-[#FAF8F5]">
+                    <div className="aspect-4/3 relative bg-[#ECE7DC]">
+                      <img
+                        src={formData.images[0] || 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=1000&q=80'}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                      {formData.featured && (
+                        <span className="absolute top-2 left-2 bg-[#2D3A2F]/90 text-white text-[9px] font-bold uppercase px-2 py-0.5 rounded-full">
+                          Destacado
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-4 space-y-1.5">
+                      <span className="text-[10px] uppercase font-bold text-[#556353]">
+                        {lines.find((l) => l.id === formData.lineId)?.name || 'Línea de diseño'}
+                      </span>
+                      <h4 className="font-serif text-sm font-bold text-[#222A21] line-clamp-1">
+                        {formData.name || 'Nombre del Producto'}
+                      </h4>
+                      <p className="text-sm font-bold text-[#2D3A2F]">
+                        {formatPrice(formData.price || 0)}
+                      </p>
+                      {formData.colors.length > 0 && (
+                        <div className="flex items-center gap-1 pt-1">
+                          {formData.colors.slice(0, 6).map((c) => (
+                            <span
+                              key={c.id}
+                              className="w-3.5 h-3.5 rounded-full border border-black/20"
+                              style={{ backgroundColor: c.hex }}
+                              title={c.name}
+                            />
+                          ))}
+                          {formData.colors.length > 6 && (
+                            <span className="text-[10px] text-[#7A8878] font-medium">
+                              +{formData.colors.length - 6}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ACCIONES INFERIORES LATERALES */}
+                <div className="pt-2 flex flex-col gap-2.5">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="lg"
+                    className="w-full justify-center"
+                    isLoading={isSubmitting}
+                    leftIcon={<Save className="w-4 h-4" />}
+                  >
+                    {editingProduct ? 'Guardar Cambios' : 'Publicar Producto'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="md"
+                    className="w-full justify-center"
+                    onClick={() => {
+                      setViewMode('list');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    Cancelar y Volver
+                  </Button>
+                </div>
+
+              </div>
+            </div>
+          </form>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
@@ -422,383 +978,7 @@ export const ProductsAdminPage: React.FC = () => {
         </div>
       </main>
 
-      {/* CREATE / EDIT PRODUCT MODAL */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingProduct ? 'Editar Producto' : 'Crear Nuevo Producto'}
-        maxWidth="xl"
-      >
-        <form onSubmit={handleSave} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormInput
-              label="Nombre del producto"
-              required
-              placeholder="Ej: Maceta Roma Terracota"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
 
-            <div className="space-y-1.5 text-left">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#475446]">
-                Línea de diseño
-              </label>
-              <select
-                required
-                value={formData.lineId}
-                onChange={(e) => setFormData({ ...formData, lineId: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-white border border-[#D9D3C7] rounded-xl text-sm text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
-              >
-                {lines.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormInput
-              label="Precio (Guaraníes ₲)"
-              type="number"
-              required
-              min={1000}
-              step={1000}
-              placeholder="85000"
-              value={formData.price || ''}
-              onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-            />
-
-            <FormInput
-              label="Dimensiones (opcional)"
-              placeholder="Ej: Ø 24 cm x Alto 28 cm"
-              value={formData.dimensions}
-              onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormInput
-              label="Material (opcional)"
-              placeholder="Ej: Cerámica refractaria cocida a leña"
-              value={formData.material}
-              onChange={(e) => setFormData({ ...formData, material: e.target.value })}
-            />
-
-            <FormInput
-              label="Acabado / Color (opcional)"
-              placeholder="Ej: Esmalte satinado terracota"
-              value={formData.finish}
-              onChange={(e) => setFormData({ ...formData, finish: e.target.value })}
-            />
-          </div>
-
-          {/* Selector de Colores Disponibles */}
-          <div className="space-y-2.5 text-left bg-[#F4EFE6] p-3.5 rounded-2xl border border-[#E3DDD1]">
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[#475446] flex items-center gap-1.5">
-                  <Palette className="w-3.5 h-3.5 text-[#4A5D4E]" />
-                  Colores disponibles ({formData.colors.length} seleccionados)
-                </label>
-                <p className="text-[11px] text-[#6E7B6C] mt-0.5">
-                  Elige los colores específicos para esta maceta (ej: 3, 4 colores o los que fabrique el cliente).
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, colors: [...DEFAULT_POT_PALETTE] })}
-                  className="text-[11px] font-semibold text-[#4A5D4E] hover:underline cursor-pointer"
-                >
-                  Marcar todos
-                </button>
-                <span className="text-[10px] text-[#A9BCA1]">|</span>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, colors: [] })}
-                  className="text-[11px] font-semibold text-[#8C988A] hover:underline cursor-pointer"
-                >
-                  Limpiar
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-6 sm:grid-cols-9 gap-2 pt-1">
-              {DEFAULT_POT_PALETTE.map((color) => {
-                const isSelected = formData.colors.some((c) => c.id === color.id);
-                return (
-                  <button
-                    key={color.id}
-                    type="button"
-                    onClick={() => {
-                      if (isSelected) {
-                        setFormData({
-                          ...formData,
-                          colors: formData.colors.filter((c) => c.id !== color.id),
-                        });
-                      } else {
-                        setFormData({
-                          ...formData,
-                          colors: [...formData.colors, color],
-                        });
-                      }
-                    }}
-                    title={color.name}
-                    aria-label={`Color ${color.name}`}
-                    className={`relative aspect-square rounded-xl transition-all cursor-pointer flex items-center justify-center border ${
-                      isSelected
-                        ? 'ring-2 ring-[#222A21] ring-offset-2 scale-105 shadow-sm border-white/60'
-                        : 'border-black/10 opacity-35 hover:opacity-90 hover:scale-105'
-                    }`}
-                    style={{ backgroundColor: color.hex }}
-                  >
-                    {isSelected && (
-                      <span className="p-0.5 rounded-full bg-black/40 text-white backdrop-blur-xs">
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {formData.colors.length === 0 ? (
-              <p className="text-[11px] text-amber-700 font-medium pt-0.5">
-                * Si no seleccionas ninguno específico, se habilitará la paleta completa en la tienda.
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {formData.colors.map((c) => (
-                  <span
-                    key={c.id}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-white border border-[#DDD6C8] text-[#2D3A2F]"
-                  >
-                    <span className="w-2 h-2 rounded-full border border-black/20" style={{ backgroundColor: c.hex }} />
-                    {c.name}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Fotos específicas por cada color */}
-            {formData.colors.length > 0 && (
-              <div className="pt-2.5 border-t border-[#E3DDD1] space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#475446] flex items-center gap-1.5">
-                    <Camera className="w-3.5 h-3.5 text-[#4A5D4E]" />
-                    Fotos por color (opcional)
-                  </span>
-                  <span className="text-[10px] text-[#7A8878] font-medium">
-                    {formData.colors.filter((c) => !!c.image).length} de {formData.colors.length} con foto
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#6E7B6C]">
-                  Asigna la foto real de la maceta para cada color. Al elegir el color en la tienda, cambiará automáticamente a su foto respectiva.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1 pt-1">
-                  {formData.colors.map((color) => {
-                    const isConfiguring = activeColorPhotoId === color.id;
-                    return (
-                      <div
-                        key={color.id}
-                        className={`p-2 rounded-xl border transition-all ${
-                          isConfiguring
-                            ? 'bg-white border-[#2D3A2F] shadow-sm ring-1 ring-[#2D3A2F]/20'
-                            : color.image
-                            ? 'bg-white border-[#C9DFCA]'
-                            : 'bg-white/80 border-[#E5DFD4]'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span
-                              className="w-4 h-4 rounded-full border border-black/20 shrink-0 shadow-xs"
-                              style={{ backgroundColor: color.hex }}
-                            />
-                            <span className="text-xs font-semibold text-[#2D3A2F] truncate">
-                              {color.name}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {color.image ? (
-                              <div className="flex items-center gap-1.5">
-                                <img
-                                  src={color.image}
-                                  alt={color.name}
-                                  className="w-7 h-7 rounded-lg object-cover border border-[#D5CEC2]"
-                                />
-                                <button
-                                  type="button"
-                                  title="Cambiar foto"
-                                  onClick={() => setActiveColorPhotoId(isConfiguring ? null : color.id)}
-                                  className="text-[10px] text-[#4A5D4E] hover:underline font-medium cursor-pointer"
-                                >
-                                  {isConfiguring ? 'Cerrar' : 'Cambiar'}
-                                </button>
-                                <button
-                                  type="button"
-                                  title="Quitar foto"
-                                  onClick={() => handleSetColorImage(color.id, undefined)}
-                                  className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer"
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setActiveColorPhotoId(isConfiguring ? null : color.id)}
-                                className="text-[10px] font-semibold text-[#4A5D4E] bg-[#EAE4D7] hover:bg-[#DDD6C8] px-2 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer"
-                              >
-                                <Camera className="w-3 h-3" />
-                                {isConfiguring ? 'Cancelar' : 'Asignar foto'}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Panel de carga para este color */}
-                        {isConfiguring && (
-                          <div className="mt-2.5 pt-2 border-t border-[#EFECE6] space-y-2 text-left">
-                            <div className="flex items-center gap-2">
-                              <label className="text-[11px] font-medium bg-[#2D3A2F] hover:bg-[#3D4D3F] text-white px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs">
-                                <UploadCloud className="w-3.5 h-3.5" />
-                                <span>Subir de mi PC</span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={(e) => handleColorFileUpload(color.id, e)}
-                                />
-                              </label>
-                            </div>
-
-                            {formData.images.length > 0 && (
-                              <div className="space-y-1">
-                                <span className="text-[10px] font-medium text-[#768474]">
-                                  O seleccionar de las fotos del producto:
-                                </span>
-                                <div className="flex gap-1.5 overflow-x-auto py-0.5">
-                                  {formData.images.map((imgUrl, imgIdx) => (
-                                    <button
-                                      key={imgIdx}
-                                      type="button"
-                                      onClick={() => {
-                                        handleSetColorImage(color.id, imgUrl);
-                                        setActiveColorPhotoId(null);
-                                      }}
-                                      className={`w-9 h-9 rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
-                                        color.image === imgUrl
-                                          ? 'border-[#2D3A2F] ring-1 ring-[#2D3A2F]'
-                                          : 'border-transparent opacity-80 hover:opacity-100 hover:scale-105'
-                                      }`}
-                                    >
-                                      <img src={imgUrl} alt="" className="w-full h-full object-cover" />
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="flex items-center gap-1 pt-0.5">
-                              <input
-                                type="url"
-                                placeholder="O pega enlace web (https://...)"
-                                value={tempUrlMap[color.id] || ''}
-                                onChange={(e) =>
-                                  setTempUrlMap({ ...tempUrlMap, [color.id]: e.target.value })
-                                }
-                                className="w-full px-2 py-1 text-xs bg-[#FAF8F5] border border-[#D9D3C7] rounded-md focus:outline-none focus:ring-1 focus:ring-[#2D3A2F]"
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  const url = tempUrlMap[color.id]?.trim();
-                                  if (url) {
-                                    handleSetColorImage(color.id, url);
-                                    setActiveColorPhotoId(null);
-                                  }
-                                }}
-                                className="text-[10px] py-1 px-2.5 shrink-0"
-                              >
-                                Usar
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-1.5 text-left">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#475446]">
-              Descripción
-            </label>
-            <textarea
-              rows={3}
-              required
-              placeholder="Contá para qué plantas es ideal, detalles de drenaje y estética..."
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-white border border-[#D9D3C7] rounded-xl text-sm text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
-            />
-          </div>
-
-          {/* Images Gallery Uploader */}
-          <div className="space-y-1.5 text-left">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#475446]">
-              Fotografías del producto (Hasta 4 imágenes)
-            </label>
-            <ImageUploader
-              maxImages={4}
-              value={formData.images}
-              onChange={(imgs) => setFormData({ ...formData, images: imgs })}
-            />
-          </div>
-
-          {/* Toggles */}
-          <div className="flex items-center gap-6 pt-2">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={formData.active}
-                onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                className="rounded text-[#2D3A2F] focus:ring-[#2D3A2F] border-[#D9D3C7]"
-              />
-              <span className="text-xs font-semibold text-[#2D3A2F]">Producto Activo</span>
-            </label>
-
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={formData.featured}
-                onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                className="rounded text-[#2D3A2F] focus:ring-[#2D3A2F] border-[#D9D3C7]"
-              />
-              <span className="text-xs font-semibold text-[#2D3A2F]">Destacar en Home</span>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EAE4D7]">
-            <Button type="button" variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="primary" size="sm" isLoading={isSubmitting}>
-              {editingProduct ? 'Guardar Cambios' : 'Crear Producto'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
 
       {/* DELETE CONFIRM DIALOG */}
       <ConfirmDialog
