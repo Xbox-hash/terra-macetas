@@ -326,7 +326,7 @@ export const ProductsAdminPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
                     <FormInput
                       label="Precio de Venta (Guaraníes ₲)"
                       type="number"
@@ -337,15 +337,6 @@ export const ProductsAdminPage: React.FC = () => {
                       value={formData.price || ''}
                       onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
                     />
-
-                    <div className="space-y-1.5 text-left">
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-[#475446]">
-                        Precio formateado
-                      </label>
-                      <div className="px-3.5 py-2.5 bg-[#F6F4EF] rounded-xl border border-[#E8E2D7] text-sm font-bold text-[#2D3A2F]">
-                        {formatPrice(formData.price || 0)}
-                      </div>
-                    </div>
                   </div>
 
                   <div className="space-y-1.5 text-left">

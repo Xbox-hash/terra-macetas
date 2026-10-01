@@ -25,7 +25,7 @@ public class ProductsController : ControllerBase
         [FromQuery] bool? onlyFeatured = null,
         [FromQuery] string? search = null)
     {
-        var query = _context.Products.Include(p => p.Line).AsQueryable();
+        var query = _context.Products.AsNoTracking().Include(p => p.Line).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(lineId) && lineId != "all" && lineId != "todas")
         {
@@ -57,7 +57,7 @@ public class ProductsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductDto>> GetById(string id)
     {
-        var product = await _context.Products.Include(p => p.Line).FirstOrDefaultAsync(p => p.Id == id);
+        var product = await _context.Products.AsNoTracking().Include(p => p.Line).FirstOrDefaultAsync(p => p.Id == id);
         if (product == null) return NotFound(new { message = "Producto no encontrado" });
 
         return Ok(MapToDto(product));

@@ -48,11 +48,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
               <Sprout className="w-6 h-6 text-[#A7BA9F]" />
             </div>
           )}
-          <div className="overflow-hidden">
-            <h1 className="font-serif text-lg font-bold tracking-wider text-white leading-none truncate">
+          <div className="min-w-0 flex-1">
+            <h1 className="font-serif text-base font-bold text-white leading-snug">
               {config.storeName || 'TERRA'}
             </h1>
-            <span className="text-[10px] tracking-widest uppercase text-[#8CA08A] font-semibold">
+            <span className="text-[10px] tracking-wider uppercase text-[#8CA08A] font-semibold block mt-0.5">
               Panel Administrativo
             </span>
           </div>
@@ -139,7 +139,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
 
   return (
     <>
-      <aside className="hidden md:flex flex-col w-64 shrink-0 h-screen sticky top-0">
+      <aside className="hidden md:flex flex-col w-72 shrink-0 h-screen sticky top-0">
         {sidebarContent}
       </aside>
 

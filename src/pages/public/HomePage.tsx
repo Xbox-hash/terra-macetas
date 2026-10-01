@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles, ShieldCheck, Truck, Palette, HeartHandshake } fro
 import { Product, ProductLine } from '../../types';
 import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
+import { INITIAL_LINES, INITIAL_PRODUCTS } from '../../data/mockData';
 import { ProductCard } from '../../components/public/ProductCard';
 import { LineCard } from '../../components/public/LineCard';
 import { Button } from '../../components/common/Button';
@@ -11,10 +12,12 @@ import { useCompany } from '../../contexts/CompanyContext';
 
 export const HomePage: React.FC = () => {
   const { config } = useCompany();
-  const [lines, setLines] = useState<ProductLine[]>([]);
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [lines, setLines] = useState<ProductLine[]>(INITIAL_LINES);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>(
+    INITIAL_PRODUCTS.filter((p) => p.featured).slice(0, 4)
+  );
+  const [allProducts, setAllProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -24,9 +27,9 @@ export const HomePage: React.FC = () => {
           productService.getFeatured(),
           productService.getAll(),
         ]);
-        setLines(linesData);
-        setFeaturedProducts(featuredData.slice(0, 4));
-        setAllProducts(allProds);
+        if (linesData && linesData.length > 0) setLines(linesData);
+        if (featuredData && featuredData.length > 0) setFeaturedProducts(featuredData.slice(0, 4));
+        if (allProds && allProds.length > 0) setAllProducts(allProds);
       } finally {
         setLoading(false);
       }

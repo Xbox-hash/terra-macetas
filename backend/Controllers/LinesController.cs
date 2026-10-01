@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
 using TerraMacetas.Api.DTOs;
@@ -20,7 +20,7 @@ public class LinesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProductLineDto>>> GetAll([FromQuery] bool? onlyActive = null)
     {
-        var query = _context.ProductLines.Include(l => l.Products).AsQueryable();
+        var query = _context.ProductLines.AsNoTracking().Include(l => l.Products).AsQueryable();
 
         if (onlyActive == true)
         {
