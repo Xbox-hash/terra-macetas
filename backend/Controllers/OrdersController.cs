@@ -213,7 +213,11 @@ public class OrdersController : ControllerBase
             CancelledBy = o.CancelledBy,
             ReopenedBy = o.ReopenedBy,
             WhatsAppNotified = o.WhatsAppNotified,
-            WhatsAppNotifiedAt = o.WhatsAppNotifiedAt
+            WhatsAppNotifiedAt = o.WhatsAppNotifiedAt,
+            WhatsAppMessageId = o.WhatsAppMessageId,
+            WhatsAppStatus = o.WhatsAppStatus,
+            WhatsAppDeliveredAt = o.WhatsAppDeliveredAt,
+            WhatsAppReadAt = o.WhatsAppReadAt
         };
     }
 }

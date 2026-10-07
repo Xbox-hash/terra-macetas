@@ -100,18 +100,23 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
                 return false;
             }
 
+            string? capturedMessageId = null;
             bool sentToCompany = false;
             // Enviar notificación a la Empresa
             if (!string.IsNullOrWhiteSpace(companyPhone))
             {
-                sentToCompany = await SendTextMessage(client, baseUrl, instanceName, CleanPhone(companyPhone), businessMessage.ToString());
+                var compRes = await SendTextMessage(client, baseUrl, instanceName, CleanPhone(companyPhone), businessMessage.ToString());
+                sentToCompany = compRes.success;
+                if (!string.IsNullOrWhiteSpace(compRes.messageId)) capturedMessageId = compRes.messageId;
             }
 
             bool sentToClient = false;
             // Enviar confirmación automática al Cliente
             if (!string.IsNullOrWhiteSpace(order.CustomerPhone))
             {
-                sentToClient = await SendTextMessage(client, baseUrl, instanceName, CleanPhone(order.CustomerPhone), clientMessage.ToString());
+                var cliRes = await SendTextMessage(client, baseUrl, instanceName, CleanPhone(order.CustomerPhone), clientMessage.ToString());
+                sentToClient = cliRes.success;
+                if (!string.IsNullOrWhiteSpace(cliRes.messageId)) capturedMessageId = cliRes.messageId;
             }
 
             if (sentToCompany || sentToClient)
@@ -123,6 +128,11 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
                 {
                     dbOrder.WhatsAppNotified = true;
                     dbOrder.WhatsAppNotifiedAt = DateTime.UtcNow;
+                    dbOrder.WhatsAppStatus = "Enviado";
+                    if (!string.IsNullOrWhiteSpace(capturedMessageId))
+                    {
+                        dbOrder.WhatsAppMessageId = capturedMessageId;
+                    }
                     await db.SaveChangesAsync();
                 }
                 return true;
@@ -213,9 +223,9 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
         return sentCount;
     }
 
-    private async Task<bool> SendTextMessage(HttpClient client, string baseUrl, string instance, string phone, string message)
+    private async Task<(bool success, string? messageId)> SendTextMessage(HttpClient client, string baseUrl, string instance, string phone, string message)
     {
-        if (string.IsNullOrWhiteSpace(phone)) return false;
+        if (string.IsNullOrWhiteSpace(phone)) return (false, null);
 
         var url = $"{baseUrl.TrimEnd('/')}/message/sendText/{instance}";
         var body = new
@@ -231,13 +241,26 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
         if (response.IsSuccessStatusCode)
         {
             _logger.LogInformation("Mensaje automático enviado con éxito a {Phone}", phone);
-            return true;
+            string? msgId = null;
+            try
+            {
+                var respStr = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(respStr);
+                if (doc.RootElement.TryGetProperty("key", out var keyProp) &&
+                    keyProp.TryGetProperty("id", out var idProp))
+                {
+                    msgId = idProp.GetString();
+                }
+            }
+            catch {}
+
+            return (true, msgId);
         }
         else
         {
             var error = await response.Content.ReadAsStringAsync();
             _logger.LogWarning("No se pudo enviar a {Phone}: {Error}", phone, error);
-            return false;
+            return (false, null);
         }
     }
 

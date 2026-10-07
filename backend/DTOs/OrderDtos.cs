@@ -30,6 +30,10 @@ public class OrderDto
     public string? ReopenedBy { get; set; }
     public bool WhatsAppNotified { get; set; } = false;
     public DateTime? WhatsAppNotifiedAt { get; set; }
+    public string? WhatsAppMessageId { get; set; }
+    public string WhatsAppStatus { get; set; } = "Pendiente";
+    public DateTime? WhatsAppDeliveredAt { get; set; }
+    public DateTime? WhatsAppReadAt { get; set; }
 }
 
 public class OrderActionRequestDto

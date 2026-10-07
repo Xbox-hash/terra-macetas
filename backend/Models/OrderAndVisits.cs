@@ -49,6 +49,16 @@ public class Order
     public bool WhatsAppNotified { get; set; } = false;
 
     public DateTime? WhatsAppNotifiedAt { get; set; }
+
+    [MaxLength(100)]
+    public string? WhatsAppMessageId { get; set; }
+
+    [MaxLength(50)]
+    public string WhatsAppStatus { get; set; } = "Pendiente"; // "Pendiente", "Enviado", "Entregado", "Leído"
+
+    public DateTime? WhatsAppDeliveredAt { get; set; }
+
+    public DateTime? WhatsAppReadAt { get; set; }
 }
 
 public class SiteVisit

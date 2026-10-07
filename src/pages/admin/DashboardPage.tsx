@@ -17,7 +17,8 @@ import {
   Sparkles,
   Calendar,
   AlertCircle,
-  Ban
+  Ban,
+  CheckCheck
 } from 'lucide-react';
 import { AdminHeader } from '../../components/admin/AdminHeader';
 import { Button } from '../../components/common/Button';
@@ -50,18 +51,20 @@ export const DashboardPage: React.FC = () => {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [orderToCancel, setOrderToCancel] = useState<any | null>(null);
 
-  const loadDashboardData = async () => {
-    setLoading(true);
+  const loadDashboardData = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const data = await dashboardService.getStats();
       setStats(data);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     loadDashboardData();
+    const interval = setInterval(() => loadDashboardData(true), 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleCloseOrder = async (orderId: string) => {
@@ -118,7 +121,7 @@ export const DashboardPage: React.FC = () => {
         subtitle="Monitoreo en tiempo real de visitas a la tienda, pedidos por WhatsApp y estado de ventas"
         onOpenMobileSidebar={openMobileSidebar}
         actions={
-          <Button variant="outline" size="sm" onClick={loadDashboardData} isLoading={loading}>
+          <Button variant="outline" size="sm" onClick={() => loadDashboardData()} isLoading={loading}>
             Actualizar datos
           </Button>
         }
@@ -341,6 +344,43 @@ export const DashboardPage: React.FC = () => {
                           ) : (
                             <span className="text-[11px] text-neutral-400 italic block">Sin teléfono registrado</span>
                           )}
+
+                          {/* 📲 Tildes de Confirmación de WhatsApp */}
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            {order.whatsAppStatus === 'Leído' ? (
+                              <span 
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-[#0284C7] border border-sky-200" 
+                                title={`Mensaje leído por el destinatario ${order.whatsAppReadAt ? 'a las ' + new Date(order.whatsAppReadAt).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }) : ''}`}
+                              >
+                                <CheckCheck className="w-3.5 h-3.5 text-[#0284C7]" />
+                                <span>Leído</span>
+                              </span>
+                            ) : order.whatsAppStatus === 'Entregado' ? (
+                              <span 
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EFEFEF] text-[#52606D] border border-neutral-300" 
+                                title={`Mensaje entregado en el teléfono ${order.whatsAppDeliveredAt ? 'a las ' + new Date(order.whatsAppDeliveredAt).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }) : ''}`}
+                              >
+                                <CheckCheck className="w-3.5 h-3.5 text-[#52606D]" />
+                                <span>Entregado</span>
+                              </span>
+                            ) : order.whatsAppStatus === 'Enviado' ? (
+                              <span 
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-[#71717A] border border-neutral-200" 
+                                title="Mensaje enviado a los servidores de WhatsApp"
+                              >
+                                <Check className="w-3.5 h-3.5 text-[#71717A]" />
+                                <span>Enviado</span>
+                              </span>
+                            ) : (
+                              <span 
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] text-[#A1A1AA] border border-dashed border-neutral-200" 
+                                title="Pendiente de despacho"
+                              >
+                                <Clock className="w-3 h-3 text-[#A1A1AA]" />
+                                <span>Pendiente</span>
+                              </span>
+                            )}
+                          </div>
                           {order.notes && (
                             <p className="text-xs text-[#5D6B5C] bg-[#F2EDE4] p-2 rounded-lg mt-1 leading-snug">
                               {order.notes}

@@ -65,6 +65,10 @@ export interface Order {
   cancelledAt?: string;
   cancelledBy?: string;
   reopenedBy?: string;
+  whatsAppNotified?: boolean;
+  whatsAppStatus?: 'Pendiente' | 'Enviado' | 'Entregado' | 'Leído' | string;
+  whatsAppDeliveredAt?: string;
+  whatsAppReadAt?: string;
 }
 
 // Auth & Admin Types

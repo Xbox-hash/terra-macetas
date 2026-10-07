@@ -186,4 +186,78 @@ public class WhatsAppController : ControllerBase
             return StatusCode(500, new { success = false, message = "Error al reenviar pedidos", error = ex.Message });
         }
     }
+
+    [HttpPost("webhook")]
+    public async Task<IActionResult> HandleWebhook([FromBody] JsonElement payload)
+    {
+        try
+        {
+            if (payload.TryGetProperty("data", out var dataProp))
+            {
+                var updates = new List<JsonElement>();
+                if (dataProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in dataProp.EnumerateArray()) updates.Add(item);
+                }
+                else if (dataProp.ValueKind == JsonValueKind.Object)
+                {
+                    updates.Add(dataProp);
+                }
+
+                foreach (var item in updates)
+                {
+                    string? msgId = null;
+                    if (item.TryGetProperty("key", out var keyProp) && keyProp.TryGetProperty("id", out var idProp))
+                    {
+                        msgId = idProp.GetString();
+                    }
+
+                    if (string.IsNullOrWhiteSpace(msgId)) continue;
+
+                    string? statusStr = null;
+                    if (item.TryGetProperty("update", out var updProp) && updProp.TryGetProperty("status", out var stProp))
+                    {
+                        statusStr = stProp.ToString();
+                    }
+                    else if (item.TryGetProperty("status", out var sProp))
+                    {
+                        statusStr = sProp.ToString();
+                    }
+
+                    if (string.IsNullOrWhiteSpace(statusStr)) continue;
+
+                    var order = await _context.Orders.FirstOrDefaultAsync(o => o.WhatsAppMessageId == msgId);
+                    if (order == null) continue;
+
+                    var upperStatus = statusStr.ToUpperInvariant();
+
+                    if (upperStatus.Contains("READ") || upperStatus == "4" || upperStatus.Contains("VIEWED"))
+                    {
+                        order.WhatsAppStatus = "Leído";
+                        order.WhatsAppReadAt = DateTime.UtcNow;
+                        if (order.WhatsAppDeliveredAt == null) order.WhatsAppDeliveredAt = DateTime.UtcNow;
+                        await _context.SaveChangesAsync();
+                        _logger.LogInformation("Pedido #{OrderId} marcado como LEÍDO en WhatsApp.", order.Id);
+                    }
+                    else if (upperStatus.Contains("DELIVERY") || upperStatus.Contains("DELIVERED") || upperStatus == "3" || upperStatus.Contains("RECEIVED"))
+                    {
+                        if (order.WhatsAppStatus != "Leído")
+                        {
+                            order.WhatsAppStatus = "Entregado";
+                            order.WhatsAppDeliveredAt = DateTime.UtcNow;
+                            await _context.SaveChangesAsync();
+                            _logger.LogInformation("Pedido #{OrderId} marcado como ENTREGADO en WhatsApp.", order.Id);
+                        }
+                    }
+                }
+            }
+
+            return Ok(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error procesando webhook de Evolution API.");
+            return Ok(new { success = false, error = ex.Message });
+        }
+    }
 }
