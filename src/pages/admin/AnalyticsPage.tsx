@@ -306,7 +306,7 @@ export const AnalyticsPage: React.FC = () => {
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
-    doc.text(config.storeName || 'TERRA - MACETAS BOTÁNICAS', 14, 13);
+    doc.text(config.storeName || 'TERRA - MACETAS DE AUTOR', 14, 13);
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');

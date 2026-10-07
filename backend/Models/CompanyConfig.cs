@@ -14,7 +14,7 @@ public class CompanyConfig
     public string StoreName { get; set; } = "TERRA";
 
     [MaxLength(250)]
-    public string Tagline { get; set; } = "Macetas de autor & diseño botánico";
+    public string Tagline { get; set; } = "Macetas de autor & diseño decorativo";
 
     public string LogoUrl { get; set; } = string.Empty;
 
@@ -59,6 +59,13 @@ public class CompanyConfig
 
     [MaxLength(100)]
     public string? WhatsappInstanceName { get; set; } = "terra_bot";
+
+    // 🖼️ Home Page Banner & Philosophy Visuals
+    public string? HeroImageUrl { get; set; }
+
+    public string? HeroFloatingImageUrl { get; set; }
+
+    public string? PhilosophyImageUrl { get; set; }
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

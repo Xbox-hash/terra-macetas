@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal, ArrowUpDown, X, Sprout } from 'lucide-react';
 import { Product, ProductLine } from '../../types';
@@ -87,7 +87,7 @@ export const CatalogPage: React.FC = () => {
         <p className="text-sm sm:text-base text-[#657363] max-w-2xl">
           {activeLineObj
             ? activeLineObj.description
-            : 'Explorá nuestras piezas exclusivas de cerámica, cemento aligerado y gres. Cada maceta está diseñada para convivir en armonía con tu estilo y la vida de tus plantas.'}
+            : 'Explorá nuestras piezas exclusivas de cemento de autor, hormigón arquitectónico y texturas artesanales. Cada maceta está pensada como una obra de diseño para embellecer y transformar la estética de tus espacios.'}
         </p>
       </div>
 

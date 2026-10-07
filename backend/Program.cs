@@ -15,7 +15,7 @@ builder.Services.AddSwaggerGen(c =>
 
 // 2. Configure SQL Server DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Server=localhost;Database=TerraMacetasDb;Trusted_Connection=True;TrustServerCertificate=True;";
+    ?? "Server=localhost\\MSSQLSERVER01;Database=TerraMacetasDb;Trusted_Connection=True;TrustServerCertificate=True;";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));

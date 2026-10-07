@@ -58,6 +58,9 @@ public class CompanyController : ControllerBase
         config.WhatsappApiUrl = string.IsNullOrWhiteSpace(dto.WhatsappApiUrl) ? "http://localhost:8080" : dto.WhatsappApiUrl.Trim();
         config.WhatsappApiKey = string.IsNullOrWhiteSpace(dto.WhatsappApiKey) ? "TerraSecretApiKey2026_WhatsAppGateway!" : dto.WhatsappApiKey.Trim();
         config.WhatsappInstanceName = string.IsNullOrWhiteSpace(dto.WhatsappInstanceName) ? "terra_bot" : dto.WhatsappInstanceName.Trim();
+        config.HeroImageUrl = dto.HeroImageUrl;
+        config.HeroFloatingImageUrl = dto.HeroFloatingImageUrl;
+        config.PhilosophyImageUrl = dto.PhilosophyImageUrl;
         config.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -85,7 +88,10 @@ public class CompanyController : ControllerBase
             WhatsappGatewayEnabled = c.WhatsappGatewayEnabled,
             WhatsappApiUrl = c.WhatsappApiUrl,
             WhatsappApiKey = c.WhatsappApiKey,
-            WhatsappInstanceName = c.WhatsappInstanceName
+            WhatsappInstanceName = c.WhatsappInstanceName,
+            HeroImageUrl = c.HeroImageUrl,
+            HeroFloatingImageUrl = c.HeroFloatingImageUrl,
+            PhilosophyImageUrl = c.PhilosophyImageUrl
         };
     }
 }

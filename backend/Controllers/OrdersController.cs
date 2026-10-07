@@ -211,7 +211,9 @@ public class OrdersController : ControllerBase
             ClosedBy = o.ClosedBy,
             CancelledAt = o.CancelledAt,
             CancelledBy = o.CancelledBy,
-            ReopenedBy = o.ReopenedBy
+            ReopenedBy = o.ReopenedBy,
+            WhatsAppNotified = o.WhatsAppNotified,
+            WhatsAppNotifiedAt = o.WhatsAppNotifiedAt
         };
     }
 }

@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { UploadCloud, Image as ImageIcon, X, Link as LinkIcon, FolderOpen, Check } from 'lucide-react';
 
 interface ImageUploaderProps {
@@ -204,7 +204,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
           {/* Option C: Sample presets */}
           <div className="pt-2 border-t border-[#E2DBD0]">
             <span className="text-[11px] font-semibold text-[#5A6557] block mb-2">
-              3. O elegí una imagen de muestra botánica:
+              3. O elegí una imagen de muestra de diseño:
             </span>
             <div className="flex gap-2.5 overflow-x-auto pb-1">
               {sampleImages.map((s, i) => (

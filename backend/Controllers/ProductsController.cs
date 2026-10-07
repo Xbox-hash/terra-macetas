@@ -104,6 +104,7 @@ public class ProductsController : ControllerBase
             Dimensions = dto.Dimensions?.Trim(),
             Material = dto.Material?.Trim(),
             Finish = dto.Finish?.Trim(),
+            ManufacturingTime = dto.ManufacturingTime?.Trim(),
             ColorsJson = JsonSerializer.Serialize(dto.Colors ?? new List<ProductColorDto>()),
             Active = dto.Active,
             Featured = dto.Featured,
@@ -139,6 +140,7 @@ public class ProductsController : ControllerBase
         product.Dimensions = dto.Dimensions?.Trim();
         product.Material = dto.Material?.Trim();
         product.Finish = dto.Finish?.Trim();
+        product.ManufacturingTime = dto.ManufacturingTime?.Trim();
         if (dto.Colors != null) product.ColorsJson = JsonSerializer.Serialize(dto.Colors);
         product.Active = dto.Active;
         product.Featured = dto.Featured;
@@ -209,6 +211,7 @@ public class ProductsController : ControllerBase
             Dimensions = product.Dimensions,
             Material = product.Material,
             Finish = product.Finish,
+            ManufacturingTime = product.ManufacturingTime,
             Colors = colorsList,
             Active = product.Active,
             Featured = product.Featured,

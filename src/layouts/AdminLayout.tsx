@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Navigate, ScrollRestoration, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useInactivityLogout } from '../hooks/useInactivityLogout';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
 import { ShieldAlert } from 'lucide-react';
 
@@ -8,6 +9,9 @@ export const AdminLayout: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const location = useLocation();
+
+  // Cerrar sesión y redirigir a la tienda de clientes tras 15 minutos de inactividad
+  useInactivityLogout(15 * 60 * 1000);
 
   if (isLoading) {
     return (
@@ -37,6 +41,8 @@ export const AdminLayout: React.FC = () => {
       hasPermission = userPermissions.includes('lines');
     } else if (currentPath.includes('/admin/productos')) {
       hasPermission = userPermissions.includes('products');
+    } else if (currentPath.includes('/admin/colores')) {
+      hasPermission = userPermissions.includes('colors') || userPermissions.includes('products');
     } else if (currentPath.includes('/admin/empresa')) {
       hasPermission = userPermissions.includes('company');
     } else if (currentPath.includes('/admin/usuarios')) {

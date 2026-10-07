@@ -23,7 +23,7 @@ export const CartPage: React.FC = () => {
           Tu carrito de compras está vacío
         </h1>
         <p className="text-sm text-[#677565] max-w-md mx-auto leading-relaxed">
-          Todavía no agregaste ninguna maceta. Explorá nuestro catálogo de piezas de autor y encontrá el diseño ideal para tus plantas.
+          Todavía no agregaste ninguna maceta. Explorá nuestro catálogo de piezas de autor y encontrá el diseño ideal para tu decoración.
         </p>
         <div className="pt-2">
           <Link to="/catalogo">

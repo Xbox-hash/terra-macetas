@@ -45,6 +45,10 @@ public class Order
 
     [MaxLength(150)]
     public string? ReopenedBy { get; set; }
+
+    public bool WhatsAppNotified { get; set; } = false;
+
+    public DateTime? WhatsAppNotifiedAt { get; set; }
 }
 
 public class SiteVisit

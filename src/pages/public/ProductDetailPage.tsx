@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, MessageCircle, Truck, Sparkles, Shield, Check, Info } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, MessageCircle, Truck, Sparkles, Shield, Check, Info, Clock } from 'lucide-react';
 import { Product, ProductLine, ProductColor } from '../../types';
 import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
@@ -13,6 +13,7 @@ import { QuantitySelector } from '../../components/common/QuantitySelector';
 import { ProductCard } from '../../components/public/ProductCard';
 import { ColorPaletteSelector } from '../../components/public/ColorPaletteSelector';
 import { DEFAULT_POT_PALETTE } from '../../data/potColors';
+import { colorService } from '../../services/colorService';
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +27,7 @@ export const ProductDetailPage: React.FC = () => {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [productColors, setProductColors] = useState<ProductColor[]>(DEFAULT_POT_PALETTE);
   const [selectedColor, setSelectedColor] = useState<ProductColor>(DEFAULT_POT_PALETTE[0]);
   const [activeImage, setActiveImage] = useState<string>('');
   const [isColorTransitioning, setIsColorTransitioning] = useState(false);
@@ -36,14 +38,36 @@ export const ProductDetailPage: React.FC = () => {
       if (!id) return;
       setLoading(true);
       try {
-        const prod = await productService.getById(id);
+        const [prod, allRegisteredColors] = await Promise.all([
+          productService.getById(id),
+          colorService.getAll(),
+        ]);
+
         if (prod) {
           setProduct(prod);
           setSelectedImageIndex(0);
           setQuantity(1);
-          if (prod.colors && prod.colors.length > 0) {
-            setSelectedColor(prod.colors[0]);
-            setActiveImage(prod.colors[0].image || prod.images[0] || '');
+
+          const colorMap = new Map(allRegisteredColors.map((c) => [c.id, c]));
+          const baseList =
+            prod.colors && prod.colors.length > 0
+              ? prod.colors
+              : allRegisteredColors.filter((c) => c.active !== false);
+
+          const enriched = baseList.map((c) => {
+            const reg = colorMap.get(c.id);
+            return {
+              ...c,
+              description: c.description || reg?.description,
+              image: c.image || reg?.image,
+            };
+          });
+
+          setProductColors(enriched);
+
+          if (enriched.length > 0) {
+            setSelectedColor(enriched[0]);
+            setActiveImage(enriched[0].image || prod.images[0] || '');
           } else {
             setSelectedColor(DEFAULT_POT_PALETTE[0]);
             setActiveImage(prod.images[0] || '');
@@ -108,7 +132,8 @@ export const ProductDetailPage: React.FC = () => {
   };
 
   const handleQuickWhatsApp = () => {
-    const message = `🌿 *¡Hola ${config.storeName}!* Me interesa pedir directamente esta pieza:\n\n🪴 *${product.name}*\n🎨 *Color seleccionado:* ${selectedColor.name}\n   • Cantidad: ${quantity}\n   • Precio unitario: ${formatPrice(product.price)}\n   • Total estimado: ${formatPrice(product.price * quantity)}\n\n¿Tienen disponibilidad y cómo coordinamos la entrega? ¡Muchas gracias!`;
+    const timeDetail = product.manufacturingTime ? `\n⏳ *Tiempo de fabricación:* ${product.manufacturingTime}` : '';
+    const message = `✨ *¡Hola ${config.storeName}!* Me interesa pedir directamente esta pieza:\n\n🏺 *${product.name}*\n🎨 *Color seleccionado:* ${selectedColor.name}${timeDetail}\n   • Cantidad: ${quantity}\n   • Precio unitario: ${formatPrice(product.price)}\n   • Total estimado: ${formatPrice(product.price * quantity)}\n\n¿Tienen disponibilidad y cómo coordinamos la entrega? ¡Muchas gracias!`;
     const targetNumber = config.whatsappNumber?.replace(/\D/g, '') || '595981234567';
     const url = `https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -233,16 +258,27 @@ export const ProductDetailPage: React.FC = () => {
               </div>
             )}
             {product.finish && (
-              <div className="flex justify-between">
+              <div className={`flex justify-between ${product.manufacturingTime ? 'border-b border-[#E7E1D4] pb-2' : ''}`}>
                 <span className="font-semibold text-[#2D3A2F]">Acabado:</span>
                 <span>{product.finish}</span>
+              </div>
+            )}
+            {product.manufacturingTime && (
+              <div className="flex justify-between items-center pt-0.5">
+                <span className="font-semibold text-[#2D3A2F] flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-[#5A6E59]" />
+                  Tiempo de fabricación:
+                </span>
+                <span className="font-semibold text-[#2E4A32] bg-[#E2EBE2] px-2.5 py-0.5 rounded-full text-[11px]">
+                  {product.manufacturingTime}
+                </span>
               </div>
             )}
           </div>
 
           {/* Color Palette Selector (Vaso & Cor inspired) */}
           <ColorPaletteSelector
-            colors={product.colors && product.colors.length > 0 ? product.colors : DEFAULT_POT_PALETTE}
+            colors={productColors}
             selectedColor={selectedColor}
             onSelectColor={handleColorChange}
           />
@@ -282,16 +318,23 @@ export const ProductDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Botanical guarantee note */}
+          {/* Quality and design note */}
           <div className="border-t border-[#E8E2D6] pt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-[#637261]">
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-4 h-4 text-[#4A5D4E] shrink-0" />
               <span>Diseño original de taller</span>
             </div>
-            <div className="flex items-center gap-2.5">
-              <Truck className="w-4 h-4 text-[#4A5D4E] shrink-0" />
-              <span>Embalaje reforzado anti-quiebres</span>
-            </div>
+            {product.manufacturingTime ? (
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-4 h-4 text-[#4A5D4E] shrink-0" />
+                <span>Tiempo de producción: {product.manufacturingTime}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2.5">
+                <Truck className="w-4 h-4 text-[#4A5D4E] shrink-0" />
+                <span>Embalaje reforzado anti-quiebres</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

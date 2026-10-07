@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, Layers, Package, Building2, Users, Settings, LogOut, Sprout, ExternalLink, X } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Layers, Package, Palette, Building2, Users, Settings, LogOut, Sparkles, ExternalLink, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompany } from '../../contexts/CompanyContext';
 
@@ -24,6 +24,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
     { key: 'analytics', label: 'Reportes & BI', path: '/admin/reportes', icon: BarChart3 },
     { key: 'lines', label: 'Líneas', path: '/admin/lineas', icon: Layers },
     { key: 'products', label: 'Productos', path: '/admin/productos', icon: Package },
+    { key: 'colors', label: 'Colores & Acabados', path: '/admin/colores', icon: Palette },
     { key: 'company', label: 'Datos Empresa', path: '/admin/empresa', icon: Building2 },
     { key: 'users', label: 'Usuarios / Accesos', path: '/admin/usuarios', icon: Users },
   ];
@@ -45,7 +46,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
             <img src={config.logoUrl} alt={config.storeName} className="w-10 h-10 rounded-xl object-cover border border-[#3E4E40]" />
           ) : (
             <div className="w-10 h-10 rounded-xl bg-[#3E4E40] text-[#C4D1B8] flex items-center justify-center font-bold">
-              <Sprout className="w-6 h-6 text-[#A7BA9F]" />
+              <Sparkles className="w-6 h-6 text-[#A7BA9F]" />
             </div>
           )}
           <div className="min-w-0 flex-1">

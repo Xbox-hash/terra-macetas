@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Power, Search, Filter, Sparkles, X, Package, Check, Palette, Camera, UploadCloud, ArrowLeft, Save, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, Power, Search, Filter, Sparkles, X, Package, Check, Palette, Camera, UploadCloud, ArrowLeft, Save, Eye, Clock } from 'lucide-react';
 import { Product, ProductLine, ProductColor } from '../../types';
 import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
@@ -13,6 +13,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { formatPrice } from '../../utils';
 import { useToast } from '../../contexts/ToastContext';
 import { DEFAULT_POT_PALETTE } from '../../data/potColors';
+import { colorService } from '../../services/colorService';
 
 export const ProductsAdminPage: React.FC = () => {
   const { openMobileSidebar } = useOutletContext<{ openMobileSidebar: () => void }>();
@@ -21,6 +22,7 @@ export const ProductsAdminPage: React.FC = () => {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [lines, setLines] = useState<ProductLine[]>([]);
+  const [availableColors, setAvailableColors] = useState<ProductColor[]>(DEFAULT_POT_PALETTE);
   const [loading, setLoading] = useState(true);
 
   // Filters state
@@ -40,6 +42,7 @@ export const ProductsAdminPage: React.FC = () => {
     dimensions: '',
     material: '',
     finish: '',
+    manufacturingTime: '',
     colors: [] as ProductColor[],
     active: true,
     featured: false,
@@ -98,12 +101,16 @@ export const ProductsAdminPage: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [prodsData, linesData] = await Promise.all([
+      const [prodsData, linesData, colorsData] = await Promise.all([
         productService.getAll(),
         lineService.getAll(),
+        colorService.getActive(),
       ]);
       setProducts(prodsData);
       setLines(linesData);
+      if (colorsData && colorsData.length > 0) {
+        setAvailableColors(colorsData);
+      }
       if (linesData.length > 0 && !formData.lineId) {
         setFormData((prev) => ({ ...prev, lineId: linesData[0].id }));
       }
@@ -140,6 +147,7 @@ export const ProductsAdminPage: React.FC = () => {
       dimensions: 'Ø 20 cm x Alto 22 cm',
       material: 'Cerámica cocida de taller',
       finish: 'Mate artesanal',
+      manufacturingTime: '3 a 5 días hábiles',
       colors: [],
       active: true,
       featured: false,
@@ -160,6 +168,7 @@ export const ProductsAdminPage: React.FC = () => {
       dimensions: prod.dimensions || '',
       material: prod.material || '',
       finish: prod.finish || '',
+      manufacturingTime: prod.manufacturingTime || '',
       colors: prod.colors || [],
       active: prod.active,
       featured: !!prod.featured,
@@ -189,6 +198,7 @@ export const ProductsAdminPage: React.FC = () => {
         dimensions: formData.dimensions,
         material: formData.material,
         finish: formData.finish,
+        manufacturingTime: formData.manufacturingTime.trim() || undefined,
         colors: formData.colors,
         active: formData.active,
         featured: formData.featured,
@@ -346,7 +356,7 @@ export const ProductsAdminPage: React.FC = () => {
                     <textarea
                       rows={4}
                       required
-                      placeholder="Describí para qué plantas es ideal, detalles de drenaje, estilo de cocción y estética..."
+                      placeholder="Describí detalles del acabado, estilo decorativo, texturas, sugerencias de ubicación en ambientes..."
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-[#FAF8F5] border border-[#D9D3C7] rounded-xl text-sm text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
@@ -367,12 +377,20 @@ export const ProductsAdminPage: React.FC = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-2.5">
+                      <a
+                        href="/admin/colores"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs font-semibold text-[#4A5D4E] hover:underline bg-[#F2EFE8] px-2.5 py-1 rounded-lg"
+                      >
+                        + Administrar paleta
+                      </a>
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, colors: [...DEFAULT_POT_PALETTE] })}
+                        onClick={() => setFormData({ ...formData, colors: [...availableColors] })}
                         className="text-xs font-semibold text-[#4A5D4E] hover:underline cursor-pointer bg-[#F2EFE8] px-2.5 py-1 rounded-lg"
                       >
-                        Marcar todos (17)
+                        Marcar todos ({availableColors.length})
                       </button>
                       <button
                         type="button"
@@ -386,7 +404,7 @@ export const ProductsAdminPage: React.FC = () => {
 
                   {/* Grid grande de selección de colores */}
                   <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-9 gap-3">
-                    {DEFAULT_POT_PALETTE.map((color) => {
+                    {availableColors.map((color) => {
                       const isSelected = formData.colors.some((c) => c.id === color.id);
                       return (
                         <button
@@ -412,11 +430,18 @@ export const ProductsAdminPage: React.FC = () => {
                           }`}
                         >
                           <div
-                            className="w-10 h-10 rounded-full border border-black/20 flex items-center justify-center shadow-xs transition-transform group-hover:scale-105"
+                            className="w-10 h-10 rounded-full border border-black/20 flex items-center justify-center shadow-xs transition-transform group-hover:scale-105 relative overflow-hidden"
                             style={{ backgroundColor: color.hex }}
                           >
+                            {color.image ? (
+                              <img
+                                src={color.image}
+                                alt={color.name}
+                                className="w-full h-full object-cover rounded-full"
+                              />
+                            ) : null}
                             {isSelected && (
-                              <span className="p-0.5 rounded-full bg-black/50 text-white backdrop-blur-xs">
+                              <span className="p-0.5 rounded-full bg-black/60 text-white backdrop-blur-xs absolute">
                                 <Check className="w-3.5 h-3.5 stroke-[3]" />
                               </span>
                             )}
@@ -613,7 +638,7 @@ export const ProductsAdminPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     <FormInput
                       label="Dimensiones"
                       placeholder="Ej: Ø 24 cm x Alto 28 cm"
@@ -633,6 +658,13 @@ export const ProductsAdminPage: React.FC = () => {
                       placeholder="Ej: Esmalte satinado al horno"
                       value={formData.finish}
                       onChange={(e) => setFormData({ ...formData, finish: e.target.value })}
+                    />
+
+                    <FormInput
+                      label="Tiempo de fabricación"
+                      placeholder="Ej: 3 a 5 días hábiles, 2 semanas..."
+                      value={formData.manufacturingTime}
+                      onChange={(e) => setFormData({ ...formData, manufacturingTime: e.target.value })}
                     />
                   </div>
                 </div>
@@ -925,8 +957,16 @@ export const ProductsAdminPage: React.FC = () => {
                           <span className="text-xs text-[#8C988A] block mt-1">Paleta completa</span>
                         )}
                         {product.featured && (
-                          <span className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-full inline-block mt-1.5">
+                          <span className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-full inline-block mt-1.5 mr-1.5">
                             ⭐ Destacado en Home
+                          </span>
+                        )}
+                        {product.manufacturingTime && (
+                          <span
+                            className="text-[11px] font-medium text-[#4A5D4E] bg-[#EAE5DA] px-2 py-0.5 rounded-full inline-flex items-center gap-1 mt-1.5"
+                            title="Tiempo de fabricación"
+                          >
+                            <Clock className="w-3 h-3" /> {product.manufacturingTime}
                           </span>
                         )}
                       </td>

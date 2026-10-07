@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Sparkles, CheckCircle2, MessageCircle, MapPin, User, Phone, Building, ArrowRight, X } from 'lucide-react';
+import { ShoppingBag, Sparkles, CheckCircle2, MessageCircle, MapPin, User, Phone } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
-import { FormInput } from '../common/FormInput';
 import { useCompany } from '../../contexts/CompanyContext';
 import { useCart } from '../../contexts/CartContext';
 import { formatPrice } from '../../utils';
@@ -19,12 +18,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [city, setCity] = useState(config.city || 'Asunción');
+  const [city, setCity] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
-  const [whatsappDirectUrl, setWhatsappDirectUrl] = useState('');
 
   if (!isOpen) return null;
 
@@ -36,7 +34,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     try {
       const fullNote = `Ciudad: ${city.trim()}`;
 
-      // 1. Guardar el pedido en SQL Server
+      // 1. Guardar el pedido en la base de datos SQL Server
       const createdOrder = await orderService.createOrder({
         customerName: name.trim(),
         customerPhone: phone.trim(),
@@ -48,26 +46,24 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       const orderId = createdOrder.id || `ORD-${Date.now().toString().slice(-6)}`;
       setOrderNumber(orderId);
 
-      // 2. Preparar el mensaje de WhatsApp estructurado con colores
-      let message = `🌿 *¡Hola ${config.storeName}! Quiero realizar un pedido:*\n\n`;
+      // 2. Preparar el mensaje de WhatsApp estructurado con colores y tiempos
+      let message = `✨ *¡Hola ${config.storeName || 'DONNA BOTANICA'}! Quiero realizar un pedido:*\n\n`;
       message += `👤 *Cliente:* ${name.trim()}\n`;
       message += `📱 *Teléfono / WhatsApp:* ${phone.trim()}\n`;
       message += `📍 *Ciudad de entrega:* ${city.trim()}\n\n`;
       message += `📦 *DETALLE DEL PEDIDO (#${orderId}):*\n`;
-      
+
       items.forEach((item) => {
         const colorLabel = item.selectedColor ? ` [Color: ${item.selectedColor}]` : '';
-        message += `   • ${item.quantity}x *${item.product.name}*${colorLabel} (${formatPrice(item.subtotal)})\n`;
+        const timeLabel = item.product.manufacturingTime ? ` _(Fab: ${item.product.manufacturingTime})_` : '';
+        message += `   • ${item.quantity}x *${item.product.name}*${colorLabel}${timeLabel} (${formatPrice(item.subtotal)})\n`;
       });
 
       message += `\n━━━━━━━━━━━━━━━━━━━━\n`;
       message += `💰 *TOTAL A ABONAR: ${formatPrice(totalAmount)}*\n\n`;
       message += `Quedo a la espera de su confirmación para coordinar el pago y el envío. ¡Muchas gracias!`;
 
-      const targetPhone = config.whatsappNumber?.replace(/\D/g, '') || '595982615140';
-      setWhatsappDirectUrl(`https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`);
-
-      // 3. Limpiar carrito y mostrar pantalla de éxito
+      // 3. Limpiar carrito y mostrar confirmación automática
       clearCart();
       if (closeCartDrawer) closeCartDrawer();
       setOrderSuccess(true);
@@ -86,80 +82,94 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
   return (
     <Modal isOpen={isOpen} onClose={orderSuccess ? handleFinish : onClose} maxWidth="md">
       {orderSuccess ? (
-        /* Pantalla Elegante de Agradecimiento */
-        <div className="text-center py-6 px-2 space-y-6 animate-in zoom-in-95 duration-200">
-          <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto shadow-xs">
+        /* Pantalla Elegante de Agradecimiento 100% Automática */
+        <div className="text-center py-6 px-3 space-y-6 animate-in zoom-in-95 duration-200">
+          <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto shadow-sm">
             <CheckCircle2 className="w-10 h-10 text-emerald-600" />
           </div>
 
-          <div className="space-y-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#4A5D4E] bg-[#EAE4D7] px-4 py-1.5 rounded-full inline-block">
+          <div className="space-y-2">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-[#4A5D4E] bg-[#EAE4D7] px-4 py-1.5 rounded-full inline-block">
               ✓ PEDIDO REGISTRADO #{orderNumber}
             </span>
             <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#222A21] pt-1">
-              ¡Muchas gracias por realizar su pedido!
+              ¡Muchas gracias por tu pedido!
             </h3>
-            <p className="text-base text-[#3E4E3F] max-w-md mx-auto leading-relaxed font-medium pt-1">
-              En breve, alguien de <strong>{config.storeName}</strong> se estará contactando con usted a su WhatsApp o teléfono para coordinar el pago y la entrega.
+            <p className="text-sm text-[#4A5748] max-w-sm mx-auto leading-relaxed pt-1">
+              Tu pedido ya ingresó a nuestro sistema. En breve, el equipo de <strong>{config.storeName || 'DONNA BOTANICA'}</strong> se pondrá en contacto contigo para coordinar el pago y la entrega.
             </p>
           </div>
 
-          <div className="p-4 bg-[#F4EFE6] rounded-2xl border border-[#E3DDD1] text-xs text-[#5C6A5A] text-left space-y-2.5">
+          <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-[#E3DDD1] text-xs text-[#5C6A5A] text-left space-y-2.5">
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-4 h-4 text-[#3E5040] shrink-0" />
-              <span>Sus datos, colores elegidos y piezas ya ingresaron a nuestro sistema.</span>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Podés enviar el comprobante directamente a nuestro WhatsApp con un clic.</span>
+              <span>Tus productos, colores seleccionados y datos de entrega ya quedaron registrados.</span>
             </div>
           </div>
 
-          <div className="pt-2 flex flex-col sm:flex-row gap-3">
-            {whatsappDirectUrl && (
-              <a
-                href={whatsappDirectUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-semibold text-sm transition-all shadow-md active:scale-98"
-              >
-                <MessageCircle className="w-5 h-5 fill-current" />
-                Enviar a nuestro WhatsApp
-              </a>
-            )}
-            <Button variant="outline" size="lg" className="justify-center" onClick={handleFinish}>
+          <div className="pt-2">
+            <Button variant="primary" size="lg" className="w-full justify-center shadow-sm" onClick={handleFinish}>
               Volver a la tienda
             </Button>
           </div>
         </div>
       ) : (
-        /* Formulario Sutil de Datos de Entrega */
+        /* Formulario Estético y Perfectamente Alineado */
         <form onSubmit={handleCheckoutSubmit} className="space-y-5">
-          <div className="border-b border-[#E8E2D6] pb-3 text-left">
+          {/* Header */}
+          <div className="border-b border-[#EAE4D7] pb-4 text-left">
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#5E725F] block">
               Coordinación de Entrega
             </span>
-            <h3 className="font-serif text-xl font-bold text-[#222A21] mt-0.5">
-              ¿A quién enviamos el pedido?
+            <h3 className="font-serif text-2xl font-bold text-[#222A21] mt-0.5">
+              Datos para el Envío
             </h3>
-            <p className="text-xs text-[#6F7B6D] mt-0.5">
-              Completá tus datos para que el equipo de <strong>{config.storeName}</strong> pueda contactarte.
+            <p className="text-xs text-[#6F7B6D] mt-1">
+              Completá tus datos para que podamos preparar y despachar tu pedido.
             </p>
           </div>
 
-          {/* Resumen sutil del carrito */}
-          <div className="p-3.5 bg-[#F4EFE6] rounded-2xl border border-[#E3DDD1] flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-[#3E4E40] font-medium">
-              <ShoppingBag className="w-4 h-4 text-[#4A5D4E]" />
-              <span>{items.length} {items.length === 1 ? 'modelo' : 'modelos'} en tu pedido</span>
+          {/* Resumen Compacto y Elegante del Carrito */}
+          <div className="p-3.5 bg-[#FAF7F2] rounded-2xl border border-[#E8E2D6] space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#4A5D4E]">
+                <ShoppingBag className="w-4 h-4 text-[#3E5040]" />
+                <span>
+                  {items.length} {items.length === 1 ? 'producto' : 'productos'} en tu pedido
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[11px] uppercase tracking-wider text-[#7C8879] block">Total</span>
+                <span className="font-serif font-bold text-lg text-[#222A21]">
+                  {formatPrice(totalAmount)}
+                </span>
+              </div>
             </div>
-            <span className="font-serif font-bold text-base text-[#222A21]">
-              {formatPrice(totalAmount)}
-            </span>
+
+            {/* Lista visual compacta de piezas con colores y tiempos */}
+            <div className="pt-2 border-t border-[#ECE5D8] space-y-1.5 max-h-32 overflow-y-auto pr-1">
+              {items.map((it, idx) => (
+                <div key={idx} className="flex items-center justify-between text-xs text-[#3E4E40]">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="font-semibold text-[#2D3A2F]">{it.quantity}×</span>
+                    <span className="truncate">{it.product.name}</span>
+                    {it.selectedColor && (
+                      <span className="text-[10px] bg-[#EAE4D7] text-[#4A5748] px-1.5 py-0.5 rounded-full shrink-0">
+                        {it.selectedColor}
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-medium text-[#5E725F] shrink-0 pl-2">
+                    {formatPrice(it.subtotal)}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-3.5">
-            {/* 🛡️ Honeypot invisible para atrapar bots */}
+          {/* Formulario con campos alineados verticalmente y estética cuidada */}
+          <div className="space-y-4">
+            {/* Honeypot invisible */}
             <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
               <input
                 type="text"
@@ -171,49 +181,80 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
               />
             </div>
 
-            <FormInput
-              label="Tu Nombre Completo"
-              required
-              placeholder="Ej: Sofia Martínez"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+            {/* Campo 1: Nombre */}
+            <div className="space-y-1.5 text-left">
+              <label htmlFor="customer-name" className="block text-xs font-bold uppercase tracking-wider text-[#4A5748] flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-[#5E725F]" />
+                <span>Tu Nombre y Apellido *</span>
+              </label>
+              <input
+                id="customer-name"
+                type="text"
+                required
+                placeholder="Ej: Sofia Martínez"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3.5 py-3 bg-white border border-[#D9D3C7] rounded-xl text-sm text-[#2D3A2F] placeholder-[#9AA598] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2D3A2F] focus:border-transparent"
+              />
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <FormInput
-                label="WhatsApp / Teléfono de Contacto"
+            {/* Campo 2: Teléfono / WhatsApp */}
+            <div className="space-y-1.5 text-left">
+              <div className="flex items-center justify-between">
+                <label htmlFor="customer-phone" className="block text-xs font-bold uppercase tracking-wider text-[#4A5748] flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-[#5E725F]" />
+                  <span>WhatsApp de Contacto *</span>
+                </label>
+                <span className="text-[10px] text-[#7A8677]">PY (+595) o BR (+55)</span>
+              </div>
+              <input
+                id="customer-phone"
                 type="tel"
                 required
                 placeholder="Ej: 0981 123 456 o +55 45 99988-7766"
-                helperText="Acepta números de Paraguay (098...) y Brasil (+55...)"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/[^0-9+\s-()]/g, ''))}
+                className="w-full px-3.5 py-3 bg-white border border-[#D9D3C7] rounded-xl text-sm text-[#2D3A2F] placeholder-[#9AA598] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2D3A2F] focus:border-transparent"
               />
+            </div>
 
-              <FormInput
-                label="Ciudad / Localidad"
+            {/* Campo 3: Ciudad / Localidad */}
+            <div className="space-y-1.5 text-left">
+              <label htmlFor="customer-city" className="block text-xs font-bold uppercase tracking-wider text-[#4A5748] flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-[#5E725F]" />
+                <span>Ciudad / Localidad de Entrega *</span>
+              </label>
+              <input
+                id="customer-city"
+                type="text"
                 required
-                placeholder="Ej: Asunción, Luque, Lambaré..."
+                placeholder="Ej: Asunción, Ciudad del Este, Encarnación..."
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
+                className="w-full px-3.5 py-3 bg-white border border-[#D9D3C7] rounded-xl text-sm text-[#2D3A2F] placeholder-[#9AA598] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2D3A2F] focus:border-transparent"
               />
             </div>
           </div>
 
-          <div className="pt-2 border-t border-[#E8E2D6] flex flex-col gap-2">
+          {/* Acciones */}
+          <div className="pt-3 border-t border-[#EAE4D7] space-y-2.5">
             <Button
               type="submit"
               variant="whatsapp"
               size="lg"
-              className="w-full justify-center shadow-md font-semibold cursor-pointer"
+              className="w-full justify-center shadow-md font-semibold cursor-pointer py-3.5 rounded-xl text-base"
               isLoading={isSubmitting}
               leftIcon={<MessageCircle className="w-5 h-5 fill-current" />}
             >
               Confirmar y Enviar Pedido
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={onClose} className="text-xs text-[#6F7B6D]">
-              Volver al carrito
-            </Button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full text-center text-xs text-[#7A8677] hover:text-[#2D3A2F] transition-colors py-1 cursor-pointer"
+            >
+              ← Volver al carrito
+            </button>
           </div>
         </form>
       )}

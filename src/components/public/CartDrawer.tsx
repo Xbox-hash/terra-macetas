@@ -62,7 +62,7 @@ export const CartDrawer: React.FC = () => {
                     Tu carrito está vacío
                   </h3>
                   <p className="text-xs text-[#6F7B6D] max-w-xs mb-6">
-                    Descubrí nuestras colecciones de autor y sumá diseño botánico a tus espacios.
+                    Descubrí nuestras colecciones de autor y sumá diseño y distinción a tus espacios.
                   </p>
                   <Link to="/catalogo" onClick={closeCartDrawer}>
                     <Button variant="primary" size="sm">
@@ -90,6 +90,11 @@ export const CartDrawer: React.FC = () => {
                           {item.selectedColor && (
                             <span className="inline-block mt-0.5 text-[11px] font-medium text-[#4A5D4E] bg-[#EAE4D7] px-2 py-0.5 rounded-md">
                               Color: {item.selectedColor}
+                            </span>
+                          )}
+                          {item.product.manufacturingTime && (
+                            <span className="inline-block mt-0.5 ml-1 text-[11px] font-medium text-[#657364] bg-[#EDE8DE] px-2 py-0.5 rounded-md">
+                              Fab: {item.product.manufacturingTime}
                             </span>
                           )}
                         </div>

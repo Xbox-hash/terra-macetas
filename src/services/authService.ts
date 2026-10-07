@@ -25,7 +25,14 @@ export interface UpdateUserData {
 
 export const authService = {
   getCurrentState(): AuthState {
-    const data = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
+    // Se elimina cualquier residuo en localStorage para evitar sesiones infinitas sin login
+    try {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+
+    const data = sessionStorage.getItem(AUTH_STORAGE_KEY);
     if (!data) return { user: null, token: null, isAuthenticated: false };
     try {
       return JSON.parse(data);
@@ -34,7 +41,7 @@ export const authService = {
     }
   },
 
-  async login(email: string, password: string, remember = false): Promise<User> {
+  async login(email: string, password: string, _remember = false): Promise<User> {
     try {
       const res = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
@@ -54,11 +61,12 @@ export const authService = {
         isAuthenticated: true,
       };
 
-      if (remember) {
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state));
-      } else {
-        sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state));
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state));
+      // Se guarda exclusivamente en sessionStorage (se destruye al cerrar navegador/pestaña)
+      sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state));
+      try {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+      } catch {
+        // ignore
       }
 
       return user;

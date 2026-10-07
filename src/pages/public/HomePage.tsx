@@ -64,7 +64,7 @@ export const HomePage: React.FC = () => {
               </h1>
 
               <p className="text-base sm:text-lg text-[#5A6757] max-w-xl leading-relaxed font-normal">
-                Encontrá el diseño ideal para darle vida a cada rincón. Cerámica de autor, texturas minerales y siluetas contemporáneas pensadas para realzar la belleza natural de tus plantas.
+                Encontrá la pieza ideal para elevar cada rincón. Macetas de cemento de autor, texturas minerales y siluetas contemporáneas pensadas como protagonistas de tu decoración e interiorismo.
               </p>
 
               <div className="flex flex-wrap items-center gap-4 pt-2">
@@ -104,14 +104,14 @@ export const HomePage: React.FC = () => {
               <div className="relative mx-auto max-w-md lg:max-w-none">
                 <div className="relative aspect-4/5 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/80">
                   <img
-                    src="https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=1200&q=85"
-                    alt="Colección de Macetas Terra"
+                    src={config.heroImageUrl || 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=1200&q=85'}
+                    alt={config.storeName || 'Colección de Macetas Terra'}
                     className="w-full h-full object-cover object-center"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                   <div className="absolute bottom-6 left-6 right-6 text-white">
                     <p className="text-xs uppercase tracking-widest text-[#E0EBDC] font-semibold mb-1">
-                      Artesanía & Botánica
+                      Diseño & Decoración
                     </p>
                     <p className="font-serif text-xl font-medium">Texturas minerales y tonos tierra</p>
                   </div>
@@ -121,7 +121,7 @@ export const HomePage: React.FC = () => {
                 <div className="absolute -bottom-6 -left-6 bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-[#EBE5DA] hidden sm:flex items-center gap-3 max-w-xs animate-in slide-in-from-bottom-6">
                   <div className="w-12 h-12 rounded-xl bg-[#F0EBE0] overflow-hidden shrink-0">
                     <img
-                      src="https://images.unsplash.com/photo-1512428813834-c702c7702b78?auto=format&fit=crop&w=300&q=80"
+                      src={config.heroFloatingImageUrl || 'https://images.unsplash.com/photo-1512428813834-c702c7702b78?auto=format&fit=crop&w=300&q=80'}
                       alt="Maceta Minimalista"
                       className="w-full h-full object-cover"
                     />
@@ -149,7 +149,7 @@ export const HomePage: React.FC = () => {
             </h2>
           </div>
           <p className="text-sm text-[#667464] max-w-md">
-            Desde la calidez de la cerámica modelada a torno hasta la sobriedad geométrica nórdica y la durabilidad del hormigón exterior.
+            Desde la solidez del cemento arquitectónico moldeado a mano hasta la sobriedad geométrica nórdica y la durabilidad del hormigón exterior.
           </p>
         </div>
 
@@ -201,8 +201,8 @@ export const HomePage: React.FC = () => {
             <div className="lg:col-span-5 relative order-2 lg:order-1">
               <div className="aspect-4/3 sm:aspect-square rounded-3xl overflow-hidden shadow-xl border border-[#DDD6C8]">
                 <img
-                  src="https://images.unsplash.com/photo-1592150621744-aca64f48394a?auto=format&fit=crop&w=1000&q=80"
-                  alt="Taller de Cerámica y Macetas"
+                  src={config.philosophyImageUrl || 'https://images.unsplash.com/photo-1592150621744-aca64f48394a?auto=format&fit=crop&w=1000&q=80'}
+                  alt="Taller de Macetas de Cemento y Hormigón Artesanal"
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -214,11 +214,11 @@ export const HomePage: React.FC = () => {
               </span>
 
               <h2 className="font-serif text-3xl sm:text-5xl font-medium text-[#222A21] leading-tight">
-                Amor por la arcilla, el diseño y las plantas vivas
+                Pasión por el cemento, las texturas y el diseño de espacios
               </h2>
 
               <p className="text-base sm:text-lg text-[#526050] font-light leading-relaxed">
-                En <strong>{config.storeName || 'nuestro taller'}</strong> entendemos que incorporar vegetación en tu hogar u oficina es un ritual de bienestar. Por eso no creamos macetas genéricas: diseñamos piezas con personalidad, peso, textura y proporciones cuidadosamente estudiadas para que tus plantas respiren y luzcan en su máximo esplendor.
+                En <strong>{config.storeName || 'DONNA BOTANICA'}</strong> entendemos que cada rincón merece piezas con carácter y distinción. Por eso no creamos macetas genéricas: fabricamos artesanalmente macetas de cemento y hormigón de autor, con peso, texturas minerales y proporciones estudiadas al milímetro para aportar elegancia, solidez y volumen a livings, galerías, oficinas y cualquier ambiente.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
@@ -229,7 +229,7 @@ export const HomePage: React.FC = () => {
                   <div>
                     <h4 className="font-serif text-base font-semibold text-[#222A21] mb-1">Texturas Únicas</h4>
                     <p className="text-xs text-[#667464] leading-relaxed">
-                      Esmaltados mate, arenas y terminaciones táctiles inspiradas en la naturaleza.
+                      Hormigón pulido, texturas rústicas, arenas minerales y selladores protectores trabajados a mano en taller.
                     </p>
                   </div>
                 </div>
@@ -239,9 +239,9 @@ export const HomePage: React.FC = () => {
                     <HeartHandshake className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-serif text-base font-semibold text-[#222A21] mb-1">Asesoría Cálida</h4>
+                    <h4 className="font-serif text-base font-semibold text-[#222A21] mb-1">Asesoría en Decoración</h4>
                     <p className="text-xs text-[#667464] leading-relaxed">
-                      Atención directa por WhatsApp para elegir el tamaño y drenaje perfecto.
+                      Atención directa por WhatsApp para ayudarte a elegir el modelo, tono y tamaño perfecto para tus espacios.
                     </p>
                   </div>
                 </div>
@@ -254,7 +254,7 @@ export const HomePage: React.FC = () => {
       {/* CTA FINAL */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative bg-[#2D3A2F] text-white rounded-3xl p-10 sm:p-16 lg:p-20 overflow-hidden text-center shadow-2xl">
-          {/* Subtle background plant graphic element */}
+          {/* Subtle background graphic element */}
           <div className="absolute -right-16 -bottom-16 w-80 h-80 rounded-full bg-[#3B4C3E]/50 blur-3xl pointer-events-none" />
           <div className="absolute -left-16 -top-16 w-80 h-80 rounded-full bg-[#3B4C3E]/50 blur-3xl pointer-events-none" />
 
@@ -263,7 +263,7 @@ export const HomePage: React.FC = () => {
               Explorá la Colección Completa
             </span>
             <h2 className="font-serif text-3xl sm:text-5xl font-medium tracking-tight text-white leading-tight">
-              ¿Listo para darle una nueva energía a tu hogar?
+              ¿Listo para renovar la estética de tu hogar?
             </h2>
             <p className="text-sm sm:text-base text-[#CAD6C6] leading-relaxed">
               Descubrí todos los modelos, diámetros y acabados disponibles. Hacé tu pedido fácilmente y coordiná la entrega directa por WhatsApp.

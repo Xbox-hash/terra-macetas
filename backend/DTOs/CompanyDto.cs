@@ -19,4 +19,7 @@ public class CompanyConfigDto
     public string? WhatsappApiUrl { get; set; } = "http://localhost:8080";
     public string? WhatsappApiKey { get; set; } = "TerraSecretApiKey2026_WhatsAppGateway!";
     public string? WhatsappInstanceName { get; set; } = "terra_bot";
+    public string? HeroImageUrl { get; set; }
+    public string? HeroFloatingImageUrl { get; set; }
+    public string? PhilosophyImageUrl { get; set; }
 }

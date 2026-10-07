@@ -33,7 +33,7 @@ export const ContactPage: React.FC = () => {
           Estamos para asesorarte
         </h1>
         <p className="text-sm sm:text-base text-[#657363] leading-relaxed">
-          Ya sea para saber qué tamaño de maceta necesita tu planta, solicitar medidas especiales o consultar costos de envío a tu zona.
+          Ya sea para saber qué modelo y tamaño combina mejor con tu espacio, solicitar medidas especiales o consultar costos de envío a tu zona.
         </p>
       </div>
 

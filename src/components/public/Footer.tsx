@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sprout, Phone, MapPin, Mail, ArrowUpRight, Camera } from 'lucide-react';
+import { Sparkles, Phone, MapPin, Mail, ArrowUpRight, Camera } from 'lucide-react';
 import { useCompany } from '../../contexts/CompanyContext';
 import { formatPhoneNumber } from '../../utils';
 
@@ -18,15 +18,15 @@ export const Footer: React.FC = () => {
                 <img src={config.logoUrl} alt={config.storeName} className="w-9 h-9 rounded-full object-cover border border-[#4A5D4E]" />
               ) : (
                 <div className="w-9 h-9 rounded-full bg-[#4A5D4E] flex items-center justify-center">
-                  <Sprout className="w-5 h-5 text-[#D4DEC9]" />
+                  <Sparkles className="w-5 h-5 text-[#D4DEC9]" />
                 </div>
               )}
               <span className="font-serif text-2xl font-bold tracking-wider text-white">
-                {config.storeName || 'TERRA'}
+                {config.storeName || 'DONNA BOTANICA'}
               </span>
             </div>
             <p className="text-sm text-[#B4BFB2] leading-relaxed">
-              {config.tagline || 'Diseño, materialidad y naturaleza. Creemos que una maceta no es solo un contenedor, sino la extensión viva del diseño de tu hogar.'}
+              {config.tagline || 'Diseño, materialidad y estética. Creemos que una maceta es una pieza de autor que define la identidad, textura y calidez de cada ambiente.'}
             </p>
             <div className="pt-2">
               <span className="inline-block px-3 py-1 rounded-full bg-[#323D31] text-[#CAD6C6] text-xs font-medium">
@@ -99,13 +99,13 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Col 4: Botanical note */}
+          {/* Col 4: Decoration advice */}
           <div>
             <h4 className="text-xs uppercase tracking-widest font-semibold text-white/90 mb-4">
-              Asesoramiento Botánico
+              Asesoramiento en Decoración
             </h4>
             <p className="text-sm text-[#B4BFB2] mb-4 leading-relaxed">
-              ¿No sabés qué maceta elegir para tu planta? Escribinos por WhatsApp con una foto y te guiamos en la elección.
+              ¿Dudas sobre qué modelo o tamaño combina mejor con tu espacio? Escribinos por WhatsApp con una foto de tu ambiente y te orientamos.
             </p>
             <a
               href={`https://wa.me/${config.whatsappNumber}`}
@@ -113,7 +113,7 @@ export const Footer: React.FC = () => {
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-xs font-semibold text-[#8FD9A8] hover:text-white transition-colors"
             >
-              Consultar a un especialista <ArrowUpRight className="w-3.5 h-3.5" />
+              Consultar con un asesor <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
           </div>
         </div>

@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { ShoppingBag, Menu, X, Sprout } from 'lucide-react';
+import { ShoppingBag, Menu, X, Sparkles } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useCompany } from '../../contexts/CompanyContext';
 
@@ -46,15 +46,15 @@ export const Header: React.FC = () => {
               <img src={config.logoUrl} alt={config.storeName} className="w-10 h-10 rounded-xl object-cover shadow-xs group-hover:scale-105 transition-transform" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-[#2D3A2F] text-[#FAF8F5] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shadow-xs">
-                <Sprout className="w-5 h-5 text-[#C4D1B8]" />
+                <Sparkles className="w-5 h-5 text-[#C4D1B8]" />
               </div>
             )}
             <div>
               <span className="font-serif text-2xl font-bold tracking-wider text-[#2D3A2F] block leading-none">
-                {config.storeName || 'TERRA'}
+                {config.storeName || 'DONNA BOTANICA'}
               </span>
               <span className="text-[10px] tracking-widest uppercase text-[#6C7969] font-medium block mt-0.5">
-                {config.tagline || 'Macetas & Botánica'}
+                {config.tagline || 'Macetas Artesanales de Cemento & Diseño'}
               </span>
             </div>
           </Link>

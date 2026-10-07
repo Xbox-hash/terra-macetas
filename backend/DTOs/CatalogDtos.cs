@@ -51,6 +51,7 @@ public class ProductDto
     public string? Dimensions { get; set; }
     public string? Material { get; set; }
     public string? Finish { get; set; }
+    public string? ManufacturingTime { get; set; }
     public List<ProductColorDto> Colors { get; set; } = new();
     public bool Active { get; set; }
     public bool Featured { get; set; }
@@ -67,6 +68,7 @@ public class CreateProductDto
     public string? Dimensions { get; set; }
     public string? Material { get; set; }
     public string? Finish { get; set; }
+    public string? ManufacturingTime { get; set; }
     public List<ProductColorDto>? Colors { get; set; }
     public bool Active { get; set; } = true;
     public bool Featured { get; set; } = false;
@@ -82,6 +84,7 @@ public class UpdateProductDto
     public string? Dimensions { get; set; }
     public string? Material { get; set; }
     public string? Finish { get; set; }
+    public string? ManufacturingTime { get; set; }
     public List<ProductColorDto>? Colors { get; set; }
     public bool Active { get; set; }
     public bool Featured { get; set; }

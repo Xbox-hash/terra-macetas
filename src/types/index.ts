@@ -20,6 +20,7 @@ export interface Product {
   dimensions?: string;
   material?: string;
   finish?: string;
+  manufacturingTime?: string;
   colors?: ProductColor[];
   active: boolean;
   featured?: boolean;
@@ -31,6 +32,9 @@ export interface ProductColor {
   name: string;
   hex: string;
   image?: string;
+  description?: string;
+  active?: boolean;
+  createdAt?: string;
 }
 
 // Shopping Cart & Order Architecture
@@ -98,4 +102,7 @@ export interface StoreConfig {
   whatsappApiUrl?: string;
   whatsappApiKey?: string;
   whatsappInstanceName?: string;
+  heroImageUrl?: string;
+  heroFloatingImageUrl?: string;
+  philosophyImageUrl?: string;
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail, Sprout, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, Sparkles, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompany } from '../../contexts/CompanyContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -11,14 +11,19 @@ export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const { config } = useCompany();
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +36,7 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      await login(email.trim(), password, remember);
+      await login(email.trim(), password, false);
       showToast(`¡Bienvenido al panel administrativo de ${config.storeName || 'TERRA'}!`);
       navigate('/admin/dashboard');
     } catch (err: any) {
@@ -55,7 +60,7 @@ export const LoginPage: React.FC = () => {
               />
             ) : (
               <div className="w-12 h-12 rounded-2xl bg-[#374538] text-[#D0DEC7] flex items-center justify-center shadow-lg mx-auto">
-                <Sprout className="w-7 h-7 text-[#A9BCA1]" />
+                <Sparkles className="w-7 h-7 text-[#A9BCA1]" />
               </div>
             )}
           </Link>
@@ -117,18 +122,6 @@ export const LoginPage: React.FC = () => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-[#596657]">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="rounded text-[#2D3A2F] focus:ring-[#2D3A2F] border-[#D9D3C7]"
-                />
-                <span>Recordarme</span>
-              </label>
             </div>
 
             <div className="pt-2">

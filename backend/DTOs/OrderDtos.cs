@@ -28,6 +28,8 @@ public class OrderDto
     public DateTime? CancelledAt { get; set; }
     public string? CancelledBy { get; set; }
     public string? ReopenedBy { get; set; }
+    public bool WhatsAppNotified { get; set; } = false;
+    public DateTime? WhatsAppNotifiedAt { get; set; }
 }
 
 public class OrderActionRequestDto

@@ -39,6 +39,9 @@ public class Product
     [MaxLength(200)]
     public string? Finish { get; set; }
 
+    [MaxLength(100)]
+    public string? ManufacturingTime { get; set; }
+
     public string? ColorsJson { get; set; } = "[]";
 
     public bool Active { get; set; } = true;

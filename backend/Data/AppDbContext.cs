@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Models;
 
 namespace TerraMacetas.Api.Data;
@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<SiteVisit> SiteVisits => Set<SiteVisit>();
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
+    public DbSet<PotColor> PotColors => Set<PotColor>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

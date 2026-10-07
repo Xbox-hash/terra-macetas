@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using TerraMacetas.Api.Models;
 
 namespace TerraMacetas.Api.Data;
@@ -14,9 +14,9 @@ public static class DbInitializer
         var ceramica = new ProductLine
         {
             Id = "line-ceramica",
-            Name = "Línea Cerámica Artesanal",
-            Slug = "ceramica-artesanal",
-            Description = "Piezas torneadas a mano con esmaltes mate, texturas orgánicas y acabados únicos cocidos en alta temperatura.",
+            Name = "Línea Cemento Artesanal",
+            Slug = "cemento-artesanal",
+            Description = "Piezas moldeadas y vaciadas a mano en cemento artesanal, con texturas minerales y acabados hidrófugos de alta durabilidad.",
             Image = "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=1000&q=80",
             Active = true,
             Featured = true,
@@ -28,7 +28,7 @@ public static class DbInitializer
             Id = "line-minimalista",
             Name = "Línea Minimalista Nórdica",
             Slug = "minimalista-nordica",
-            Description = "Líneas puras, geometrías esenciales y paletas neutras que realzan la forma natural y pureza de cada planta.",
+            Description = "Líneas puras, geometrías esenciales y paletas neutras que aportan equilibrio y sofisticación visual a cualquier ambiente.",
             Image = "https://images.unsplash.com/photo-1512428813834-c702c7702b78?auto=format&fit=crop&w=1000&q=80",
             Active = true,
             Featured = true,
@@ -40,7 +40,7 @@ public static class DbInitializer
             Id = "line-exterior",
             Name = "Línea Exterior & Terrazas",
             Slug = "exterior-terrazas",
-            Description = "Estructuras resistentes a la intemperie fabricadas en hormigón liviano, fibrocemento y barro curado para patios y jardines.",
+            Description = "Estructuras resistentes a la intemperie fabricadas en hormigón liviano, fibrocemento y microcemento curado para patios, jardines y galerías.",
             Image = "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&w=1000&q=80",
             Active = true,
             Featured = true,
@@ -69,7 +69,7 @@ public static class DbInitializer
                 LineId = "line-ceramica",
                 Name = "Maceta Roma Terracota",
                 Slug = "maceta-roma-terracota",
-                Description = "Maceta cilíndrica de cerámica artesanal con textura terrosa al tacto y base acampanada. Ideal para monsteras, ficus o sansevierias en espacios cálidos e iluminados.",
+                Description = "Maceta cilíndrica de cemento artesanal con textura mineral al tacto y base acampanada. Ideal como pieza decorativa protagónica en livings y rincones iluminados.",
                 Price = 85000,
                 ImagesJson = JsonSerializer.Serialize(new[] {
                     "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=1000&q=80",
@@ -77,8 +77,9 @@ public static class DbInitializer
                     "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&w=1000&q=80"
                 }),
                 Dimensions = "Ø 24 cm x Alto 28 cm",
-                Material = "Cerámica cocida a alta temperatura con orificio de drenaje",
-                Finish = "Esmalte satinado terracota natural",
+                Material = "Cemento pigmentado aligerado con hidrófugo sellador",
+                Finish = "Pátina mineral terracota mate",
+                ManufacturingTime = "3 a 5 días hábiles",
                 Active = true,
                 Featured = true,
                 CreatedAt = DateTime.UtcNow
@@ -89,15 +90,16 @@ public static class DbInitializer
                 LineId = "line-ceramica",
                 Name = "Maceta Bali Arena",
                 Slug = "maceta-bali-arena",
-                Description = "Diseño orgánico modelado a torno con finas estrías horizontales y esmalte mate en tonalidad arena cálida. Realza la frescura de helechos y calatheas.",
+                Description = "Diseño cilíndrico de autor en cemento blanco y arena sílice con estrías texturadas al tacto y tonalidad arena cálida.",
                 Price = 110000,
                 ImagesJson = JsonSerializer.Serialize(new[] {
                     "https://images.unsplash.com/photo-1592150621744-aca64f48394a?auto=format&fit=crop&w=1000&q=80",
                     "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=1000&q=80"
                 }),
                 Dimensions = "Ø 28 cm x Alto 32 cm",
-                Material = "Arcilla refractaria esmaltada a mano",
-                Finish = "Arena texturada mate",
+                Material = "Compuesto cementicio aligerado con arena de cuarzo",
+                Finish = "Arena texturada rústica sellada",
+                ManufacturingTime = "5 a 7 días hábiles",
                 Active = true,
                 Featured = true,
                 CreatedAt = DateTime.UtcNow
@@ -108,14 +110,15 @@ public static class DbInitializer
                 LineId = "line-minimalista",
                 Name = "Cilindro Tokio Blanco Mate",
                 Slug = "cilindro-tokio-blanco-mate",
-                Description = "Silueta minimalista japonesa con plato oculto anti-derrame. Perfecta para escritorios, repisas y ambientes donde reina la sobriedad.",
+                Description = "Silueta minimalista con plato oculto anti-derrame. Perfecta para escritorios, repisas y ambientes donde reina la sobriedad.",
                 Price = 65000,
                 ImagesJson = JsonSerializer.Serialize(new[] {
                     "https://images.unsplash.com/photo-1512428813834-c702c7702b78?auto=format&fit=crop&w=1000&q=80"
                 }),
                 Dimensions = "Ø 18 cm x Alto 20 cm",
-                Material = "Cerámica técnica de alta densidad",
+                Material = "Microcemento pulido de alta densidad",
                 Finish = "Blanco tiza mate impermeable",
+                ManufacturingTime = "Entrega Inmediata (En stock)",
                 Active = true,
                 Featured = true,
                 CreatedAt = DateTime.UtcNow
@@ -126,14 +129,15 @@ public static class DbInitializer
                 LineId = "line-minimalista",
                 Name = "Maceta Cube Grafito",
                 Slug = "maceta-cube-grafito",
-                Description = "Geometría cúbica depurada con bordes ligeramente biselados. Proporciona un contraste sofisticado con plantas de hojas verdes exuberantes.",
+                Description = "Geometría cúbica depurada con bordes ligeramente biselados. Proporciona un contraste arquitectónico y sofisticado en cualquier entorno moderno.",
                 Price = 95000,
                 ImagesJson = JsonSerializer.Serialize(new[] {
                     "https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=1000&q=80"
                 }),
                 Dimensions = "22 x 22 x Alto 24 cm",
-                Material = "Gres cerámico reforzado",
+                Material = "Hormigón arquitectónico reforzado",
                 Finish = "Gris grafito antracita mate",
+                ManufacturingTime = "3 a 5 días hábiles",
                 Active = true,
                 Featured = true,
                 CreatedAt = DateTime.UtcNow
