@@ -357,18 +357,18 @@ export const DashboardPage: React.FC = () => {
                               </span>
                             ) : order.whatsAppStatus === 'Entregado' ? (
                               <span 
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EFEFEF] text-[#52606D] border border-neutral-300" 
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" 
                                 title={`Mensaje entregado en el teléfono ${order.whatsAppDeliveredAt ? 'a las ' + new Date(order.whatsAppDeliveredAt).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }) : ''}`}
                               >
-                                <CheckCheck className="w-3.5 h-3.5 text-[#52606D]" />
+                                <CheckCheck className="w-3.5 h-3.5 text-emerald-600" />
                                 <span>Entregado</span>
                               </span>
-                            ) : order.whatsAppStatus === 'Enviado' ? (
+                            ) : (order.whatsAppStatus === 'Enviado' || order.whatsAppNotified) ? (
                               <span 
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-[#71717A] border border-neutral-200" 
-                                title="Mensaje enviado a los servidores de WhatsApp"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-[#4B5563] border border-neutral-200" 
+                                title="Mensaje enviado a WhatsApp"
                               >
-                                <Check className="w-3.5 h-3.5 text-[#71717A]" />
+                                <Check className="w-3.5 h-3.5 text-[#4B5563]" />
                                 <span>Enviado</span>
                               </span>
                             ) : (

@@ -71,7 +71,13 @@ public class DashboardController : ControllerBase
                 Channel = o.Channel,
                 CreatedAt = o.CreatedAt,
                 ClosedAt = o.ClosedAt,
-                CancelledAt = o.CancelledAt
+                CancelledAt = o.CancelledAt,
+                WhatsAppNotified = o.WhatsAppNotified,
+                WhatsAppNotifiedAt = o.WhatsAppNotifiedAt,
+                WhatsAppMessageId = o.WhatsAppMessageId,
+                WhatsAppStatus = o.WhatsAppStatus,
+                WhatsAppDeliveredAt = o.WhatsAppDeliveredAt,
+                WhatsAppReadAt = o.WhatsAppReadAt
             };
         }).ToList();
 
