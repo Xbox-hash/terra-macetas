@@ -41,6 +41,7 @@ public class DashboardController : ControllerBase
         var totalOrders = await _context.Orders.CountAsync();
         var pendingOrders = await _context.Orders.CountAsync(o => o.Status == "Pendiente");
         var closedOrders = await _context.Orders.CountAsync(o => o.Status == "Cerrado");
+        var cancelledOrders = await _context.Orders.CountAsync(o => o.Status == "Cancelado");
         var totalRevenue = await _context.Orders.Where(o => o.Status == "Cerrado").SumAsync(o => (decimal?)o.Total) ?? 0;
 
         var totalProducts = await _context.Products.CountAsync(p => p.Active);
@@ -48,7 +49,6 @@ public class DashboardController : ControllerBase
 
         var recentOrdersRaw = await _context.Orders
             .OrderByDescending(o => o.CreatedAt)
-            .Take(8)
             .ToListAsync();
 
         var recentOrdersDto = recentOrdersRaw.Select(o =>
@@ -71,7 +71,10 @@ public class DashboardController : ControllerBase
                 Channel = o.Channel,
                 CreatedAt = o.CreatedAt,
                 ClosedAt = o.ClosedAt,
+                ClosedBy = o.ClosedBy,
                 CancelledAt = o.CancelledAt,
+                CancelledBy = o.CancelledBy,
+                ReopenedBy = o.ReopenedBy,
                 WhatsAppNotified = o.WhatsAppNotified,
                 WhatsAppNotifiedAt = o.WhatsAppNotifiedAt,
                 WhatsAppMessageId = o.WhatsAppMessageId,
@@ -88,6 +91,7 @@ public class DashboardController : ControllerBase
             TotalOrders = totalOrders,
             PendingOrders = pendingOrders,
             ClosedOrders = closedOrders,
+            CancelledOrders = cancelledOrders,
             TotalRevenue = totalRevenue,
             TotalProducts = totalProducts,
             TotalLines = totalLines,

@@ -40,6 +40,7 @@ export const DashboardPage: React.FC = () => {
     totalOrders: 0,
     pendingOrders: 0,
     closedOrders: 0,
+    cancelledOrders: 0,
     totalRevenue: 0,
     totalProducts: 0,
     totalLines: 0,
@@ -111,7 +112,7 @@ export const DashboardPage: React.FC = () => {
 
   const filteredOrders = stats.recentOrders.filter((o) => {
     if (filterStatus === 'all') return true;
-    return o.status.toLowerCase() === filterStatus.toLowerCase();
+    return o.status?.trim().toLowerCase() === filterStatus.trim().toLowerCase();
   });
 
   return (
@@ -227,17 +228,17 @@ export const DashboardPage: React.FC = () => {
             <div className="flex items-center gap-2 bg-[#F2EDE4] p-1 rounded-2xl">
               <button
                 onClick={() => setFilterStatus('all')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   filterStatus === 'all'
                     ? 'bg-[#2D3A2F] text-white shadow-xs'
                     : 'text-[#586656] hover:text-[#222A21]'
                 }`}
               >
-                Todos ({stats.recentOrders.length})
+                Todos ({stats.totalOrders ?? stats.recentOrders.length})
               </button>
               <button
                 onClick={() => setFilterStatus('Pendiente')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   filterStatus === 'Pendiente'
                     ? 'bg-amber-700 text-white shadow-xs'
                     : 'text-[#586656] hover:text-amber-800'
@@ -247,7 +248,7 @@ export const DashboardPage: React.FC = () => {
               </button>
               <button
                 onClick={() => setFilterStatus('Cerrado')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   filterStatus === 'Cerrado'
                     ? 'bg-emerald-800 text-white shadow-xs'
                     : 'text-[#586656] hover:text-emerald-800'
@@ -257,13 +258,13 @@ export const DashboardPage: React.FC = () => {
               </button>
               <button
                 onClick={() => setFilterStatus('Cancelado')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   filterStatus === 'Cancelado'
                     ? 'bg-rose-700 text-white shadow-xs'
                     : 'text-[#586656] hover:text-rose-700'
                 }`}
               >
-                Cancelados ({stats.recentOrders.filter(o => o.status.toLowerCase() === 'cancelado').length})
+                Cancelados ({stats.cancelledOrders ?? stats.recentOrders.filter(o => o.status?.trim().toLowerCase() === 'cancelado').length})
               </button>
             </div>
           </div>

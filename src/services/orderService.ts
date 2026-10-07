@@ -9,6 +9,7 @@ export interface DashboardStats {
   totalOrders: number;
   pendingOrders: number;
   closedOrders: number;
+  cancelledOrders?: number;
   totalRevenue: number;
   totalProducts: number;
   totalLines: number;
