@@ -13,6 +13,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { formatPrice } from '../../utils';
 import { useToast } from '../../contexts/ToastContext';
 import { colorService } from '../../services/colorService';
+import { compressImageFile } from '../../utils/imageCompressor';
 
 export const ProductsAdminPage: React.FC = () => {
   const { openMobileSidebar } = useOutletContext<{ openMobileSidebar: () => void }>();
@@ -59,21 +60,20 @@ export const ProductsAdminPage: React.FC = () => {
     }));
   };
 
-  const handleColorFileUpload = (colorId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleColorFileUpload = async (colorId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-      const base64 = loadEvent.target?.result as string;
-      if (base64) {
-        handleSetColorImage(colorId, base64);
-        setActiveColorPhotoId(null);
-        showToast('Foto asignada al color seleccionado.');
-      }
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
+    try {
+      const compressed = await compressImageFile(file, { maxWidth: 600, maxHeight: 600, quality: 0.82 });
+      handleSetColorImage(colorId, compressed);
+      setActiveColorPhotoId(null);
+      showToast('Foto asignada al color seleccionado.');
+    } catch (err) {
+      showToast('Error al procesar la imagen del color.', 'error');
+    } finally {
+      e.target.value = '';
+    }
   };
 
   // Delete confirm dialog

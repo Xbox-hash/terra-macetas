@@ -13,32 +13,41 @@ export const HomePage: React.FC = () => {
   const { config } = useCompany();
   const [lines, setLines] = useState<ProductLine[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     async function loadData() {
       try {
-        const [linesData, featuredData, allProds] = await Promise.all([
+        const [linesRes, featuredRes] = await Promise.allSettled([
           lineService.getActive(),
           productService.getFeatured(),
-          productService.getAll(),
         ]);
-        setLines(linesData || []);
-        setFeaturedProducts((featuredData || []).slice(0, 4));
-        setAllProducts(allProds || []);
+
+        if (isMounted) {
+          if (linesRes.status === 'fulfilled') {
+            setLines(linesRes.value || []);
+          }
+          if (featuredRes.status === 'fulfilled') {
+            setFeaturedProducts((featuredRes.value || []).slice(0, 4));
+          }
+        }
+      } catch (err) {
+        console.error('Error cargando datos de inicio:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
     loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const getLineProductCount = (lineId: string) => {
-    return allProducts.filter((p) => p.lineId === lineId && p.active).length;
-  };
-
-  const linesWithProducts = lines.filter((line) => getLineProductCount(line.id) > 0);
+  const linesWithProducts = lines.filter((line) => (line.productsCount ?? 0) > 0);
 
   const getLineName = (lineId: string) => {
     return lines.find((l) => l.id === lineId)?.name;
@@ -158,7 +167,7 @@ export const HomePage: React.FC = () => {
               <LineCard
                 key={line.id}
                 line={line}
-                productCount={getLineProductCount(line.id)}
+                productCount={line.productsCount ?? 0}
               />
             ))}
           </div>
@@ -190,7 +199,7 @@ export const HomePage: React.FC = () => {
               <ProductCard
                 key={product.id}
                 product={product}
-                lineName={getLineName(product.lineId)}
+                lineName={product.lineName || getLineName(product.lineId)}
               />
             ))}
           </div>

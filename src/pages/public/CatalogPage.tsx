@@ -19,19 +19,25 @@ export const CatalogPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'name'>('featured');
 
   useEffect(() => {
+    let isMounted = true;
     async function loadData() {
       try {
-        const [linesData, prodsData] = await Promise.all([
+        const [linesRes, prodsRes] = await Promise.allSettled([
           lineService.getActive(),
           productService.getActive(),
         ]);
-        setLines(linesData);
-        setProducts(prodsData);
+        if (isMounted) {
+          if (linesRes.status === 'fulfilled') setLines(linesRes.value || []);
+          if (prodsRes.status === 'fulfilled') setProducts(prodsRes.value || []);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
     loadData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleLineChange = (lineId: string) => {
@@ -69,7 +75,7 @@ export const CatalogPage: React.FC = () => {
   }, [products, selectedLineParam, searchQuery, sortBy]);
 
   const linesWithProducts = useMemo(() => {
-    return lines.filter((line) => products.some((p) => p.lineId === line.id && p.active));
+    return lines.filter((line) => (line.productsCount ?? 0) > 0 || products.some((p) => p.lineId === line.id && p.active));
   }, [lines, products]);
 
   const activeLineObj = linesWithProducts.find((l) => l.id === selectedLineParam);

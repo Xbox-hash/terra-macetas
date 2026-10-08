@@ -7,11 +7,13 @@ export interface ProductLine {
   image: string;
   active: boolean;
   featured?: boolean;
+  productsCount?: number;
 }
 
 export interface Product {
   id: string;
   lineId: string;
+  lineName?: string;
   name: string;
   slug: string;
   description: string;

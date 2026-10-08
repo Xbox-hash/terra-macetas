@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, Image as ImageIcon, X, Link as LinkIcon, FolderOpen, Check } from 'lucide-react';
+import { UploadCloud, Image as ImageIcon, X, Link as LinkIcon, FolderOpen, Check, Loader2 } from 'lucide-react';
+import { compressImageFile } from '../../utils/imageCompressor';
 
 interface ImageUploaderProps {
   value: string[];
@@ -14,6 +15,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 }) => {
   const [urlInput, setUrlInput] = useState('');
   const [isAddingUrl, setIsAddingUrl] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,29 +44,40 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     setIsAddingUrl(false);
   };
 
-  // Selector de archivos locales desde tu PC / Teléfono
-  const handleLocalFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Selector de archivos locales desde tu PC / Teléfono con compresión automática
+  const handleLocalFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     const availableSlots = maxImages - value.length;
     const filesToRead = Array.from(files).slice(0, availableSlots);
 
-    filesToRead.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (loadEvent) => {
-        const base64 = loadEvent.target?.result as string;
-        if (base64) {
-          onChange([...value, base64]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    setIsCompressing(true);
+    setErrorMessage('');
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    try {
+      const compressedImages: string[] = [];
+      for (const file of filesToRead) {
+        try {
+          const compressed = await compressImageFile(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.82 });
+          compressedImages.push(compressed);
+        } catch (fileErr) {
+          console.error('Error al comprimir archivo individual:', fileErr);
+        }
+      }
+
+      if (compressedImages.length > 0) {
+        onChange([...value, ...compressedImages]);
+      }
+    } catch (err) {
+      setErrorMessage('Error al procesar las imágenes.');
+    } finally {
+      setIsCompressing(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      setIsAddingUrl(false);
     }
-    setIsAddingUrl(false);
   };
 
   const handleSampleAdd = (sampleUrl: string) => {
@@ -124,12 +137,22 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
         {value.length < maxImages && (
           <div
-            onClick={() => setIsAddingUrl(true)}
+            onClick={() => !isCompressing && setIsAddingUrl(true)}
             className="flex flex-col items-center justify-center border-2 border-dashed border-[#D5CEC2] hover:border-[#4A5D4E] bg-white/50 hover:bg-white/90 rounded-xl aspect-square cursor-pointer transition-all p-3 text-center group"
           >
-            <UploadCloud className="w-7 h-7 text-[#6A7868] mb-1.5 group-hover:text-[#2D3A2F] transition-colors" />
-            <span className="text-xs font-semibold text-[#2D3A2F]">Cargar Imagen</span>
-            <span className="text-[10px] text-[#7A8677] mt-0.5">Archivo o URL</span>
+            {isCompressing ? (
+              <>
+                <Loader2 className="w-7 h-7 text-[#4A5D4E] mb-1.5 animate-spin" />
+                <span className="text-xs font-semibold text-[#2D3A2F]">Optimizando...</span>
+                <span className="text-[10px] text-[#7A8677] mt-0.5">Comprimiendo foto</span>
+              </>
+            ) : (
+              <>
+                <UploadCloud className="w-7 h-7 text-[#6A7868] mb-1.5 group-hover:text-[#2D3A2F] transition-colors" />
+                <span className="text-xs font-semibold text-[#2D3A2F]">Cargar Imagen</span>
+                <span className="text-[10px] text-[#7A8677] mt-0.5">Archivo o URL</span>
+              </>
+            )}
           </div>
         )}
       </div>

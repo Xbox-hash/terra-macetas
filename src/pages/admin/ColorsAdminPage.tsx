@@ -23,6 +23,7 @@ import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { FormInput } from '../../components/common/FormInput';
+import { compressImageFile } from '../../utils/imageCompressor';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -101,7 +102,7 @@ export const ColorsAdminPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -115,13 +116,13 @@ export const ColorsAdminPage: React.FC = () => {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setFormData((prev) => ({ ...prev, image: result }));
-      showToast('Foto circular cargada con éxito.');
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImageFile(file, { maxWidth: 400, maxHeight: 400, quality: 0.82 });
+      setFormData((prev) => ({ ...prev, image: compressed }));
+      showToast('Foto circular cargada y optimizada con éxito.');
+    } catch (err) {
+      showToast('Error al procesar la imagen.', 'error');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

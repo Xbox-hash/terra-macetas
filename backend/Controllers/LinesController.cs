@@ -20,26 +20,28 @@ public class LinesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProductLineDto>>> GetAll([FromQuery] bool? onlyActive = null)
     {
-        var query = _context.ProductLines.AsNoTracking().Include(l => l.Products).AsQueryable();
+        var query = _context.ProductLines.AsNoTracking().AsQueryable();
 
         if (onlyActive == true)
         {
             query = query.Where(l => l.Active);
         }
 
-        var lines = await query.OrderByDescending(l => l.Featured).ThenBy(l => l.Name).ToListAsync();
-
-        var dtos = lines.Select(l => new ProductLineDto
-        {
-            Id = l.Id,
-            Name = l.Name,
-            Slug = l.Slug,
-            Description = l.Description,
-            Image = l.Image,
-            Active = l.Active,
-            Featured = l.Featured,
-            ProductsCount = l.Products.Count(p => p.Active)
-        });
+        var dtos = await query
+            .OrderByDescending(l => l.Featured)
+            .ThenBy(l => l.Name)
+            .Select(l => new ProductLineDto
+            {
+                Id = l.Id,
+                Name = l.Name,
+                Slug = l.Slug,
+                Description = l.Description,
+                Image = l.Image,
+                Active = l.Active,
+                Featured = l.Featured,
+                ProductsCount = l.Products.Count(p => p.Active)
+            })
+            .ToListAsync();
 
         return Ok(dtos);
     }
@@ -47,23 +49,25 @@ public class LinesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductLineDto>> GetById(string id)
     {
-        var line = await _context.ProductLines
-            .Include(l => l.Products)
-            .FirstOrDefaultAsync(l => l.Id == id);
+        var dto = await _context.ProductLines
+            .AsNoTracking()
+            .Where(l => l.Id == id)
+            .Select(l => new ProductLineDto
+            {
+                Id = l.Id,
+                Name = l.Name,
+                Slug = l.Slug,
+                Description = l.Description,
+                Image = l.Image,
+                Active = l.Active,
+                Featured = l.Featured,
+                ProductsCount = l.Products.Count(p => p.Active)
+            })
+            .FirstOrDefaultAsync();
 
-        if (line == null) return NotFound(new { message = "Línea no encontrada" });
+        if (dto == null) return NotFound(new { message = "Línea no encontrada" });
 
-        return Ok(new ProductLineDto
-        {
-            Id = line.Id,
-            Name = line.Name,
-            Slug = line.Slug,
-            Description = line.Description,
-            Image = line.Image,
-            Active = line.Active,
-            Featured = line.Featured,
-            ProductsCount = line.Products.Count(p => p.Active)
-        });
+        return Ok(dto);
     }
 
     [HttpPost]
@@ -156,13 +160,14 @@ public class LinesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        var line = await _context.ProductLines.Include(l => l.Products).FirstOrDefaultAsync(l => l.Id == id);
-        if (line == null) return NotFound(new { message = "Línea no encontrada" });
-
-        if (line.Products.Any())
+        var hasProducts = await _context.Products.AnyAsync(p => p.LineId == id);
+        if (hasProducts)
         {
             return BadRequest(new { message = "No se puede eliminar una línea que contiene productos asociados. Mueva o elimine los productos primero." });
         }
+
+        var line = await _context.ProductLines.FindAsync(id);
+        if (line == null) return NotFound(new { message = "Línea no encontrada" });
 
         _context.ProductLines.Remove(line);
         await _context.SaveChangesAsync();
