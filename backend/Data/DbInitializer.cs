@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using TerraMacetas.Api.Models;
 
@@ -9,7 +10,21 @@ public static class DbInitializer
     {
         await context.Database.EnsureCreatedAsync();
 
-        if (context.ProductLines.Any()) return;
+        // Si ya existe configuración de empresa, usuarios admin o líneas de productos,
+        // la base de datos ya fue inicializada. NO volver a sembrar productos de muestra
+        // si el usuario decidió vaciar o limpiar su catálogo.
+        if (await context.CompanyConfigs.AnyAsync() || 
+            await context.AdminUsers.AnyAsync() || 
+            await context.ProductLines.AnyAsync())
+        {
+            return;
+        }
+
+        // Crear configuración base de la empresa para marcar la BD como inicializada
+        await context.CompanyConfigs.AddAsync(new CompanyConfig
+        {
+            StoreName = "Donna Botánica"
+        });
 
         var ceramica = new ProductLine
         {
