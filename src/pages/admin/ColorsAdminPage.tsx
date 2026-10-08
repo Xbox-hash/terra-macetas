@@ -10,7 +10,6 @@ import {
   Sparkles,
   Upload,
   Link as LinkIcon,
-  RotateCcw,
   Check,
   CheckCircle2,
   Eye,
@@ -55,10 +54,9 @@ export const ColorsAdminPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoInputMode, setPhotoInputMode] = useState<'file' | 'url'>('file');
 
-  // Delete & Reset Confirmations
+  // Delete Confirmation
   const [deleteTarget, setDeleteTarget] = useState<ProductColor | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   useEffect(() => {
     loadColors();
@@ -190,17 +188,6 @@ export const ColorsAdminPage: React.FC = () => {
     }
   };
 
-  const handleResetDefaults = async () => {
-    try {
-      await colorService.resetToDefaults();
-      showToast('Paleta restablecida a los colores predeterminados.');
-      setIsResetConfirmOpen(false);
-      await loadColors();
-    } catch {
-      showToast('Error al restablecer la paleta.', 'error');
-    }
-  };
-
   // Filter & Search Logic
   const filteredColors = colors.filter((color) => {
     const matchesSearch =
@@ -227,27 +214,15 @@ export const ColorsAdminPage: React.FC = () => {
         subtitle="Registrá y personalizá las opciones de color de las macetas. Cada variante cuenta con su textura fotográfica circular y descripción artesanal."
         onOpenMobileSidebar={openMobileSidebar}
         actions={
-          <div className="flex items-center gap-2.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsResetConfirmOpen(true)}
-              className="hidden sm:flex text-xs"
-              title="Restablecer a paleta original de autor"
-            >
-              <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-              Restablecer Base
-            </Button>
-            <Button
-              variant="primary"
-              size="md"
-              onClick={handleOpenCreateModal}
-              className="shadow-sm"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo Color / Acabado
-            </Button>
-          </div>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={handleOpenCreateModal}
+            className="shadow-sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Color / Acabado
+          </Button>
         }
       />
 
@@ -707,16 +682,6 @@ export const ColorsAdminPage: React.FC = () => {
         onClose={() => setDeleteTarget(null)}
       />
 
-      {/* DIÁLOGO CONFIRMAR RESTABLECER PREDETERMINADOS */}
-      <ConfirmDialog
-        isOpen={isResetConfirmOpen}
-        title="¿Restablecer a la paleta predeterminada?"
-        message="Se reiniciará la paleta con los 17 colores tradicionales de autor. Cualquier color personalizado creado recientemente se reemplazará."
-        confirmText="Restablecer paleta base"
-        isDestructive={false}
-        onConfirm={handleResetDefaults}
-        onClose={() => setIsResetConfirmOpen(false)}
-      />
     </div>
   );
 };

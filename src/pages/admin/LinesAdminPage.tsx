@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Power, Layers, AlertCircle, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import { ProductLine } from '../../types';
@@ -65,7 +65,7 @@ export const LinesAdminPage: React.FC = () => {
     setFormData({
       name: '',
       description: '',
-      image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=1000&q=80',
+      image: '',
       active: true,
     });
     setIsModalOpen(true);
@@ -84,7 +84,15 @@ export const LinesAdminPage: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) return;
+    if (!formData.name.trim()) {
+      showToast('El nombre de la línea es obligatorio.', 'error');
+      return;
+    }
+
+    if (!formData.image.trim()) {
+      showToast('Por favor subí o agregá una imagen de portada para la línea.', 'error');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -194,11 +202,17 @@ export const LinesAdminPage: React.FC = () => {
                   lines.map((line) => (
                     <tr key={line.id} className="hover:bg-[#FAF8F4] transition-colors">
                       <td className="px-6 py-4">
-                        <img
-                          src={line.image}
-                          alt={line.name}
-                          className="w-14 h-14 rounded-xl object-cover bg-[#F0ECE4] border border-[#E8E2D7]"
-                        />
+                        {line.image ? (
+                          <img
+                            src={line.image}
+                            alt={line.name}
+                            className="w-14 h-14 rounded-xl object-cover bg-[#F0ECE4] border border-[#E8E2D7] shadow-xs"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-xl bg-[#F0ECE4] border border-[#E8E2D7] flex items-center justify-center text-[#8C988A]">
+                            <ImageIcon className="w-6 h-6" />
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 font-bold text-sm text-[#222A21] max-w-xs">
                         {line.name}
@@ -279,9 +293,17 @@ export const LinesAdminPage: React.FC = () => {
           </div>
 
           <div className="space-y-1.5 text-left">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#475446]">
-              Imagen de Portada
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#475446]">
+                Imagen de Portada de la Línea <span className="text-rose-500">*</span>
+              </label>
+              <span className="text-[11px] text-[#7E8B7D]">
+                {formData.image ? '1 imagen asignada' : 'Obligatorio'}
+              </span>
+            </div>
+            <p className="text-[11px] text-[#6E7B6C] mb-1">
+              Esta foto se mostrará como tarjeta principal de la colección en la tienda y catálogo. Podés subir una foto desde tu celular o computadora.
+            </p>
             <ImageUploader
               maxImages={1}
               value={formData.image ? [formData.image] : []}
