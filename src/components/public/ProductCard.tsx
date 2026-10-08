@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Eye, ArrowRight } from 'lucide-react';
 import { Product } from '../../types';
@@ -27,13 +27,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, lineName }) =
   const secondImage = product.images[1] || mainImage;
 
   return (
-    <div className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-[#E9E4DB] hover:border-[#D1C9BC] transition-all duration-300 hover:shadow-xl hover:shadow-stone-200/50">
+    <div className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-[#E9E4DB] hover:border-[#4A5D4E]/30 card-hover">
       {/* Image Container with Hover zoom and secondary image reveal */}
       <Link to={`/producto/${product.id}`} className="relative aspect-4/5 overflow-hidden bg-[#F3EFE9] block">
         <img
           src={mainImage}
           alt={product.name}
-          className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+          className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-108"
           loading="lazy"
         />
         {secondImage !== mainImage && (
@@ -48,7 +48,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, lineName }) =
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
           {product.featured && (
-            <span className="bg-[#2D3A2F]/90 backdrop-blur-xs text-[#FAF8F5] text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full shadow-xs">
+            <span className="bg-[#2D3A2F]/90 backdrop-blur-xs text-[#FAF8F5] text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full shadow-xs transition-transform duration-300 group-hover:translate-x-0.5">
               Destacado
             </span>
           )}
@@ -61,7 +61,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, lineName }) =
 
         {/* Quick View Floating button on Desktop hover */}
         <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4">
-          <span className="translate-y-4 group-hover:translate-y-0 transition-transform duration-300 bg-white/95 backdrop-blur-xs text-[#2D3A2F] text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg inline-flex items-center gap-1.5 hover:bg-white">
+          <span className="translate-y-4 group-hover:translate-y-0 transition-transform duration-300 bg-white/95 backdrop-blur-xs text-[#2D3A2F] text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg inline-flex items-center gap-1.5 hover:bg-white active:scale-95">
             <Eye className="w-3.5 h-3.5" /> Ver detalle
           </span>
         </div>
@@ -96,7 +96,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, lineName }) =
 
           <button
             onClick={handleAddToCart}
-            className="p-2.5 rounded-xl bg-[#F0EBE1] text-[#2D3A2F] hover:bg-[#2D3A2F] hover:text-[#FAF8F5] active:scale-95 transition-all duration-200 cursor-pointer shadow-2xs"
+            className="p-2.5 rounded-xl bg-[#F0EBE1] text-[#2D3A2F] hover:bg-[#2D3A2F] hover:text-[#FAF8F5] active:scale-90 hover:scale-105 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-md"
             title="Agregar al carrito"
             aria-label={`Agregar ${product.name} al carrito`}
           >

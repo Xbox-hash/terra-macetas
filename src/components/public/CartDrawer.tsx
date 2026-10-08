@@ -26,25 +26,25 @@ export const CartDrawer: React.FC = () => {
   return (
     <>
       {isCartDrawerOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 overflow-hidden animate-fade-in">
           <div
-            className="fixed inset-0 bg-[#161D17]/50 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-[#161D17]/50 backdrop-blur-xs transition-opacity duration-300"
             onClick={closeCartDrawer}
           />
 
           <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-md bg-[#FAF8F5] shadow-2xl flex flex-col border-l border-[#E3DDD1]">
+            <div className="w-screen max-w-md bg-[#FAF8F5] shadow-2xl flex flex-col border-l border-[#E3DDD1] animate-slide-in-right">
             {/* Header */}
             <div className="p-5 sm:p-6 border-b border-[#EBE5DA] flex items-center justify-between bg-[#F4EFE6]">
               <div className="flex items-center gap-2.5">
-                <ShoppingBag className="w-5 h-5 text-[#4A5D4E]" />
+                <ShoppingBag className="w-5 h-5 text-[#4A5D4E] animate-bounce-subtle" />
                 <h2 className="font-serif text-xl font-bold text-[#2D3A2F]">
                   Tu Carrito ({totalItems})
                 </h2>
               </div>
               <button
                 onClick={closeCartDrawer}
-                className="p-1.5 rounded-lg text-[#5B6758] hover:text-[#2D3A2F] hover:bg-[#E8E1D4] transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-[#5B6758] hover:text-[#2D3A2F] hover:bg-[#E8E1D4] hover:rotate-90 transition-all duration-200 cursor-pointer"
                 aria-label="Cerrar carrito"
               >
                 <X className="w-5 h-5" />

@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -41,16 +41,16 @@ export const Modal: React.FC<ModalProps> = ({
   }[maxWidth];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-      <div className="fixed inset-0 bg-[#1C221D]/60 backdrop-blur-xs transition-opacity" onClick={onClose} />
+    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+      <div className="fixed inset-0 bg-[#1C221D]/60 backdrop-blur-xs transition-opacity duration-300" onClick={onClose} />
       
-      <div className={`relative bg-[#FAF8F5] border border-[#E3DDD1] rounded-2xl shadow-2xl w-full ${maxWidthClass} z-10 overflow-hidden transform transition-all`}>
+      <div className={`relative bg-[#FAF8F5] border border-[#E3DDD1] rounded-2xl shadow-2xl w-full ${maxWidthClass} z-10 overflow-hidden transform animate-scale-up`}>
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-[#EBE6DC] bg-[#F4EFE6]">
             <h3 className="text-lg font-serif font-medium text-[#2D3A2F]">{title}</h3>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg text-[#5A6557] hover:text-[#2D3A2F] hover:bg-[#EAE5DC] transition-colors"
+              className="p-1.5 rounded-lg text-[#5A6557] hover:text-[#2D3A2F] hover:bg-[#EAE5DC] hover:rotate-90 transition-all duration-200 cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>

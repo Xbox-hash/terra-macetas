@@ -66,10 +66,10 @@ export const Header: React.FC = () => {
                 key={link.name}
                 to={link.path}
                 className={({ isActive }) =>
-                  `text-sm font-medium tracking-wide transition-colors py-1 relative ${
+                  `text-sm font-medium tracking-wide transition-all duration-300 py-1 relative group ${
                     isActive && link.path !== '/#lineas'
                       ? 'text-[#2D3A2F] font-semibold after:content-[""] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-[#2D3A2F]'
-                      : 'text-[#546151] hover:text-[#2D3A2F]'
+                      : 'text-[#546151] hover:text-[#2D3A2F] after:content-[""] after:absolute after:bottom-0 after:left-0 after:w-0 hover:after:w-full after:h-0.5 after:bg-[#2D3A2F]/60 after:transition-all after:duration-300'
                   }`
                 }
               >
@@ -83,12 +83,12 @@ export const Header: React.FC = () => {
             {/* Cart Trigger */}
             <button
               onClick={openCartDrawer}
-              className="relative p-2.5 rounded-full text-[#2D3A2F] hover:bg-[#EAE4D7] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2D3A2F] cursor-pointer"
+              className="relative p-2.5 rounded-full text-[#2D3A2F] hover:bg-[#EAE4D7] active:scale-90 hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2D3A2F] cursor-pointer"
               aria-label="Abrir carrito"
             >
-              <ShoppingBag className="w-5 h-5" />
+              <ShoppingBag className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
               {totalItems > 0 && (
-                <span className="absolute top-1 right-1 bg-[#4A5D4E] text-white text-[11px] font-bold h-5 w-5 rounded-full flex items-center justify-center animate-in zoom-in shadow-xs">
+                <span className="absolute top-1 right-1 bg-[#4A5D4E] text-white text-[11px] font-bold h-5 w-5 rounded-full flex items-center justify-center animate-scale-up shadow-xs">
                   {totalItems}
                 </span>
               )}

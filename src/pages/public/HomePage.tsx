@@ -61,46 +61,46 @@ export const HomePage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Content */}
             <div className="lg:col-span-7 space-y-6 text-left z-10">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E4DDD0] text-[#3D4B3E] text-xs font-semibold tracking-wider uppercase animate-in fade-in">
-                <Sparkles className="w-3.5 h-3.5 text-[#5A735C]" />
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E4DDD0] text-[#3D4B3E] text-xs font-semibold tracking-wider uppercase animate-fade-in">
+                <Sparkles className="w-3.5 h-3.5 text-[#5A735C] animate-bounce-subtle" />
                 Colección Nueva Temporada 2026
               </div>
 
-              <h1 className="font-serif text-4xl sm:text-6xl lg:text-7xl font-medium tracking-tight text-[#222A21] leading-[1.08]">
+              <h1 className="font-serif text-4xl sm:text-6xl lg:text-7xl font-medium tracking-tight text-[#222A21] leading-[1.08] animate-fade-in-up delay-100">
                 Macetas que <br />
                 <span className="italic font-normal text-[#4A5D4E]">transforman</span> tus espacios
               </h1>
 
-              <p className="text-base sm:text-lg text-[#5A6757] max-w-xl leading-relaxed font-normal">
+              <p className="text-base sm:text-lg text-[#5A6757] max-w-xl leading-relaxed font-normal animate-fade-in-up delay-150">
                 Encontrá la pieza ideal para elevar cada rincón. Macetas de cemento de autor, texturas minerales y siluetas contemporáneas pensadas como protagonistas de tu decoración e interiorismo.
               </p>
 
-              <div className="flex flex-wrap items-center gap-4 pt-2">
+              <div className="flex flex-wrap items-center gap-4 pt-2 animate-fade-in-up delay-200">
                 <Link to="/catalogo">
-                  <Button size="lg" className="shadow-md hover:shadow-xl group">
+                  <Button size="lg" className="shadow-md hover:shadow-xl group transition-all duration-300 hover:scale-[1.02]">
                     Ver catálogo completo
-                    <ArrowRight className="w-4 h-4 ml-2 transition-transform duration-200 group-hover:translate-x-1" />
+                    <ArrowRight className="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1.5" />
                   </Button>
                 </Link>
 
                 <a href="#lineas">
-                  <Button variant="secondary" size="lg">
+                  <Button variant="secondary" size="lg" className="transition-all duration-300 hover:scale-[1.02]">
                     Conocer líneas
                   </Button>
                 </a>
               </div>
 
               {/* Value stats banner */}
-              <div className="pt-8 border-t border-[#DED7C8] grid grid-cols-3 gap-6 max-w-lg">
-                <div>
+              <div className="pt-8 border-t border-[#DED7C8] grid grid-cols-3 gap-6 max-w-lg animate-fade-in-up delay-300">
+                <div className="transition-transform duration-300 hover:-translate-y-1">
                   <span className="font-serif text-2xl sm:text-3xl font-bold text-[#222A21] block">100%</span>
                   <span className="text-xs text-[#6B7968]">Materiales Nobles</span>
                 </div>
-                <div>
+                <div className="transition-transform duration-300 hover:-translate-y-1">
                   <span className="font-serif text-2xl sm:text-3xl font-bold text-[#222A21] block">+4</span>
                   <span className="text-xs text-[#6B7968]">Líneas de Diseño</span>
                 </div>
-                <div>
+                <div className="transition-transform duration-300 hover:-translate-y-1">
                   <span className="font-serif text-2xl sm:text-3xl font-bold text-[#222A21] block">WhatsApp</span>
                   <span className="text-xs text-[#6B7968]">Atención Directa</span>
                 </div>
@@ -108,20 +108,20 @@ export const HomePage: React.FC = () => {
             </div>
 
             {/* Right Hero Images - Editorial Collage */}
-            <div className="lg:col-span-5 relative">
+            <div className="lg:col-span-5 relative animate-fade-in delay-200">
               <div className="relative mx-auto max-w-md lg:max-w-none">
-                <div className="relative aspect-4/5 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/80">
+                <div className="relative aspect-4/5 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/80 transition-all duration-700 hover:shadow-3xl hover:border-white">
                   <img
                     src={config.heroImageUrl || 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=1200&q=85'}
                     alt={config.storeName || 'Colección de Macetas Terra'}
-                    className="w-full h-full object-cover object-center"
+                    className="w-full h-full object-cover object-center transition-transform duration-1000 ease-out hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent transition-opacity duration-300" />
                   <div className="absolute bottom-6 left-6 right-6 text-white">
                     <p className="text-xs uppercase tracking-widest text-[#E0EBDC] font-semibold mb-1">
                       Diseño & Decoración
                     </p>
-                    <p className="font-serif text-xl font-medium">Texturas minerales y tonos tierra</p>
+                    <p className="font-serif text-xl sm:text-2xl font-medium">Texturas minerales y tonos tierra</p>
                   </div>
                 </div>
               </div>
@@ -196,11 +196,11 @@ export const HomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-5 relative order-2 lg:order-1">
-              <div className="aspect-4/3 sm:aspect-square rounded-3xl overflow-hidden shadow-xl border border-[#DDD6C8]">
+              <div className="aspect-4/3 sm:aspect-square rounded-3xl overflow-hidden shadow-xl border border-[#DDD6C8] group">
                 <img
                   src={config.philosophyImageUrl || 'https://images.unsplash.com/photo-1592150621744-aca64f48394a?auto=format&fit=crop&w=1000&q=80'}
                   alt="Taller de Macetas de Cemento y Hormigón Artesanal"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
               </div>
             </div>
@@ -219,8 +219,8 @@ export const HomePage: React.FC = () => {
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
-                <div className="flex gap-3.5 items-start">
-                  <div className="p-2.5 rounded-xl bg-[#E2DACB] text-[#2D3A2F] shrink-0">
+                <div className="flex gap-3.5 items-start p-4 rounded-2xl bg-white/60 hover:bg-white border border-[#EBE5DA] card-hover group">
+                  <div className="p-2.5 rounded-xl bg-[#E2DACB] text-[#2D3A2F] shrink-0 transition-transform duration-300 group-hover:scale-110">
                     <Palette className="w-5 h-5" />
                   </div>
                   <div>
@@ -231,8 +231,8 @@ export const HomePage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-3.5 items-start">
-                  <div className="p-2.5 rounded-xl bg-[#E2DACB] text-[#2D3A2F] shrink-0">
+                <div className="flex gap-3.5 items-start p-4 rounded-2xl bg-white/60 hover:bg-white border border-[#EBE5DA] card-hover group">
+                  <div className="p-2.5 rounded-xl bg-[#E2DACB] text-[#2D3A2F] shrink-0 transition-transform duration-300 group-hover:scale-110">
                     <HeartHandshake className="w-5 h-5" />
                   </div>
                   <div>
