@@ -7,12 +7,12 @@ donnabotanica.com.py, www.donnabotanica.com.py {
 
     # API Backend (ASP.NET Core 8)
     handle /api/* {
-        reverse_proxy 127.0.0.1:5050
+        reverse_proxy terra_api_prod:5000
     }
 
     # Frontend SPA (React + Vite + Tailwind)
     handle {
-        reverse_proxy 127.0.0.1:8081
+        reverse_proxy terra_front_prod:80
     }
 }
 
@@ -25,11 +25,11 @@ test.donnabotanica.com.py {
 
     # API Backend Test
     handle /api/* {
-        reverse_proxy 127.0.0.1:5051
+        reverse_proxy terra_api_test:5000
     }
 
     # Frontend SPA Test
     handle {
-        reverse_proxy 127.0.0.1:8082
+        reverse_proxy terra_front_test:80
     }
 }

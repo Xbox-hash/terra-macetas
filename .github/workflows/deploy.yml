@@ -59,7 +59,14 @@ jobs:
 
             cd /opt/terra-macetas
 
-            # 3. Integrar con Caddy asegurando tls internal para Cloudflare
+            # 3. Construir y levantar contenedores según ambiente
+            echo "🐳 Levantando contenedores Docker..."
+            docker compose -f docker-compose.server.yml up -d --build
+
+            # 4. Conectar el contenedor Caddy a terra_network para resolución interna
+            docker network connect terra_network nelson-caddy 2>/dev/null || true
+
+            # 5. Integrar con Caddy asegurando conexión directa a contenedores
             if [ -f "/opt/app-nelson/Caddyfile" ]; then
               echo "🌐 Actualizando configuración de Caddy para Donna Botánica..."
               cp /opt/app-nelson/Caddyfile /opt/app-nelson/Caddyfile.bak
@@ -70,10 +77,6 @@ jobs:
               docker exec nelson-caddy caddy reload --config /etc/caddy/Caddyfile || true
               echo "✅ Caddy actualizado y recargado con éxito."
             fi
-
-            # 4. Construir y levantar contenedores según ambiente
-            echo "🐳 Levantando contenedores Docker..."
-            docker compose -f docker-compose.server.yml up -d --build
 
             echo "=========================================================="
             echo "🎉 ¡Despliegue finalizado con éxito!"

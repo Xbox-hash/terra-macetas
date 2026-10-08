@@ -133,4 +133,5 @@ volumes:
 
 networks:
   terra_network:
+    name: terra_network
     driver: bridge
