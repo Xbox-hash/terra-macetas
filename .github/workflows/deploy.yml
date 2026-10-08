@@ -1,0 +1,80 @@
+name: CI/CD - Donna Botanica Deploy
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - test
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Ambiente a desplegar'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - production
+          - test
+
+jobs:
+  deploy:
+    name: 🚀 Deploy al VPS Contabo
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Clonar Repositorio
+        uses: actions/checkout@v4
+
+      - name: ⚡ Despliegue en el Servidor via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST || '86.48.21.7' }}
+          username: ${{ secrets.VPS_USER || 'nelson' }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            echo "=========================================================="
+            echo "🚀 Iniciando despliegue de Donna Botánica en Contabo VPS"
+            echo "=========================================================="
+
+            # 1. Asegurar directorio de la aplicación
+            sudo mkdir -p /opt/terra-macetas
+            sudo chown -R ${{ secrets.VPS_USER || 'nelson' }}:${{ secrets.VPS_USER || 'nelson' }} /opt/terra-macetas
+
+            # 2. Descargar últimos cambios del repositorio
+            if [ ! -d "/opt/terra-macetas/.git" ]; then
+              echo "📦 Clonando repositorio por primera vez..."
+              git clone https://github.com/Xbox-hash/terra-macetas.git /opt/terra-macetas
+            else
+              echo "🔄 Actualizando código con git pull..."
+              cd /opt/terra-macetas
+              git fetch --all
+              git reset --hard origin/master
+            fi
+
+            cd /opt/terra-macetas
+
+            # 3. Integrar con Caddy si aún no está agregado
+            if [ -f "/opt/app-nelson/Caddyfile" ]; then
+              if ! grep -q "donnabotanica.com.py" /opt/app-nelson/Caddyfile; then
+                echo "🌐 Integrando donnabotanica.com.py en Caddy..."
+                cat /opt/terra-macetas/Caddyfile.snippet >> /opt/app-nelson/Caddyfile
+                docker exec nelson-caddy caddy reload --config /etc/caddy/Caddyfile || true
+                echo "✅ Caddy actualizado y recargado con éxito."
+              else
+                echo "✅ Caddy ya tiene configurado donnabotanica.com.py."
+              fi
+            fi
+
+            # 4. Construir y levantar contenedores según ambiente
+            echo "🐳 Levantando contenedores Docker..."
+            docker compose -f docker-compose.server.yml up -d --build
+
+            echo "=========================================================="
+            echo "🎉 ¡Despliegue finalizado con éxito!"
+            echo "   Producción: https://donnabotanica.com.py"
+            echo "   Test:       https://test.donnabotanica.com.py"
+            echo "=========================================================="
