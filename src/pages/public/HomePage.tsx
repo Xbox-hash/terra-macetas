@@ -124,21 +124,6 @@ export const HomePage: React.FC = () => {
                     <p className="font-serif text-xl font-medium">Texturas minerales y tonos tierra</p>
                   </div>
                 </div>
-
-                {/* Floating mini card */}
-                <div className="absolute -bottom-6 -left-6 bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-[#EBE5DA] hidden sm:flex items-center gap-3 max-w-xs animate-in slide-in-from-bottom-6">
-                  <div className="w-12 h-12 rounded-xl bg-[#F0EBE0] overflow-hidden shrink-0">
-                    <img
-                      src={config.heroFloatingImageUrl || 'https://images.unsplash.com/photo-1512428813834-c702c7702b78?auto=format&fit=crop&w=300&q=80'}
-                      alt="Maceta Minimalista"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-[#556957]">Diseño de Autor</span>
-                    <p className="text-xs font-semibold text-[#222A21]">Terminaciones a mano</p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
