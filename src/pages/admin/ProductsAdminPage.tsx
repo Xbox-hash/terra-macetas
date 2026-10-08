@@ -12,7 +12,6 @@ import { ImageUploader } from '../../components/common/ImageUploader';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { formatPrice } from '../../utils';
 import { useToast } from '../../contexts/ToastContext';
-import { DEFAULT_POT_PALETTE } from '../../data/potColors';
 import { colorService } from '../../services/colorService';
 
 export const ProductsAdminPage: React.FC = () => {
@@ -22,7 +21,7 @@ export const ProductsAdminPage: React.FC = () => {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [lines, setLines] = useState<ProductLine[]>([]);
-  const [availableColors, setAvailableColors] = useState<ProductColor[]>(DEFAULT_POT_PALETTE);
+  const [availableColors, setAvailableColors] = useState<ProductColor[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters state
@@ -108,9 +107,7 @@ export const ProductsAdminPage: React.FC = () => {
       ]);
       setProducts(prodsData);
       setLines(linesData);
-      if (colorsData && colorsData.length > 0) {
-        setAvailableColors(colorsData);
-      }
+      setAvailableColors(colorsData || []);
       if (linesData.length > 0 && !formData.lineId) {
         setFormData((prev) => ({ ...prev, lineId: linesData[0].id }));
       }
@@ -376,89 +373,114 @@ export const ProductsAdminPage: React.FC = () => {
                         Selecciona los colores en que se produce esta maceta. Si subes fotos individuales, la tienda cambiará a esa foto al seleccionarlo.
                       </p>
                     </div>
-                    <div className="flex items-center gap-2.5">
+                    {availableColors.length > 0 && (
+                      <div className="flex items-center gap-2.5">
+                        <a
+                          href="/admin/colores"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-semibold text-[#4A5D4E] hover:underline bg-[#F2EFE8] px-2.5 py-1 rounded-lg"
+                        >
+                          + Administrar paleta
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, colors: [...availableColors] })}
+                          className="text-xs font-semibold text-[#4A5D4E] hover:underline cursor-pointer bg-[#F2EFE8] px-2.5 py-1 rounded-lg"
+                        >
+                          Marcar todos ({availableColors.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, colors: [] })}
+                          className="text-xs font-semibold text-[#8C988A] hover:underline cursor-pointer bg-[#F2EFE8] px-2.5 py-1 rounded-lg"
+                        >
+                          Limpiar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Grid grande de selección de colores */}
+                  {availableColors.length === 0 ? (
+                    <div className="bg-[#FAF8F5] p-6 rounded-2xl border border-[#EDE7DC] text-center space-y-3">
+                      <Palette className="w-8 h-8 text-[#6A7869] mx-auto opacity-70" />
+                      <div>
+                        <h4 className="font-serif font-bold text-sm text-[#222A21]">No hay colores registrados en la paleta</h4>
+                        <p className="text-xs text-[#6F7B6D] max-w-sm mx-auto mt-1">
+                          Para habilitar colores en este producto, primero registra tus colores en el módulo de Paleta de Colores.
+                        </p>
+                      </div>
                       <a
                         href="/admin/colores"
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs font-semibold text-[#4A5D4E] hover:underline bg-[#F2EFE8] px-2.5 py-1 rounded-lg"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#354333] hover:underline bg-white border border-[#E0D7C9] px-3.5 py-2 rounded-xl shadow-xs"
                       >
-                        + Administrar paleta
+                        <Palette className="w-4 h-4 text-[#4A5D4E]" />
+                        Ir a Registro de Colores
                       </a>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, colors: [...availableColors] })}
-                        className="text-xs font-semibold text-[#4A5D4E] hover:underline cursor-pointer bg-[#F2EFE8] px-2.5 py-1 rounded-lg"
-                      >
-                        Marcar todos ({availableColors.length})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, colors: [] })}
-                        className="text-xs font-semibold text-[#8C988A] hover:underline cursor-pointer bg-[#F2EFE8] px-2.5 py-1 rounded-lg"
-                      >
-                        Limpiar
-                      </button>
                     </div>
-                  </div>
-
-                  {/* Grid grande de selección de colores */}
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-9 gap-3">
-                    {availableColors.map((color) => {
-                      const isSelected = formData.colors.some((c) => c.id === color.id);
-                      return (
-                        <button
-                          key={color.id}
-                          type="button"
-                          onClick={() => {
-                            if (isSelected) {
-                              setFormData({
-                                ...formData,
-                                colors: formData.colors.filter((c) => c.id !== color.id),
-                              });
-                            } else {
-                              setFormData({
-                                ...formData,
-                                colors: [...formData.colors, color],
-                              });
-                            }
-                          }}
-                          className={`group flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all cursor-pointer border ${
-                            isSelected
-                              ? 'bg-[#F5F2EB] border-[#2D3A2F] ring-2 ring-[#2D3A2F] shadow-sm'
-                              : 'bg-white border-[#E7E1D4] opacity-60 hover:opacity-100 hover:border-[#2D3A2F]/40'
-                          }`}
-                        >
-                          <div
-                            className="w-10 h-10 rounded-full border border-black/20 flex items-center justify-center shadow-xs transition-transform group-hover:scale-105 relative overflow-hidden"
-                            style={{ backgroundColor: color.hex }}
+                  ) : (
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-9 gap-3">
+                      {availableColors.map((color) => {
+                        const isSelected = formData.colors.some((c) => c.id === color.id);
+                        return (
+                          <button
+                            key={color.id}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setFormData({
+                                  ...formData,
+                                  colors: formData.colors.filter((c) => c.id !== color.id),
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  colors: [...formData.colors, color],
+                                });
+                              }
+                            }}
+                            className={`group flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all cursor-pointer border ${
+                              isSelected
+                                ? 'bg-[#F5F2EB] border-[#2D3A2F] ring-2 ring-[#2D3A2F] shadow-sm'
+                                : 'bg-white border-[#E7E1D4] opacity-60 hover:opacity-100 hover:border-[#2D3A2F]/40'
+                            }`}
                           >
-                            {color.image ? (
-                              <img
-                                src={color.image}
-                                alt={color.name}
-                                className="w-full h-full object-cover rounded-full"
-                              />
-                            ) : null}
-                            {isSelected && (
-                              <span className="p-0.5 rounded-full bg-black/60 text-white backdrop-blur-xs absolute">
-                                <Check className="w-3.5 h-3.5 stroke-[3]" />
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[10px] font-semibold text-[#2D3A2F] text-center leading-tight line-clamp-1">
-                            {color.name}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                            <div
+                              className="w-10 h-10 rounded-full border border-black/20 flex items-center justify-center shadow-xs transition-transform group-hover:scale-105 relative overflow-hidden"
+                              style={{ backgroundColor: color.hex }}
+                            >
+                              {color.image ? (
+                                <img
+                                  src={color.image}
+                                  alt={color.name}
+                                  className="w-full h-full object-cover rounded-full"
+                                />
+                              ) : null}
+                              {isSelected && (
+                                <span className="p-0.5 rounded-full bg-black/60 text-white backdrop-blur-xs absolute">
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-semibold text-[#2D3A2F] text-center leading-tight line-clamp-1">
+                              {color.name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Subpanel de Fotos por cada color seleccionado */}
                   {formData.colors.length === 0 ? (
-                    <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800">
-                      💡 Si no seleccionas colores específicos, se habilitará la paleta completa con tonos artesanales dinámicos.
-                    </div>
+                    availableColors.length > 0 ? (
+                      <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#E7E1D4] text-xs text-[#5D6B5C]">
+                        ℹ️ Selecciona arriba los colores de la paleta en los que se fabrica este producto.
+                      </div>
+                    ) : null
                   ) : (
                     <div className="pt-4 border-t border-[#F0EBE1] space-y-4">
                       <div className="flex items-center justify-between">

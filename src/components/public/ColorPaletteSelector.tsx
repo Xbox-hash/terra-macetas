@@ -4,7 +4,7 @@ import { Check, Sparkles, Info } from 'lucide-react';
 
 interface ColorPaletteSelectorProps {
   colors: ProductColor[];
-  selectedColor: ProductColor;
+  selectedColor: ProductColor | null;
   onSelectColor: (color: ProductColor) => void;
 }
 
@@ -14,6 +14,11 @@ export const ColorPaletteSelector: React.FC<ColorPaletteSelectorProps> = ({
   onSelectColor,
 }) => {
   const [hoveredColor, setHoveredColor] = React.useState<ProductColor | null>(null);
+
+  if (!colors || colors.length === 0 || !selectedColor) {
+    return null;
+  }
+
   const activeColor = hoveredColor || selectedColor;
 
   return (

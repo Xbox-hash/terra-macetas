@@ -4,7 +4,6 @@ import { ArrowRight, Sparkles, ShieldCheck, Truck, Palette, HeartHandshake } fro
 import { Product, ProductLine } from '../../types';
 import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
-import { INITIAL_LINES, INITIAL_PRODUCTS } from '../../data/mockData';
 import { ProductCard } from '../../components/public/ProductCard';
 import { LineCard } from '../../components/public/LineCard';
 import { Button } from '../../components/common/Button';
@@ -12,11 +11,9 @@ import { useCompany } from '../../contexts/CompanyContext';
 
 export const HomePage: React.FC = () => {
   const { config } = useCompany();
-  const [lines, setLines] = useState<ProductLine[]>(INITIAL_LINES);
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>(
-    INITIAL_PRODUCTS.filter((p) => p.featured).slice(0, 4)
-  );
-  const [allProducts, setAllProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [lines, setLines] = useState<ProductLine[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -27,9 +24,9 @@ export const HomePage: React.FC = () => {
           productService.getFeatured(),
           productService.getAll(),
         ]);
-        if (linesData && linesData.length > 0) setLines(linesData);
-        if (featuredData && featuredData.length > 0) setFeaturedProducts(featuredData.slice(0, 4));
-        if (allProds && allProds.length > 0) setAllProducts(allProds);
+        setLines(linesData || []);
+        setFeaturedProducts((featuredData || []).slice(0, 4));
+        setAllProducts(allProds || []);
       } finally {
         setLoading(false);
       }
@@ -40,6 +37,8 @@ export const HomePage: React.FC = () => {
   const getLineProductCount = (lineId: string) => {
     return allProducts.filter((p) => p.lineId === lineId && p.active).length;
   };
+
+  const linesWithProducts = lines.filter((line) => getLineProductCount(line.id) > 0);
 
   const getLineName = (lineId: string) => {
     return lines.find((l) => l.id === lineId)?.name;
@@ -137,62 +136,66 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* SECCIÓN DE LÍNEAS */}
-      <section id="lineas" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-2">
-              Nuestras Colecciones
-            </span>
-            <h2 className="font-serif text-3xl sm:text-4xl font-medium text-[#222A21]">
-              Líneas pensadas para cada estilo
-            </h2>
+      {/* SECCIÓN DE LÍNEAS (Solo si hay líneas con productos asociados) */}
+      {linesWithProducts.length > 0 && (
+        <section id="lineas" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-2">
+                Nuestras Colecciones
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl font-medium text-[#222A21]">
+                Líneas pensadas para cada estilo
+              </h2>
+            </div>
+            <p className="text-sm text-[#667464] max-w-md">
+              Desde la solidez del cemento arquitectónico moldeado a mano hasta la sobriedad geométrica nórdica y la durabilidad del hormigón exterior.
+            </p>
           </div>
-          <p className="text-sm text-[#667464] max-w-md">
-            Desde la solidez del cemento arquitectónico moldeado a mano hasta la sobriedad geométrica nórdica y la durabilidad del hormigón exterior.
-          </p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {lines.map((line) => (
-            <LineCard
-              key={line.id}
-              line={line}
-              productCount={getLineProductCount(line.id)}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* PRODUCTOS DESTACADOS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-2">
-              Selección Exclusiva
-            </span>
-            <h2 className="font-serif text-3xl sm:text-4xl font-medium text-[#222A21]">
-              Piezas destacadas
-            </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {linesWithProducts.map((line) => (
+              <LineCard
+                key={line.id}
+                line={line}
+                productCount={getLineProductCount(line.id)}
+              />
+            ))}
           </div>
-          <Link
-            to="/catalogo"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#2D3A2F] hover:text-[#4A5D4E] transition-colors"
-          >
-            Ver todo el catálogo <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
+        </section>
+      )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          {featuredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              lineName={getLineName(product.lineId)}
-            />
-          ))}
-        </div>
-      </section>
+      {/* PRODUCTOS DESTACADOS (Solo si existen productos destacados registrados) */}
+      {featuredProducts.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-2">
+                Selección Exclusiva
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl font-medium text-[#222A21]">
+                Piezas destacadas
+              </h2>
+            </div>
+            <Link
+              to="/catalogo"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#2D3A2F] hover:text-[#4A5D4E] transition-colors"
+            >
+              Ver todo el catálogo <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            {featuredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                lineName={getLineName(product.lineId)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* SECCIÓN SOBRE EL NEGOCIO */}
       <section className="bg-[#EFEAE1] py-20 border-y border-[#E2DBD0]">

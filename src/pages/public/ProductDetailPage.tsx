@@ -12,7 +12,6 @@ import { Button } from '../../components/common/Button';
 import { QuantitySelector } from '../../components/common/QuantitySelector';
 import { ProductCard } from '../../components/public/ProductCard';
 import { ColorPaletteSelector } from '../../components/public/ColorPaletteSelector';
-import { DEFAULT_POT_PALETTE } from '../../data/potColors';
 import { colorService } from '../../services/colorService';
 
 export const ProductDetailPage: React.FC = () => {
@@ -27,8 +26,8 @@ export const ProductDetailPage: React.FC = () => {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [productColors, setProductColors] = useState<ProductColor[]>(DEFAULT_POT_PALETTE);
-  const [selectedColor, setSelectedColor] = useState<ProductColor>(DEFAULT_POT_PALETTE[0]);
+  const [productColors, setProductColors] = useState<ProductColor[]>([]);
+  const [selectedColor, setSelectedColor] = useState<ProductColor | null>(null);
   const [activeImage, setActiveImage] = useState<string>('');
   const [isColorTransitioning, setIsColorTransitioning] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -69,7 +68,7 @@ export const ProductDetailPage: React.FC = () => {
             setSelectedColor(enriched[0]);
             setActiveImage(enriched[0].image || prod.images[0] || '');
           } else {
-            setSelectedColor(DEFAULT_POT_PALETTE[0]);
+            setSelectedColor(null);
             setActiveImage(prod.images[0] || '');
           }
 
@@ -112,7 +111,7 @@ export const ProductDetailPage: React.FC = () => {
   }
 
   const handleColorChange = (newColor: ProductColor) => {
-    if (newColor.id === selectedColor.id) return;
+    if (selectedColor && newColor.id === selectedColor.id) return;
     setIsColorTransitioning(true);
     setSelectedColor(newColor);
     if (newColor.image) {
@@ -126,14 +125,16 @@ export const ProductDetailPage: React.FC = () => {
   };
 
   const handleAddToCart = () => {
-    addToCart(product, quantity, selectedColor.name);
-    showToast(`¡Agregaste ${quantity}x "${product.name}" (${selectedColor.name}) al carrito!`);
+    addToCart(product, quantity, selectedColor ? selectedColor.name : undefined);
+    const colorLabel = selectedColor ? ` (${selectedColor.name})` : '';
+    showToast(`¡Agregaste ${quantity}x "${product.name}"${colorLabel} al carrito!`);
     openCartDrawer();
   };
 
   const handleQuickWhatsApp = () => {
     const timeDetail = product.manufacturingTime ? `\n⏳ *Tiempo de fabricación:* ${product.manufacturingTime}` : '';
-    const message = `✨ *¡Hola ${config.storeName}!* Me interesa pedir directamente esta pieza:\n\n🏺 *${product.name}*\n🎨 *Color seleccionado:* ${selectedColor.name}${timeDetail}\n   • Cantidad: ${quantity}\n   • Precio unitario: ${formatPrice(product.price)}\n   • Total estimado: ${formatPrice(product.price * quantity)}\n\n¿Tienen disponibilidad y cómo coordinamos la entrega? ¡Muchas gracias!`;
+    const colorDetail = selectedColor ? `\n🎨 *Color seleccionado:* ${selectedColor.name}` : '';
+    const message = `✨ *¡Hola ${config.storeName}!* Me interesa pedir directamente esta pieza:\n\n🏺 *${product.name}*${colorDetail}${timeDetail}\n   • Cantidad: ${quantity}\n   • Precio unitario: ${formatPrice(product.price)}\n   • Total estimado: ${formatPrice(product.price * quantity)}\n\n¿Tienen disponibilidad y cómo coordinamos la entrega? ¡Muchas gracias!`;
     const targetNumber = config.whatsappNumber?.replace(/\D/g, '') || '595981234567';
     const url = `https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -158,20 +159,22 @@ export const ProductDetailPage: React.FC = () => {
           {/* Main Large Image Container */}
           <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-[#F1EDE5] border border-[#E6E0D4] shadow-sm group">
             <img
-              src={activeImage || selectedColor.image || product.images[selectedImageIndex] || product.images[0]}
-              alt={`${product.name} - ${selectedColor.name}`}
+              src={activeImage || selectedColor?.image || product.images[selectedImageIndex] || product.images[0]}
+              alt={`${product.name}${selectedColor ? ` - ${selectedColor.name}` : ''}`}
               className={`w-full h-full object-cover object-center transition-all duration-500 ease-out ${
                 isColorTransitioning ? 'opacity-30 scale-95 blur-[2px]' : 'opacity-100 scale-100 blur-0'
               }`}
             />
 
             {/* Subtle Dynamic Color Tone Overlay */}
-            <div
-              className={`absolute inset-0 pointer-events-none mix-blend-color transition-all duration-700 ease-in-out ${
-                selectedColor.image && activeImage === selectedColor.image ? 'opacity-0' : 'opacity-35'
-              }`}
-              style={{ backgroundColor: selectedColor.hex }}
-            />
+            {selectedColor && (
+              <div
+                className={`absolute inset-0 pointer-events-none mix-blend-color transition-all duration-700 ease-in-out ${
+                  selectedColor.image && activeImage === selectedColor.image ? 'opacity-0' : 'opacity-35'
+                }`}
+                style={{ backgroundColor: selectedColor.hex }}
+              />
+            )}
 
             {product.featured && (
               <span className="absolute top-4 left-4 bg-[#2D3A2F]/90 backdrop-blur-xs text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md z-10">
@@ -180,13 +183,15 @@ export const ProductDetailPage: React.FC = () => {
             )}
 
             {/* Active Selected Color Pill Badge */}
-            <div className="absolute bottom-4 left-4 z-10 bg-[#1E261F]/85 backdrop-blur-md text-white text-xs px-3.5 py-1.5 rounded-full flex items-center gap-2 border border-white/10 shadow-lg">
-              <span
-                className="w-3.5 h-3.5 rounded-full border border-white/50 shadow-xs"
-                style={{ backgroundColor: selectedColor.hex }}
-              />
-              <span className="font-medium text-[11px] sm:text-xs">Color: {selectedColor.name}</span>
-            </div>
+            {selectedColor && (
+              <div className="absolute bottom-4 left-4 z-10 bg-[#1E261F]/85 backdrop-blur-md text-white text-xs px-3.5 py-1.5 rounded-full flex items-center gap-2 border border-white/10 shadow-lg">
+                <span
+                  className="w-3.5 h-3.5 rounded-full border border-white/50 shadow-xs"
+                  style={{ backgroundColor: selectedColor.hex }}
+                />
+                <span className="font-medium text-[11px] sm:text-xs">Color: {selectedColor.name}</span>
+              </div>
+            )}
           </div>
 
           {/* Gallery Thumbnails */}

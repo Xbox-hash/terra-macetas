@@ -68,7 +68,11 @@ export const CatalogPage: React.FC = () => {
       });
   }, [products, selectedLineParam, searchQuery, sortBy]);
 
-  const activeLineObj = lines.find((l) => l.id === selectedLineParam);
+  const linesWithProducts = useMemo(() => {
+    return lines.filter((line) => products.some((p) => p.lineId === line.id && p.active));
+  }, [lines, products]);
+
+  const activeLineObj = linesWithProducts.find((l) => l.id === selectedLineParam);
 
   const getLineName = (lineId: string) => {
     return lines.find((l) => l.id === lineId)?.name;
@@ -106,7 +110,7 @@ export const CatalogPage: React.FC = () => {
             Todas las macetas ({products.length})
           </button>
 
-          {lines.map((line) => {
+          {linesWithProducts.map((line) => {
             const count = products.filter((p) => p.lineId === line.id).length;
             const isSelected = selectedLineParam === line.id;
             return (
