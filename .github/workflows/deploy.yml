@@ -59,16 +59,16 @@ jobs:
 
             cd /opt/terra-macetas
 
-            # 3. Integrar con Caddy si aún no está agregado
+            # 3. Integrar con Caddy asegurando tls internal para Cloudflare
             if [ -f "/opt/app-nelson/Caddyfile" ]; then
-              if ! grep -q "donnabotanica.com.py" /opt/app-nelson/Caddyfile; then
-                echo "🌐 Integrando donnabotanica.com.py en Caddy..."
-                cat /opt/terra-macetas/Caddyfile.snippet >> /opt/app-nelson/Caddyfile
-                docker exec nelson-caddy caddy reload --config /etc/caddy/Caddyfile || true
-                echo "✅ Caddy actualizado y recargado con éxito."
-              else
-                echo "✅ Caddy ya tiene configurado donnabotanica.com.py."
-              fi
+              echo "🌐 Actualizando configuración de Caddy para Donna Botánica..."
+              cp /opt/app-nelson/Caddyfile /opt/app-nelson/Caddyfile.bak
+              sed -i '/DONNA BOTANICA/,$d' /opt/app-nelson/Caddyfile
+              sed -i '/donnabotanica/,$d' /opt/app-nelson/Caddyfile
+              cat /opt/terra-macetas/Caddyfile.snippet >> /opt/app-nelson/Caddyfile
+              docker exec -i nelson-caddy sh -c "cat > /etc/caddy/Caddyfile" < /opt/app-nelson/Caddyfile
+              docker exec nelson-caddy caddy reload --config /etc/caddy/Caddyfile || true
+              echo "✅ Caddy actualizado y recargado con éxito."
             fi
 
             # 4. Construir y levantar contenedores según ambiente

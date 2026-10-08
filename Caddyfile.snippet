@@ -1,7 +1,8 @@
 # ========================================================
-# DONNA BOTÁNICA (TERRA MACETAS) - PRODUCCIÓN
+# DONNA BOTANICA (PRODUCCION)
 # ========================================================
 donnabotanica.com.py, www.donnabotanica.com.py {
+    tls internal
     encode gzip zstd
 
     # API Backend (ASP.NET Core 8)
@@ -16,9 +17,10 @@ donnabotanica.com.py, www.donnabotanica.com.py {
 }
 
 # ========================================================
-# DONNA BOTÁNICA - AMBIENTE DE TEST / PRUEBAS
+# DONNA BOTANICA (TEST / PRUEBAS)
 # ========================================================
 test.donnabotanica.com.py {
+    tls internal
     encode gzip zstd
 
     # API Backend Test
