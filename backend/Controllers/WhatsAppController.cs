@@ -36,9 +36,22 @@ public class WhatsAppController : ControllerBase
     private async Task<(string baseUrl, string apiKey, string instanceName)> GetConfigAsync()
     {
         var config = await _context.CompanyConfigs.FirstOrDefaultAsync();
-        var baseUrl = config?.WhatsappApiUrl ?? _configuration.GetValue<string>("WhatsAppGateway:BaseUrl") ?? "http://localhost:8080";
-        var apiKey = config?.WhatsappApiKey ?? _configuration.GetValue<string>("WhatsAppGateway:ApiKey") ?? "TerraSecretApiKey2026_WhatsAppGateway!";
-        var instanceName = config?.WhatsappInstanceName ?? _configuration.GetValue<string>("WhatsAppGateway:InstanceName") ?? "terra_bot";
+        var envBaseUrl = _configuration.GetValue<string>("WhatsAppGateway:BaseUrl");
+        var envApiKey = _configuration.GetValue<string>("WhatsAppGateway:ApiKey");
+        var envInstanceName = _configuration.GetValue<string>("WhatsAppGateway:InstanceName");
+
+        // Priorizar variable de entorno si estamos en Docker y la DB tiene 'localhost'
+        var baseUrl = !string.IsNullOrWhiteSpace(envBaseUrl) && (string.IsNullOrWhiteSpace(config?.WhatsappApiUrl) || config.WhatsappApiUrl.Contains("localhost"))
+            ? envBaseUrl
+            : (config?.WhatsappApiUrl ?? envBaseUrl ?? "http://localhost:8080");
+
+        var apiKey = !string.IsNullOrWhiteSpace(config?.WhatsappApiKey)
+            ? config.WhatsappApiKey
+            : (envApiKey ?? "TerraSecretApiKey2026_WhatsAppGateway!");
+
+        var instanceName = !string.IsNullOrWhiteSpace(envInstanceName) && (string.IsNullOrWhiteSpace(config?.WhatsappInstanceName) || config.WhatsappInstanceName == "terra_bot")
+            ? envInstanceName
+            : (config?.WhatsappInstanceName ?? envInstanceName ?? "terra_bot");
 
         return (baseUrl.TrimEnd('/'), apiKey, instanceName);
     }
@@ -50,7 +63,7 @@ public class WhatsAppController : ControllerBase
         {
             var (baseUrl, apiKey, instanceName) = await GetConfigAsync();
             var client = _httpClientFactory.CreateClient();
-            client.Timeout = TimeSpan.FromSeconds(3);
+            client.Timeout = TimeSpan.FromSeconds(4);
             client.DefaultRequestHeaders.Add("apikey", apiKey);
 
             var url = $"{baseUrl}/instance/connectionState/{instanceName}";
@@ -63,7 +76,7 @@ public class WhatsAppController : ControllerBase
                     isOnline = false,
                     state = "disconnected",
                     instanceName,
-                    message = "Instancia no encontrada o desconectada."
+                    message = "Instancia lista para vincular."
                 });
             }
 
@@ -72,7 +85,7 @@ public class WhatsAppController : ControllerBase
             var state = doc.RootElement.TryGetProperty("instance", out var inst) &&
                         inst.TryGetProperty("state", out var st)
                 ? st.GetString()
-                : "unknown";
+                : "disconnected";
 
             bool isOnline = state == "open";
 
@@ -102,7 +115,7 @@ public class WhatsAppController : ControllerBase
             return Ok(new
             {
                 isOnline,
-                state,
+                state = isOnline ? "open" : "disconnected",
                 instanceName
             });
         }
@@ -125,11 +138,45 @@ public class WhatsAppController : ControllerBase
         {
             var (baseUrl, apiKey, instanceName) = await GetConfigAsync();
             var client = _httpClientFactory.CreateClient();
-            client.Timeout = TimeSpan.FromSeconds(5);
+            client.Timeout = TimeSpan.FromSeconds(10);
             client.DefaultRequestHeaders.Add("apikey", apiKey);
 
             var url = $"{baseUrl}/instance/connect/{instanceName}";
             var response = await client.GetAsync(url);
+
+            // Si la instancia no existe aún en Evolution API, la creamos automáticamente
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogInformation("Instancia {inst} no existe en Evolution API. Creando automáticamente...", instanceName);
+                var createPayload = new
+                {
+                    instanceName = instanceName,
+                    token = apiKey,
+                    qrcode = true,
+                    integration = "WHATSAPP-BAILEYS"
+                };
+
+                var createRes = await client.PostAsJsonAsync($"{baseUrl}/instance/create", createPayload);
+                if (createRes.IsSuccessStatusCode)
+                {
+                    var createContent = await createRes.Content.ReadAsStringAsync();
+                    using var createDoc = JsonDocument.Parse(createContent);
+
+                    string? b64 = null;
+                    if (createDoc.RootElement.TryGetProperty("qrcode", out var qrObj) && qrObj.TryGetProperty("base64", out var b64Prop))
+                        b64 = b64Prop.GetString();
+                    else if (createDoc.RootElement.TryGetProperty("base64", out var directB64))
+                        b64 = directB64.GetString();
+
+                    if (!string.IsNullOrWhiteSpace(b64))
+                    {
+                        return Ok(new { base64 = b64, pairingCode = (string?)null, instanceName });
+                    }
+                }
+
+                // Reintentar connect si create no devolvió el QR directo en el cuerpo
+                response = await client.GetAsync(url);
+            }
 
             if (!response.IsSuccessStatusCode)
             {
@@ -142,9 +189,9 @@ public class WhatsAppController : ControllerBase
             string? base64 = null;
             string? pairingCode = null;
 
-            if (doc.RootElement.TryGetProperty("base64", out var b64Prop))
+            if (doc.RootElement.TryGetProperty("base64", out var b64PropFinal))
             {
-                base64 = b64Prop.GetString();
+                base64 = b64PropFinal.GetString();
             }
 
             if (doc.RootElement.TryGetProperty("pairingCode", out var pairProp))

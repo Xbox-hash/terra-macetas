@@ -52,9 +52,20 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
                 companyName = config.StoreName;
                 companyPhone = config.WhatsappNumber;
                 isEnabled = config.WhatsappGatewayEnabled;
-                if (!string.IsNullOrWhiteSpace(config.WhatsappApiUrl)) baseUrl = config.WhatsappApiUrl;
+                var envBaseUrl = _configuration.GetValue<string>("WhatsAppGateway:BaseUrl");
+                var envInstanceName = _configuration.GetValue<string>("WhatsAppGateway:InstanceName");
+
+                if (!string.IsNullOrWhiteSpace(config.WhatsappApiUrl) && !config.WhatsappApiUrl.Contains("localhost"))
+                    baseUrl = config.WhatsappApiUrl;
+                else if (!string.IsNullOrWhiteSpace(envBaseUrl))
+                    baseUrl = envBaseUrl;
+
                 if (!string.IsNullOrWhiteSpace(config.WhatsappApiKey)) apiKey = config.WhatsappApiKey;
-                if (!string.IsNullOrWhiteSpace(config.WhatsappInstanceName)) instanceName = config.WhatsappInstanceName;
+
+                if (!string.IsNullOrWhiteSpace(config.WhatsappInstanceName) && config.WhatsappInstanceName != "terra_bot")
+                    instanceName = config.WhatsappInstanceName;
+                else if (!string.IsNullOrWhiteSpace(envInstanceName))
+                    instanceName = envInstanceName;
             }
         }
 
@@ -161,9 +172,20 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
             if (config != null)
             {
                 isEnabled = config.WhatsappGatewayEnabled;
-                if (!string.IsNullOrWhiteSpace(config.WhatsappApiUrl)) baseUrl = config.WhatsappApiUrl;
+                var envBaseUrl = _configuration.GetValue<string>("WhatsAppGateway:BaseUrl");
+                var envInstanceName = _configuration.GetValue<string>("WhatsAppGateway:InstanceName");
+
+                if (!string.IsNullOrWhiteSpace(config.WhatsappApiUrl) && !config.WhatsappApiUrl.Contains("localhost"))
+                    baseUrl = config.WhatsappApiUrl;
+                else if (!string.IsNullOrWhiteSpace(envBaseUrl))
+                    baseUrl = envBaseUrl;
+
                 if (!string.IsNullOrWhiteSpace(config.WhatsappApiKey)) apiKey = config.WhatsappApiKey;
-                if (!string.IsNullOrWhiteSpace(config.WhatsappInstanceName)) instanceName = config.WhatsappInstanceName;
+
+                if (!string.IsNullOrWhiteSpace(config.WhatsappInstanceName) && config.WhatsappInstanceName != "terra_bot")
+                    instanceName = config.WhatsappInstanceName;
+                else if (!string.IsNullOrWhiteSpace(envInstanceName))
+                    instanceName = envInstanceName;
             }
         }
 

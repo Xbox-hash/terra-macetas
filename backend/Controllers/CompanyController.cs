@@ -11,10 +11,12 @@ namespace TerraMacetas.Api.Controllers;
 public class CompanyController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IConfiguration _configuration;
 
-    public CompanyController(AppDbContext context)
+    public CompanyController(AppDbContext context, IConfiguration configuration)
     {
         _context = context;
+        _configuration = configuration;
     }
 
     [HttpGet]
@@ -68,8 +70,19 @@ public class CompanyController : ControllerBase
         return Ok(MapToDto(config));
     }
 
-    private static CompanyConfigDto MapToDto(CompanyConfig c)
+    private CompanyConfigDto MapToDto(CompanyConfig c)
     {
+        var envBaseUrl = _configuration.GetValue<string>("WhatsAppGateway:BaseUrl");
+        var envInstanceName = _configuration.GetValue<string>("WhatsAppGateway:InstanceName");
+
+        var whatsappUrl = !string.IsNullOrWhiteSpace(c.WhatsappApiUrl) && !c.WhatsappApiUrl.Contains("localhost")
+            ? c.WhatsappApiUrl
+            : (envBaseUrl ?? c.WhatsappApiUrl ?? "http://localhost:8080");
+
+        var instanceName = !string.IsNullOrWhiteSpace(c.WhatsappInstanceName) && c.WhatsappInstanceName != "terra_bot"
+            ? c.WhatsappInstanceName
+            : (envInstanceName ?? c.WhatsappInstanceName ?? "terra_bot");
+
         return new CompanyConfigDto
         {
             StoreName = c.StoreName,
@@ -86,9 +99,9 @@ public class CompanyController : ControllerBase
             Country = c.Country,
             BusinessHours = c.BusinessHours,
             WhatsappGatewayEnabled = c.WhatsappGatewayEnabled,
-            WhatsappApiUrl = c.WhatsappApiUrl,
+            WhatsappApiUrl = whatsappUrl,
             WhatsappApiKey = c.WhatsappApiKey,
-            WhatsappInstanceName = c.WhatsappInstanceName,
+            WhatsappInstanceName = instanceName,
             HeroImageUrl = c.HeroImageUrl,
             HeroFloatingImageUrl = c.HeroFloatingImageUrl,
             PhilosophyImageUrl = c.PhilosophyImageUrl
