@@ -8,18 +8,16 @@ const STORAGE_KEY = 'terra_pot_colors';
 const getLocalColors = (): ProductColor[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed;
       }
     }
   } catch (e) {
     console.error('Error al leer colores de almacenamiento local', e);
   }
-  // Semilla inicial
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_POT_PALETTE));
-  return [...DEFAULT_POT_PALETTE];
+  return [];
 };
 
 const saveLocalColors = (colors: ProductColor[]) => {
@@ -36,7 +34,7 @@ export const colorService = {
       const res = await fetch(API_BASE_URL);
       if (res.ok) {
         const data: ProductColor[] = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           saveLocalColors(data);
           return data;
         }
@@ -137,7 +135,7 @@ export const colorService = {
       const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'DELETE',
       });
-      if (res.ok) {
+      if (res.ok || res.status === 404) {
         const current = getLocalColors();
         saveLocalColors(current.filter((c) => c.id !== id));
         return;
@@ -151,6 +149,17 @@ export const colorService = {
   },
 
   async resetToDefaults(): Promise<ProductColor[]> {
+    try {
+      for (const col of DEFAULT_POT_PALETTE) {
+        await fetch(API_BASE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(col),
+        }).catch(() => {});
+      }
+    } catch {
+      // ignorar si backend falla
+    }
     saveLocalColors([...DEFAULT_POT_PALETTE]);
     return [...DEFAULT_POT_PALETTE];
   },
