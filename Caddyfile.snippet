@@ -1,0 +1,33 @@
+# ========================================================
+# DONNA BOTÁNICA (TERRA MACETAS) - PRODUCCIÓN
+# ========================================================
+donnabotanica.com.py, www.donnabotanica.com.py {
+    encode gzip zstd
+
+    # API Backend (ASP.NET Core 8)
+    handle /api/* {
+        reverse_proxy 127.0.0.1:5050
+    }
+
+    # Frontend SPA (React + Vite + Tailwind)
+    handle {
+        reverse_proxy 127.0.0.1:8081
+    }
+}
+
+# ========================================================
+# DONNA BOTÁNICA - AMBIENTE DE TEST / PRUEBAS
+# ========================================================
+test.donnabotanica.com.py {
+    encode gzip zstd
+
+    # API Backend Test
+    handle /api/* {
+        reverse_proxy 127.0.0.1:5051
+    }
+
+    # Frontend SPA Test
+    handle {
+        reverse_proxy 127.0.0.1:8082
+    }
+}

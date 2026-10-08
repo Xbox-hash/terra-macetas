@@ -1,0 +1,136 @@
+version: '3.8'
+
+services:
+  # ========================================================
+  # 1. MOTOR DE BASE DE DATOS (SQL Server 2022)
+  # ========================================================
+  terra_sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: terra_sqlserver
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=TerraPass2026_MacetasDbSecret!
+      - MSSQL_PID=Express
+    volumes:
+      - terra_mssql_data:/var/opt/mssql
+    ports:
+      - "127.0.0.1:14330:1433"
+    networks:
+      - terra_network
+
+  # ========================================================
+  # 2. WHATSAPP GATEWAY (Evolution API + Postgres)
+  # ========================================================
+  terra_evolution_db:
+    image: postgres:15-alpine
+    container_name: terra_evolution_db
+    restart: always
+    environment:
+      POSTGRES_DB: evolution
+      POSTGRES_USER: evolution_user
+      POSTGRES_PASSWORD: EvoSecretDbPassword2026!
+    volumes:
+      - terra_evo_data:/var/lib/postgresql/data
+    networks:
+      - terra_network
+
+  terra_evolution_api:
+    image: evoapicloud/evolution-api:latest
+    container_name: terra_evolution_api
+    restart: always
+    depends_on:
+      - terra_evolution_db
+    ports:
+      - "127.0.0.1:8088:8080"
+    environment:
+      - SERVER_URL=http://127.0.0.1:8088
+      - AUTHENTICATION_API_KEY=TerraSecretApiKey2026_WhatsAppGateway!
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution_user:EvoSecretDbPassword2026!@terra_evolution_db:5432/evolution
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_MESSAGE_HISTORIC=true
+      - CACHE_REDIS_ENABLED=false
+      - CACHE_LOCAL_ENABLED=true
+      - DEL_INSTANCE=false
+    networks:
+      - terra_network
+
+  # ========================================================
+  # 3. AMBIENTE DE PRODUCCIÓN (donnabotanica.com.py)
+  # ========================================================
+  terra_api_prod:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: terra_api_prod
+    restart: always
+    depends_on:
+      - terra_sqlserver
+      - terra_evolution_api
+    ports:
+      - "127.0.0.1:5050:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=terra_sqlserver,1433;Database=TerraMacetas_Prod;User Id=sa;Password=TerraPass2026_MacetasDbSecret!;TrustServerCertificate=True;MultipleActiveResultSets=true;
+      - WhatsAppGateway__Enabled=true
+      - WhatsAppGateway__BaseUrl=http://terra_evolution_api:8080
+      - WhatsAppGateway__ApiKey=TerraSecretApiKey2026_WhatsAppGateway!
+      - WhatsAppGateway__InstanceName=terra_bot_prod
+    networks:
+      - terra_network
+
+  terra_front_prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: terra_front_prod
+    restart: always
+    ports:
+      - "127.0.0.1:8081:80"
+    networks:
+      - terra_network
+
+  # ========================================================
+  # 4. AMBIENTE DE TEST / PRUEBAS (test.donnabotanica.com.py)
+  # ========================================================
+  terra_api_test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: terra_api_test
+    restart: always
+    depends_on:
+      - terra_sqlserver
+      - terra_evolution_api
+    ports:
+      - "127.0.0.1:5051:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=terra_sqlserver,1433;Database=TerraMacetas_Test;User Id=sa;Password=TerraPass2026_MacetasDbSecret!;TrustServerCertificate=True;MultipleActiveResultSets=true;
+      - WhatsAppGateway__Enabled=true
+      - WhatsAppGateway__BaseUrl=http://terra_evolution_api:8080
+      - WhatsAppGateway__ApiKey=TerraSecretApiKey2026_WhatsAppGateway!
+      - WhatsAppGateway__InstanceName=terra_bot_test
+    networks:
+      - terra_network
+
+  terra_front_test:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: terra_front_test
+    restart: always
+    ports:
+      - "127.0.0.1:8082:80"
+    networks:
+      - terra_network
+
+volumes:
+  terra_mssql_data:
+  terra_evo_data:
+
+networks:
+  terra_network:
+    driver: bridge
