@@ -40,9 +40,11 @@ jobs:
             echo "🚀 Iniciando despliegue de Donna Botánica en Contabo VPS"
             echo "=========================================================="
 
-            # 1. Asegurar directorio de la aplicación
-            sudo mkdir -p /opt/terra-macetas
-            sudo chown -R ${{ secrets.VPS_USER || 'nelson' }}:${{ secrets.VPS_USER || 'nelson' }} /opt/terra-macetas
+            # 1. Asegurar directorio de la aplicación sin bloquear por sudo
+            if [ ! -d "/opt/terra-macetas" ]; then
+              echo "${{ secrets.VPS_PASSWORD }}" | sudo -S mkdir -p /opt/terra-macetas
+              echo "${{ secrets.VPS_PASSWORD }}" | sudo -S chown -R $(whoami):$(whoami) /opt/terra-macetas
+            fi
 
             # 2. Descargar últimos cambios del repositorio
             if [ ! -d "/opt/terra-macetas/.git" ]; then
