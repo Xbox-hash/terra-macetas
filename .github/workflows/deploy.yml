@@ -62,7 +62,14 @@ jobs:
             # 3. Construir y levantar contenedores según ambiente
             echo "🐳 Levantando contenedores Docker..."
             docker rm -f terra_front_prod terra_front_test 2>/dev/null || true
-            docker compose -f docker-compose.server.yml up -d --build
+            for net in $(docker network ls --filter name=terra-macetas -q 2>/dev/null); do
+              for c in $(docker network inspect $net -f '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null); do
+                docker network disconnect -f $net $c 2>/dev/null || true
+              done
+              docker network rm $net 2>/dev/null || true
+            done
+            docker network disconnect -f terra-macetas_terra_network terra_evolution_db 2>/dev/null || true
+            docker compose -f docker-compose.server.yml up -d --build --remove-orphans
 
             # 4. Conectar el contenedor Caddy a terra_network para resolución interna
             docker network connect terra_network nelson-caddy 2>/dev/null || true
