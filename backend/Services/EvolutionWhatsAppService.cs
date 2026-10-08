@@ -94,7 +94,13 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
         // 2. Mensaje de confirmación para el WhatsApp del Cliente (si dejó su número)
         var clientMessage = new StringBuilder();
         clientMessage.AppendLine($"🌿 *¡Hola {order.CustomerName}! Gracias por tu compra en {companyName}.*");
-        clientMessage.AppendLine($"Hemos registrado tu pedido *#{order.Id}* por un total de *₲ {order.Total:N0}*.");
+        clientMessage.AppendLine($"Hemos registrado tu pedido *#{order.Id}* exitosamente.");
+        clientMessage.AppendLine();
+        clientMessage.AppendLine($"📦 *DETALLE DE TU PEDIDO:*");
+        clientMessage.AppendLine(itemsSummary);
+        clientMessage.AppendLine($"━━━━━━━━━━━━━━━━━━━━");
+        clientMessage.AppendLine($"💰 *TOTAL:* ₲ {order.Total:N0}");
+        clientMessage.AppendLine();
         clientMessage.AppendLine($"En breve nos pondremos en contacto con vos para coordinar los detalles de pago y entrega.");
         clientMessage.AppendLine($"¡Muchas gracias por elegirnos!");
 

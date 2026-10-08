@@ -23,6 +23,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
+  const [whatsappMessage, setWhatsappMessage] = useState('');
 
   if (!isOpen) return null;
 
@@ -64,6 +65,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       message += `Quedo a la espera de su confirmación para coordinar el pago y el envío. ¡Muchas gracias!`;
 
       // 3. Limpiar carrito y mostrar confirmación automática
+      setWhatsappMessage(message);
       clearCart();
       if (closeCartDrawer) closeCartDrawer();
       setOrderSuccess(true);
@@ -107,8 +109,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
             </div>
           </div>
 
-          <div className="pt-2">
-            <Button variant="primary" size="lg" className="w-full justify-center shadow-sm" onClick={handleFinish}>
+          <div className="pt-2 space-y-3">
+            {config.whatsappNumber && (
+              <a
+                href={`https://wa.me/${config.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(whatsappMessage)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2.5 w-full py-3.5 px-5 rounded-2xl font-bold text-sm text-white bg-[#25D366] hover:bg-[#1EBE5D] transition-all shadow-md hover:shadow-lg cursor-pointer"
+              >
+                <MessageCircle className="w-5 h-5 fill-current" />
+                Abrir WhatsApp y enviar pedido
+              </a>
+            )}
+
+            <Button variant="outline" size="lg" className="w-full justify-center shadow-xs" onClick={handleFinish}>
               Volver a la tienda
             </Button>
           </div>
