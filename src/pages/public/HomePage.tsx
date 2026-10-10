@@ -9,11 +9,27 @@ import { LineCard } from '../../components/public/LineCard';
 import { Button } from '../../components/common/Button';
 import { useCompany } from '../../contexts/CompanyContext';
 
+const getCachedLines = (): ProductLine[] => {
+  try {
+    const cached = localStorage.getItem('terra_cached_lines');
+    if (cached) return JSON.parse(cached);
+  } catch {}
+  return [];
+};
+
+const getCachedFeatured = (): Product[] => {
+  try {
+    const cached = localStorage.getItem('terra_cached_featured');
+    if (cached) return JSON.parse(cached);
+  } catch {}
+  return [];
+};
+
 export const HomePage: React.FC = () => {
   const { config } = useCompany();
-  const [lines, setLines] = useState<ProductLine[]>([]);
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [lines, setLines] = useState<ProductLine[]>(getCachedLines);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>(getCachedFeatured);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -26,10 +42,18 @@ export const HomePage: React.FC = () => {
 
         if (isMounted) {
           if (linesRes.status === 'fulfilled') {
-            setLines(linesRes.value || []);
+            const loadedLines = linesRes.value || [];
+            setLines(loadedLines);
+            try {
+              localStorage.setItem('terra_cached_lines', JSON.stringify(loadedLines));
+            } catch {}
           }
           if (featuredRes.status === 'fulfilled') {
-            setFeaturedProducts((featuredRes.value || []).slice(0, 4));
+            const loadedFeatured = (featuredRes.value || []).slice(0, 4);
+            setFeaturedProducts(loadedFeatured);
+            try {
+              localStorage.setItem('terra_cached_featured', JSON.stringify(loadedFeatured));
+            } catch {}
           }
         }
       } catch (err) {
@@ -112,8 +136,8 @@ export const HomePage: React.FC = () => {
               <div className="relative mx-auto max-w-md lg:max-w-none">
                 <div className="relative aspect-4/5 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/80 transition-all duration-700 hover:shadow-3xl hover:border-white">
                   <img
-                    src={config.heroImageUrl || 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=1200&q=85'}
-                    alt={config.storeName || 'Colección de Macetas Terra'}
+                    src={config.heroImageUrl || '/images/hero.jpg'}
+                    alt={config.storeName || 'Donna Botânica'}
                     className="w-full h-full object-cover object-center transition-transform duration-1000 ease-out hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent transition-opacity duration-300" />

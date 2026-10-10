@@ -10,16 +10,31 @@ interface CompanyContextType {
   refreshConfig: () => Promise<void>;
 }
 
+const getInitialConfig = (): StoreConfig => {
+  try {
+    const cached = localStorage.getItem('terra_company_config');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      return { ...INITIAL_STORE_CONFIG, ...parsed };
+    }
+  } catch (err) {
+    console.error('Error al leer configuración en caché:', err);
+  }
+  return INITIAL_STORE_CONFIG;
+};
+
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [config, setConfig] = useState<StoreConfig>(INITIAL_STORE_CONFIG);
-  const [isLoading, setIsLoading] = useState(true);
+  const [config, setConfig] = useState<StoreConfig>(getInitialConfig);
+  const [isLoading, setIsLoading] = useState(false);
 
   const refreshConfig = async () => {
     try {
       const data = await companyService.getConfig();
       setConfig(data);
+    } catch (err) {
+      console.error('Error al actualizar configuración:', err);
     } finally {
       setIsLoading(false);
     }
@@ -28,6 +43,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     refreshConfig();
   }, []);
+
 
   useEffect(() => {
     if (config.storeName) {

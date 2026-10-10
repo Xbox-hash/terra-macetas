@@ -22,7 +22,7 @@ export const Footer: React.FC = () => {
                 </div>
               )}
               <span className="font-serif text-2xl font-bold tracking-wider text-white">
-                {config.storeName || 'DONNA BOTANICA'}
+                {config.storeName || 'Donna Botânica'}
               </span>
             </div>
             <p className="text-sm text-[#B4BFB2] leading-relaxed">

@@ -51,10 +51,10 @@ export const Header: React.FC = () => {
             )}
             <div>
               <span className="font-serif text-2xl font-bold tracking-wider text-[#2D3A2F] block leading-none">
-                {config.storeName || 'DONNA BOTANICA'}
+                {config.storeName || 'Donna Botânica'}
               </span>
               <span className="text-[10px] tracking-widest uppercase text-[#6C7969] font-medium block mt-0.5">
-                {config.tagline || 'Macetas Artesanales de Cemento & Diseño'}
+                {config.tagline || 'Calidad que se transmite'}
               </span>
             </div>
           </Link>
