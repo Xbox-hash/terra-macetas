@@ -6,13 +6,29 @@ import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
 import { ProductCard } from '../../components/public/ProductCard';
 
+const getCachedLines = (): ProductLine[] => {
+  try {
+    const cached = localStorage.getItem('terra_cached_lines');
+    if (cached) return JSON.parse(cached);
+  } catch {}
+  return [];
+};
+
+const getCachedProducts = (): Product[] => {
+  try {
+    const cached = localStorage.getItem('terra_cached_active_products');
+    if (cached) return JSON.parse(cached);
+  } catch {}
+  return [];
+};
+
 export const CatalogPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedLineParam = searchParams.get('linea') || 'todas';
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [lines, setLines] = useState<ProductLine[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(getCachedProducts);
+  const [lines, setLines] = useState<ProductLine[]>(getCachedLines);
+  const [loading, setLoading] = useState(() => getCachedProducts().length === 0);
 
   // Filters & Sorting state
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,8 +43,20 @@ export const CatalogPage: React.FC = () => {
           productService.getActive(),
         ]);
         if (isMounted) {
-          if (linesRes.status === 'fulfilled') setLines(linesRes.value || []);
-          if (prodsRes.status === 'fulfilled') setProducts(prodsRes.value || []);
+          if (linesRes.status === 'fulfilled') {
+            const val = linesRes.value || [];
+            setLines(val);
+            try {
+              localStorage.setItem('terra_cached_lines', JSON.stringify(val));
+            } catch {}
+          }
+          if (prodsRes.status === 'fulfilled') {
+            const val = prodsRes.value || [];
+            setProducts(val);
+            try {
+              localStorage.setItem('terra_cached_active_products', JSON.stringify(val));
+            } catch {}
+          }
         }
       } finally {
         if (isMounted) setLoading(false);

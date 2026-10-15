@@ -1,4 +1,4 @@
-﻿## Backend (ASP.NET Core / .NET)
+## Backend (ASP.NET Core / .NET)
 **/bin/
 **/obj/
 *.user
@@ -16,6 +16,12 @@
 *.local
 .npm
 .eslintcache
+
+## Uploads
+backend/wwwroot/uploads/**
+!backend/wwwroot/uploads/
+!backend/wwwroot/uploads/**/
+!backend/wwwroot/uploads/**/.gitkeep
 
 ## OS / IDE
 .DS_Store

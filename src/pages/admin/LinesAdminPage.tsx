@@ -3,7 +3,6 @@ import { useOutletContext } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Power, Layers, AlertCircle, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import { ProductLine } from '../../types';
 import { lineService } from '../../services/lineService';
-import { productService } from '../../services/productService';
 import { AdminHeader } from '../../components/admin/AdminHeader';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
@@ -13,13 +12,27 @@ import { ImageUploader } from '../../components/common/ImageUploader';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { useToast } from '../../contexts/ToastContext';
 
+const getCachedLines = (): ProductLine[] => {
+  try {
+    const cached = localStorage.getItem('terra_cached_all_lines');
+    if (cached) return JSON.parse(cached);
+  } catch {}
+  return [];
+};
+
 export const LinesAdminPage: React.FC = () => {
   const { openMobileSidebar } = useOutletContext<{ openMobileSidebar: () => void }>();
   const { showToast } = useToast();
 
-  const [lines, setLines] = useState<ProductLine[]>([]);
-  const [productCounts, setProductCounts] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true);
+  const [lines, setLines] = useState<ProductLine[]>(getCachedLines);
+  const [productCounts, setProductCounts] = useState<Record<string, number>>(() => {
+    const initialCounts: Record<string, number> = {};
+    getCachedLines().forEach((l) => {
+      initialCounts[l.id] = l.productsCount ?? 0;
+    });
+    return initialCounts;
+  });
+  const [loading, setLoading] = useState(() => getCachedLines().length === 0);
 
   // Modal / Form state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,19 +53,19 @@ export const LinesAdminPage: React.FC = () => {
     loadLines();
   }, []);
 
-  const loadLines = async () => {
-    setLoading(true);
+  const loadLines = async (silent = lines.length > 0) => {
+    if (!silent) setLoading(true);
     try {
-      const [allLines, allProds] = await Promise.all([
-        lineService.getAll(),
-        productService.getAll(),
-      ]);
+      const allLines = await lineService.getAll();
       setLines(allLines);
+      try {
+        localStorage.setItem('terra_cached_all_lines', JSON.stringify(allLines));
+      } catch {}
 
-      // Calcular cantidad de productos por línea
+      // Las líneas ya traen su productsCount precalculado directamente desde la base de datos
       const counts: Record<string, number> = {};
       allLines.forEach((l) => {
-        counts[l.id] = allProds.filter((p) => p.lineId === l.id).length;
+        counts[l.id] = l.productsCount ?? 0;
       });
       setProductCounts(counts);
     } finally {
@@ -126,25 +139,34 @@ export const LinesAdminPage: React.FC = () => {
   };
 
   const handleToggleStatus = async (line: ProductLine) => {
+    // Actualización optimista inmediata
+    setLines((prev) =>
+      prev.map((l) => (l.id === line.id ? { ...l, active: !l.active } : l))
+    );
     try {
       await lineService.toggleActive(line.id);
       showToast(`Estado de "${line.name}" actualizado.`);
-      loadLines();
+      loadLines(true);
     } catch (err: any) {
       showToast('Error al alternar estado', 'error');
+      loadLines(true);
     }
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+    const targetId = deleteTarget.id;
+    const targetName = deleteTarget.name;
     setIsDeleting(true);
     try {
-      await lineService.delete(deleteTarget.id);
-      showToast(`Línea "${deleteTarget.name}" eliminada.`);
+      await lineService.delete(targetId);
+      setLines((prev) => prev.filter((l) => l.id !== targetId));
+      showToast(`Línea "${targetName}" eliminada.`);
       setDeleteTarget(null);
-      loadLines();
+      loadLines(true);
     } catch (err: any) {
       showToast('Error al eliminar línea', 'error');
+      loadLines(true);
     } finally {
       setIsDeleting(false);
     }
@@ -306,6 +328,7 @@ export const LinesAdminPage: React.FC = () => {
             </p>
             <ImageUploader
               maxImages={1}
+              folder="lines"
               value={formData.image ? [formData.image] : []}
               onChange={(imgs) => setFormData({ ...formData, image: imgs[0] || '' })}
             />

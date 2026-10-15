@@ -5,6 +5,10 @@ using TerraMacetas.Api.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Add services to the container.
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
@@ -43,7 +47,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<AppDbContext>();
-        await DbInitializer.SeedAsync(context);
+        await DbInitializer.SeedAsync(context, app.Environment);
     }
     catch (Exception ex)
     {
@@ -61,6 +65,17 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "TERRA API v1");
     });
 }
+
+app.UseResponseCompression();
+
+// Servir archivos estáticos desde wwwroot/uploads con encabezados de caché del navegador
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=2592000");
+    }
+});
 
 app.UseCors("AllowFrontend");
 

@@ -48,9 +48,12 @@ public class ProductsController : ControllerBase
             query = query.Where(p => p.Name.ToLower().Contains(s) || p.Description.ToLower().Contains(s));
         }
 
-        var products = await query.OrderByDescending(p => p.Featured).ThenByDescending(p => p.CreatedAt).ToListAsync();
+        var products = await query
+            .OrderByDescending(p => p.Featured)
+            .ThenByDescending(p => p.CreatedAt)
+            .ToListAsync();
 
-        var dtos = products.Select(p => MapToDto(p));
+        var dtos = products.Select(p => MapToDto(p, isList: true));
         return Ok(dtos);
     }
 
@@ -174,7 +177,7 @@ public class ProductsController : ControllerBase
         return NoContent();
     }
 
-    private static ProductDto MapToDto(Product product)
+    private static ProductDto MapToDto(Product product, bool isList = false)
     {
         List<string> imagesList;
         try
@@ -196,6 +199,19 @@ public class ProductsController : ControllerBase
         catch
         {
             colorsList = new List<ProductColorDto>();
+        }
+
+        if (isList)
+        {
+            // En listados y catálogo prevenimos el reenvío de cadenas base64 masivas en colores
+            // Se mantiene el Id, Nombre, Hexadecimal y la indicación de foto
+            foreach (var c in colorsList)
+            {
+                if (c.Image != null && c.Image.StartsWith("data:"))
+                {
+                    c.Image = "has-photo";
+                }
+            }
         }
 
         return new ProductDto

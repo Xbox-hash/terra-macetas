@@ -147,6 +147,7 @@ export const CompanyAdminPage: React.FC = () => {
               </label>
               <ImageUploader
                 maxImages={1}
+                folder="company"
                 value={form.logoUrl ? [form.logoUrl] : []}
                 onChange={(imgs) => setForm({ ...form, logoUrl: imgs[0] || '' })}
               />
@@ -178,6 +179,7 @@ export const CompanyAdminPage: React.FC = () => {
                 </div>
                 <ImageUploader
                   maxImages={1}
+                  folder="company"
                   value={form.heroImageUrl ? [form.heroImageUrl] : []}
                   onChange={(imgs) => setForm({ ...form, heroImageUrl: imgs[0] || '' })}
                 />
@@ -195,6 +197,7 @@ export const CompanyAdminPage: React.FC = () => {
                 </div>
                 <ImageUploader
                   maxImages={1}
+                  folder="company"
                   value={form.heroFloatingImageUrl ? [form.heroFloatingImageUrl] : []}
                   onChange={(imgs) => setForm({ ...form, heroFloatingImageUrl: imgs[0] || '' })}
                 />
@@ -212,6 +215,7 @@ export const CompanyAdminPage: React.FC = () => {
                 </div>
                 <ImageUploader
                   maxImages={1}
+                  folder="company"
                   value={form.philosophyImageUrl ? [form.philosophyImageUrl] : []}
                   onChange={(imgs) => setForm({ ...form, philosophyImageUrl: imgs[0] || '' })}
                 />

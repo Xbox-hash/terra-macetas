@@ -14,16 +14,25 @@ import { formatPrice } from '../../utils';
 import { useToast } from '../../contexts/ToastContext';
 import { colorService } from '../../services/colorService';
 import { compressImageFile } from '../../utils/imageCompressor';
+import { uploadService } from '../../services/uploadService';
+
+const getCachedAdminProducts = (): Product[] => {
+  try {
+    const cached = localStorage.getItem('terra_cached_all_products');
+    if (cached) return JSON.parse(cached);
+  } catch {}
+  return [];
+};
 
 export const ProductsAdminPage: React.FC = () => {
   const { openMobileSidebar } = useOutletContext<{ openMobileSidebar: () => void }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(getCachedAdminProducts);
   const [lines, setLines] = useState<ProductLine[]>([]);
   const [availableColors, setAvailableColors] = useState<ProductColor[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => getCachedAdminProducts().length === 0);
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,11 +75,12 @@ export const ProductsAdminPage: React.FC = () => {
 
     try {
       const compressed = await compressImageFile(file, { maxWidth: 600, maxHeight: 600, quality: 0.82 });
-      handleSetColorImage(colorId, compressed);
+      const uploadedUrl = await uploadService.uploadBase64(compressed, 'colors');
+      handleSetColorImage(colorId, uploadedUrl);
       setActiveColorPhotoId(null);
-      showToast('Foto asignada al color seleccionado.');
+      showToast('Foto asignada al color y guardada en el servidor.');
     } catch (err) {
-      showToast('Error al procesar la imagen del color.', 'error');
+      showToast('Error al procesar y guardar la imagen del color.', 'error');
     } finally {
       e.target.value = '';
     }
@@ -97,8 +107,8 @@ export const ProductsAdminPage: React.FC = () => {
     }
   }, [products, searchParams]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (silent = products.length > 0) => {
+    if (!silent) setLoading(true);
     try {
       const [prodsData, linesData, colorsData] = await Promise.all([
         productService.getAll(),
@@ -106,6 +116,9 @@ export const ProductsAdminPage: React.FC = () => {
         colorService.getActive(),
       ]);
       setProducts(prodsData);
+      try {
+        localStorage.setItem('terra_cached_all_products', JSON.stringify(prodsData));
+      } catch {}
       setLines(linesData);
       setAvailableColors(colorsData || []);
       if (linesData.length > 0 && !formData.lineId) {
@@ -154,7 +167,7 @@ export const ProductsAdminPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleOpenEdit = (prod: Product) => {
+  const handleOpenEdit = async (prod: Product) => {
     setEditingProduct(prod);
     setFormData({
       name: prod.name,
@@ -173,6 +186,20 @@ export const ProductsAdminPage: React.FC = () => {
     setActiveColorPhotoId(null);
     setViewMode('form');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Cargar detalles completos del producto por si incluye configuraciones avanzadas
+    try {
+      const full = await productService.getById(prod.id);
+      if (full) {
+        setEditingProduct(full);
+        setFormData((prev) => ({
+          ...prev,
+          images: full.images || prev.images,
+          colors: full.colors || prev.colors,
+          manufacturingTime: full.manufacturingTime || prev.manufacturingTime,
+        }));
+      }
+    } catch {}
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -211,7 +238,7 @@ export const ProductsAdminPage: React.FC = () => {
 
       setViewMode('list');
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      loadData();
+      loadData(true);
     } catch (err: any) {
       showToast(err.message || 'Error al guardar producto', 'error');
     } finally {
@@ -220,25 +247,34 @@ export const ProductsAdminPage: React.FC = () => {
   };
 
   const handleToggleStatus = async (prod: Product) => {
+    // Actualización optimista inmediata
+    setProducts((prev) =>
+      prev.map((p) => (p.id === prod.id ? { ...p, active: !p.active } : p))
+    );
     try {
       await productService.toggleActive(prod.id);
       showToast(`Estado de "${prod.name}" modificado.`);
-      loadData();
+      loadData(true);
     } catch (err: any) {
       showToast('Error al modificar estado', 'error');
+      loadData(true);
     }
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+    const targetId = deleteTarget.id;
+    const targetName = deleteTarget.name;
     setIsDeleting(true);
     try {
-      await productService.delete(deleteTarget.id);
-      showToast(`Producto "${deleteTarget.name}" eliminado.`);
+      await productService.delete(targetId);
+      setProducts((prev) => prev.filter((p) => p.id !== targetId));
+      showToast(`Producto "${targetName}" eliminado.`);
       setDeleteTarget(null);
-      loadData();
+      loadData(true);
     } catch (err: any) {
       showToast('Error al eliminar producto', 'error');
+      loadData(true);
     } finally {
       setIsDeleting(false);
     }

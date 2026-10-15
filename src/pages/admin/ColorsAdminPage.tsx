@@ -23,6 +23,7 @@ import { Modal } from '../../components/common/Modal';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { FormInput } from '../../components/common/FormInput';
 import { compressImageFile } from '../../utils/imageCompressor';
+import { uploadService } from '../../services/uploadService';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -116,10 +117,11 @@ export const ColorsAdminPage: React.FC = () => {
 
     try {
       const compressed = await compressImageFile(file, { maxWidth: 400, maxHeight: 400, quality: 0.82 });
-      setFormData((prev) => ({ ...prev, image: compressed }));
-      showToast('Foto circular cargada y optimizada con éxito.');
+      const uploadedUrl = await uploadService.uploadBase64(compressed, 'colors');
+      setFormData((prev) => ({ ...prev, image: uploadedUrl }));
+      showToast('Foto circular cargada y guardada en el servidor.');
     } catch (err) {
-      showToast('Error al procesar la imagen.', 'error');
+      showToast('Error al procesar y subir la imagen.', 'error');
     }
   };
 

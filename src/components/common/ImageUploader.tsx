@@ -1,17 +1,20 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, Image as ImageIcon, X, Link as LinkIcon, FolderOpen, Check, Loader2 } from 'lucide-react';
 import { compressImageFile } from '../../utils/imageCompressor';
+import { uploadService } from '../../services/uploadService';
 
 interface ImageUploaderProps {
   value: string[];
   onChange: (images: string[]) => void;
   maxImages?: number;
+  folder?: 'products' | 'lines' | 'colors' | 'company';
 }
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
   value = [],
   onChange,
   maxImages = 4,
+  folder = 'products',
 }) => {
   const [urlInput, setUrlInput] = useState('');
   const [isAddingUrl, setIsAddingUrl] = useState(false);
@@ -56,21 +59,22 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     setErrorMessage('');
 
     try {
-      const compressedImages: string[] = [];
+      const uploadedUrls: string[] = [];
       for (const file of filesToRead) {
         try {
           const compressed = await compressImageFile(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.82 });
-          compressedImages.push(compressed);
+          const url = await uploadService.uploadBase64(compressed, folder);
+          uploadedUrls.push(url);
         } catch (fileErr) {
-          console.error('Error al comprimir archivo individual:', fileErr);
+          console.error('Error al subir imagen individual al servidor:', fileErr);
         }
       }
 
-      if (compressedImages.length > 0) {
-        onChange([...value, ...compressedImages]);
+      if (uploadedUrls.length > 0) {
+        onChange([...value, ...uploadedUrls]);
       }
     } catch (err) {
-      setErrorMessage('Error al procesar las imágenes.');
+      setErrorMessage('Error al procesar y subir las imágenes al servidor.');
     } finally {
       setIsCompressing(false);
       if (fileInputRef.current) {

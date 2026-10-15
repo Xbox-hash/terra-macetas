@@ -5,6 +5,11 @@ donnabotanica.com.py, www.donnabotanica.com.py {
     tls internal
     encode gzip zstd
 
+    # Archivos estáticos e imágenes subidas
+    handle /uploads/* {
+        reverse_proxy terra_api_prod:5000
+    }
+
     # API Backend (ASP.NET Core 8)
     handle /api/* {
         reverse_proxy terra_api_prod:5000
@@ -22,6 +27,11 @@ donnabotanica.com.py, www.donnabotanica.com.py {
 test.donnabotanica.com.py {
     tls internal
     encode gzip zstd
+
+    # Archivos estáticos e imágenes subidas
+    handle /uploads/* {
+        reverse_proxy terra_api_test:5000
+    }
 
     # API Backend Test
     handle /api/* {
