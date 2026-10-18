@@ -39,7 +39,7 @@ export const CartDrawer: React.FC = () => {
               <div className="flex items-center gap-2.5">
                 <ShoppingBag className="w-5 h-5 text-[#4A5D4E] animate-bounce-subtle" />
                 <h2 className="font-serif text-xl font-bold text-[#2D3A2F]">
-                  Tu Carrito ({totalItems})
+                  Tu Pedido ({totalItems})
                 </h2>
               </div>
               <button

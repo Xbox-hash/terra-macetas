@@ -137,7 +137,7 @@ export const ProductDetailPage: React.FC = () => {
     const colorToSave = productColors.length > 0 && selectedColor ? selectedColor.name : undefined;
     addToCart(product, quantity, colorToSave);
     const colorLabel = colorToSave ? ` (${colorToSave})` : '';
-    showToast(`¡Agregaste ${quantity}x "${product.name}"${colorLabel} al carrito!`);
+    showToast(`¡Agregaste ${quantity}x "${product.name}"${colorLabel} al pedido!`);
     openCartDrawer();
   };
 
@@ -311,7 +311,7 @@ export const ProductDetailPage: React.FC = () => {
                 onClick={handleAddToCart}
                 leftIcon={<ShoppingBag className="w-5 h-5" />}
               >
-                Agregar al carrito
+                Agregar pedido
               </Button>
               <Button
                 variant="whatsapp"

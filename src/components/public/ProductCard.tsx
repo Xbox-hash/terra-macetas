@@ -19,7 +19,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, lineName }) =
     e.preventDefault();
     e.stopPropagation();
     addToCart(product, 1);
-    showToast(`¡Agregaste "${product.name}" al carrito!`);
+    showToast(`¡Agregaste "${product.name}" al pedido!`);
     openCartDrawer();
   };
 
@@ -96,11 +96,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, lineName }) =
 
           <button
             onClick={handleAddToCart}
-            className="p-2.5 rounded-xl bg-[#F0EBE1] text-[#2D3A2F] hover:bg-[#2D3A2F] hover:text-[#FAF8F5] active:scale-90 hover:scale-105 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-md"
-            title="Agregar al carrito"
-            aria-label={`Agregar ${product.name} al carrito`}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F0EBE1] text-[#2D3A2F] hover:bg-[#2D3A2F] hover:text-[#FAF8F5] active:scale-95 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-md text-xs font-semibold shrink-0"
+            title="Agregar pedido"
+            aria-label={`Agregar ${product.name} al pedido`}
           >
-            <ShoppingBag className="w-4 h-4" />
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>Agregar pedido</span>
           </button>
         </div>
       </div>
