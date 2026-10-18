@@ -113,7 +113,7 @@ export const CatalogPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-10">
+    <div className="max-w-7xl 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-10 sm:py-14 space-y-10">
       {/* Header Banner */}
       <div className="border-b border-[#E8E2D6] pb-8 text-center sm:text-left">
         <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-2">

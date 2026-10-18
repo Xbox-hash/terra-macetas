@@ -78,10 +78,10 @@ export const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-24 pb-20">
+    <div className="space-y-20 sm:space-y-24 pb-20">
       {/* HERO SECTION */}
-      <section className="relative min-h-[85vh] flex items-center bg-[#F2EDE4] overflow-hidden pt-12 pb-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      <section className="relative flex items-center bg-[#F2EDE4] overflow-hidden py-12 sm:py-16 lg:py-20">
+        <div className="max-w-7xl 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Content */}
             <div className="lg:col-span-7 space-y-6 text-left z-10">
@@ -156,7 +156,7 @@ export const HomePage: React.FC = () => {
 
       {/* SECCIÓN DE LÍNEAS (Solo si hay líneas con productos asociados) */}
       {linesWithProducts.length > 0 && (
-        <section id="lineas" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
+        <section id="lineas" className="max-w-7xl 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 scroll-mt-24">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
             <div>
               <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-2">
@@ -185,7 +185,7 @@ export const HomePage: React.FC = () => {
 
       {/* PRODUCTOS DESTACADOS (Solo si existen productos destacados registrados) */}
       {featuredProducts.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="max-w-7xl 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
             <div>
               <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-2">
@@ -217,7 +217,7 @@ export const HomePage: React.FC = () => {
 
       {/* SECCIÓN SOBRE EL NEGOCIO */}
       <section className="bg-[#EFEAE1] py-20 border-y border-[#E2DBD0]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-5 relative order-2 lg:order-1">
               <div className="aspect-4/3 sm:aspect-square rounded-3xl overflow-hidden shadow-xl border border-[#DDD6C8] group">
@@ -273,7 +273,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* CTA FINAL */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-7xl 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12">
         <div className="relative bg-[#2D3A2F] text-white rounded-3xl p-10 sm:p-16 lg:p-20 overflow-hidden text-center shadow-2xl">
           {/* Subtle background graphic element */}
           <div className="absolute -right-16 -bottom-16 w-80 h-80 rounded-full bg-[#3B4C3E]/50 blur-3xl pointer-events-none" />
