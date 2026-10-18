@@ -86,6 +86,13 @@ jobs:
               echo "✅ Caddy actualizado y recargado con éxito."
             fi
 
+            # 6. Asegurar contenedor de Cloudflare Tunnel activo
+            echo "🚇 Verificando Cloudflare Tunnel..."
+            docker rm -f cloudflared 2>/dev/null || true
+            docker run -d --name cloudflared --restart always --network host \
+              cloudflare/cloudflared:latest tunnel --no-autoupdate run --token eyJhIjoiMDAzNTg4NGEzN2Q4MGM4YzA5NjgzMjFiNGUyZWIzMWMiLCJ0IjoiZTIxMDY2OTMtMzczMS00MTNjLWFjNjEtNWFjOTgxYmVhMjliIiwicyI6Ik9EYzROMlZoTkdZdE1HTXlNeTAwWTJObExXSXpOMll0WkRObVl6RTNObUl6T0RjdyJ9
+            echo "✅ Cloudflare Tunnel conectado con éxito."
+
             echo "=========================================================="
             echo "🎉 ¡Despliegue finalizado con éxito!"
             echo "   Producción: https://donnabotanica.com.py"
