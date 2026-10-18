@@ -48,28 +48,37 @@ export const ProductDetailPage: React.FC = () => {
           setQuantity(1);
 
           const colorMap = new Map(allRegisteredColors.map((c) => [c.id, c]));
-          const baseList =
-            prod.colors && prod.colors.length > 0
-              ? prod.colors
-              : allRegisteredColors.filter((c) => c.active !== false);
 
-          const enriched = baseList.map((c) => {
-            const reg = colorMap.get(c.id);
-            return {
-              ...c,
-              description: c.description || reg?.description,
-              image: c.image || reg?.image,
-            };
-          });
+          // La imagen principal SIEMPRE inicia con la foto real del producto
+          const defaultImage = prod.images && prod.images.length > 0 ? prod.images[0] : '';
+          setActiveImage(defaultImage);
 
-          setProductColors(enriched);
+          // REGLA: Solo mostrar colores si el producto los tiene asignados explícitamente en el admin
+          if (prod.colors && prod.colors.length > 0) {
+            const enriched = prod.colors.map((c) => {
+              const reg = colorMap.get(c.id);
+              const validProdImage = c.image && c.image !== 'has-photo' ? c.image : undefined;
+              return {
+                ...c,
+                name: c.name || reg?.name || 'Color',
+                hex: c.hex || reg?.hex || '#999999',
+                description: c.description || reg?.description,
+                image: validProdImage, // Foto real de la maceta en este color
+                swatchImage: reg?.image, // Muestra circular de textura para el botón del selector
+              };
+            });
 
-          if (enriched.length > 0) {
-            setSelectedColor(enriched[0]);
-            setActiveImage(enriched[0].image || prod.images[0] || '');
+            setProductColors(enriched);
+            setSelectedColor(enriched[0] || null);
+
+            // Si el primer color asignado tiene una foto de producto real, la mostramos; si no, mantenemos defaultImage
+            if (enriched[0]?.image) {
+              setActiveImage(enriched[0].image);
+            }
           } else {
+            // El producto NO tiene colores asignados -> No mostrar paleta ni selector
+            setProductColors([]);
             setSelectedColor(null);
-            setActiveImage(prod.images[0] || '');
           }
 
           const [lineData, related] = await Promise.all([
@@ -125,15 +134,16 @@ export const ProductDetailPage: React.FC = () => {
   };
 
   const handleAddToCart = () => {
-    addToCart(product, quantity, selectedColor ? selectedColor.name : undefined);
-    const colorLabel = selectedColor ? ` (${selectedColor.name})` : '';
+    const colorToSave = productColors.length > 0 && selectedColor ? selectedColor.name : undefined;
+    addToCart(product, quantity, colorToSave);
+    const colorLabel = colorToSave ? ` (${colorToSave})` : '';
     showToast(`¡Agregaste ${quantity}x "${product.name}"${colorLabel} al carrito!`);
     openCartDrawer();
   };
 
   const handleQuickWhatsApp = () => {
     const timeDetail = product.manufacturingTime ? `\n⏳ *Tiempo de fabricación:* ${product.manufacturingTime}` : '';
-    const colorDetail = selectedColor ? `\n🎨 *Color seleccionado:* ${selectedColor.name}` : '';
+    const colorDetail = productColors.length > 0 && selectedColor ? `\n🎨 *Color seleccionado:* ${selectedColor.name}` : '';
     const message = `✨ *¡Hola ${config.storeName}!* Me interesa pedir directamente esta pieza:\n\n🏺 *${product.name}*${colorDetail}${timeDetail}\n   • Cantidad: ${quantity}\n   • Precio unitario: ${formatPrice(product.price)}\n   • Total estimado: ${formatPrice(product.price * quantity)}\n\n¿Tienen disponibilidad y cómo coordinamos la entrega? ¡Muchas gracias!`;
     const targetNumber = config.whatsappNumber?.replace(/\D/g, '') || '595981234567';
     const url = `https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`;
@@ -159,22 +169,12 @@ export const ProductDetailPage: React.FC = () => {
           {/* Main Large Image Container */}
           <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-[#F1EDE5] border border-[#E6E0D4] shadow-sm group">
             <img
-              src={activeImage || selectedColor?.image || product.images[selectedImageIndex] || product.images[0]}
+              src={activeImage || product.images[selectedImageIndex] || product.images[0] || ''}
               alt={`${product.name}${selectedColor ? ` - ${selectedColor.name}` : ''}`}
               className={`w-full h-full object-cover object-center transition-all duration-500 ease-out ${
                 isColorTransitioning ? 'opacity-30 scale-95 blur-[2px]' : 'opacity-100 scale-100 blur-0'
               }`}
             />
-
-            {/* Subtle Dynamic Color Tone Overlay */}
-            {selectedColor && (
-              <div
-                className={`absolute inset-0 pointer-events-none mix-blend-color transition-all duration-700 ease-in-out ${
-                  selectedColor.image && activeImage === selectedColor.image ? 'opacity-0' : 'opacity-35'
-                }`}
-                style={{ backgroundColor: selectedColor.hex }}
-              />
-            )}
 
             {product.featured && (
               <span className="absolute top-4 left-4 bg-[#2D3A2F]/90 backdrop-blur-xs text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md z-10">
@@ -183,7 +183,7 @@ export const ProductDetailPage: React.FC = () => {
             )}
 
             {/* Active Selected Color Pill Badge */}
-            {selectedColor && (
+            {productColors.length > 0 && selectedColor && (
               <div className="absolute bottom-4 left-4 z-10 bg-[#1E261F]/85 backdrop-blur-md text-white text-xs px-3.5 py-1.5 rounded-full flex items-center gap-2 border border-white/10 shadow-lg">
                 <span
                   className="w-3.5 h-3.5 rounded-full border border-white/50 shadow-xs"
@@ -281,12 +281,14 @@ export const ProductDetailPage: React.FC = () => {
             )}
           </div>
 
-          {/* Color Palette Selector (Vaso & Cor inspired) */}
-          <ColorPaletteSelector
-            colors={productColors}
-            selectedColor={selectedColor}
-            onSelectColor={handleColorChange}
-          />
+          {/* Color Palette Selector */}
+          {productColors.length > 0 && selectedColor && (
+            <ColorPaletteSelector
+              colors={productColors}
+              selectedColor={selectedColor}
+              onSelectColor={handleColorChange}
+            />
+          )}
 
           {/* Quantity and Actions */}
           <div className="space-y-4 pt-4">

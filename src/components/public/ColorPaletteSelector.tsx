@@ -34,9 +34,9 @@ export const ColorPaletteSelector: React.FC<ColorPaletteSelectorProps> = ({
             className="w-4 h-4 rounded-full border border-black/20 shadow-2xs overflow-hidden shrink-0"
             style={{ backgroundColor: activeColor.hex }}
           >
-            {activeColor.image && (
+            {(activeColor.swatchImage || activeColor.image) && (
               <img
-                src={activeColor.image}
+                src={activeColor.swatchImage || activeColor.image}
                 alt={activeColor.name}
                 className="w-full h-full object-cover rounded-full"
               />
@@ -53,6 +53,7 @@ export const ColorPaletteSelector: React.FC<ColorPaletteSelectorProps> = ({
         <div className="flex flex-wrap gap-2.5 sm:gap-3 items-center">
           {colors.map((color) => {
             const isSelected = selectedColor.id === color.id;
+            const previewImg = color.swatchImage || color.image;
             return (
               <button
                 key={color.id}
@@ -70,9 +71,9 @@ export const ColorPaletteSelector: React.FC<ColorPaletteSelectorProps> = ({
                 style={{ backgroundColor: color.hex }}
               >
                 {/* Imagen circular de textura real si existe */}
-                {color.image ? (
+                {previewImg ? (
                   <img
-                    src={color.image}
+                    src={previewImg}
                     alt={color.name}
                     className="w-full h-full object-cover rounded-full"
                   />

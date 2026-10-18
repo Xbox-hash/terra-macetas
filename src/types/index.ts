@@ -34,6 +34,7 @@ export interface ProductColor {
   name: string;
   hex: string;
   image?: string;
+  swatchImage?: string;
   description?: string;
   active?: boolean;
   createdAt?: string;
