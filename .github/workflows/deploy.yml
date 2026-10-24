@@ -93,6 +93,20 @@ jobs:
               cloudflare/cloudflared:latest tunnel --no-autoupdate run --token eyJhIjoiMDAzNTg4NGEzN2Q4MGM4YzA5NjgzMjFiNGUyZWIzMWMiLCJ0IjoiZTIxMDY2OTMtMzczMS00MTNjLWFjNjEtNWFjOTgxYmVhMjliIiwicyI6Ik9EYzROMlZoTkdZdE1HTXlNeTAwWTJObExXSXpOMll0WkRObVl6RTNObUl6T0RjdyJ9
             echo "✅ Cloudflare Tunnel conectado con éxito."
 
+            # 7. Prevenir expiración del certificado SSL interno de Caddy (rotación automática)
+            echo "⏰ Configurando renovación automática para certificados SSL de Caddy..."
+            cat << 'EOF' > /opt/app-nelson/reload-caddy.sh
+#!/bin/bash
+if docker ps --format '{{.Names}}' | grep -q "^nelson-caddy$"; then
+  docker exec -i nelson-caddy sh -c "cat > /etc/caddy/Caddyfile" < /opt/app-nelson/Caddyfile 2>/dev/null || true
+  docker exec nelson-caddy caddy reload --config /etc/caddy/Caddyfile 2>/dev/null || true
+fi
+EOF
+            chmod +x /opt/app-nelson/reload-caddy.sh
+            (crontab -l 2>/dev/null | grep -v "/opt/app-nelson/reload-caddy.sh" ; echo "0 4 * * * /opt/app-nelson/reload-caddy.sh >/dev/null 2>&1") | crontab -
+            (crontab -l 2>/dev/null | grep -v "@reboot /opt/app-nelson/reload-caddy.sh" ; echo "@reboot sleep 20 && /opt/app-nelson/reload-caddy.sh >/dev/null 2>&1") | crontab -
+            echo "✅ Renovación automática y sincronización post-reboot activadas."
+
             echo "=========================================================="
             echo "🎉 ¡Despliegue finalizado con éxito!"
             echo "   Producción: https://donnabotanica.com.py"
