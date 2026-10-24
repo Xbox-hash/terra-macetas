@@ -97,7 +97,7 @@ jobs:
             echo "⏰ Configurando renovación automática para certificados SSL de Caddy..."
             cat << 'EOF' > /opt/app-nelson/reload-caddy.sh
 #!/bin/bash
-if docker ps --format '{{.Names}}' | grep -q "^nelson-caddy$"; then
+if docker ps | grep -q nelson-caddy; then
   docker exec -i nelson-caddy sh -c "cat > /etc/caddy/Caddyfile" < /opt/app-nelson/Caddyfile 2>/dev/null || true
   docker exec nelson-caddy caddy reload --config /etc/caddy/Caddyfile 2>/dev/null || true
 fi
