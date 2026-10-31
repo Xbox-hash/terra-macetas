@@ -31,6 +31,7 @@ export const orderService = {
   async createOrder(payload: {
     customerName?: string;
     customerPhone?: string;
+    customerCity?: string;
     notes?: string;
     total: number;
     items: CartItem[];
@@ -50,6 +51,7 @@ export const orderService = {
       body: JSON.stringify({
         customerName: payload.customerName || 'Cliente WhatsApp',
         customerPhone: payload.customerPhone,
+        customerCity: payload.customerCity,
         notes: payload.notes,
         total: payload.total,
         items: formattedItems,

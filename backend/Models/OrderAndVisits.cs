@@ -14,6 +14,9 @@ public class Order
 
     public string? CustomerEmail { get; set; }
 
+    [MaxLength(150)]
+    public string? CustomerCity { get; set; }
+
     public string? Notes { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]

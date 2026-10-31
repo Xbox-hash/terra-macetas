@@ -58,6 +58,7 @@ export interface Order {
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
+  customerCity?: string;
   notes?: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;

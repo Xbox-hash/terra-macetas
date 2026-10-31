@@ -16,6 +16,7 @@ public class OrderDto
     public string CustomerName { get; set; } = string.Empty;
     public string? CustomerPhone { get; set; }
     public string? CustomerEmail { get; set; }
+    public string? CustomerCity { get; set; }
     public string? Notes { get; set; }
     public decimal Total { get; set; }
     public List<OrderItemDto> Items { get; set; } = new();
@@ -46,6 +47,7 @@ public class CreateOrderDto
     public string? CustomerName { get; set; }
     public string? CustomerPhone { get; set; }
     public string? CustomerEmail { get; set; }
+    public string? CustomerCity { get; set; }
     public string? Notes { get; set; }
     public decimal Total { get; set; }
     public List<OrderItemDto> Items { get; set; } = new();

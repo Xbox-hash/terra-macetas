@@ -51,18 +51,45 @@ export function formatPhoneNumber(phone?: string): string {
   return `+${clean}`;
 }
 
-export function generateWhatsAppMessage(items: CartItem[], total: number, customerNote?: string): string {
+export function generateWhatsAppMessage(
+  items: CartItem[],
+  total: number,
+  customerNote?: string,
+  orderId?: string,
+  customerName?: string,
+  customerPhone?: string,
+  customerCity?: string
+): string {
   let message = `🌿 *¡Hola ${STORE_CONFIG.storeName}! Quiero realizar el siguiente pedido:*\n\n`;
-  
-  items.forEach((item, index) => {
-    message += `🪴 *${item.product.name}*\n`;
-    message += `   • Cantidad: ${item.quantity}\n`;
-    message += `   • Precio Unit: ${formatPrice(item.product.price)}\n`;
-    message += `   • Subtotal: ${formatPrice(item.subtotal)}\n\n`;
+
+  if (orderId) {
+    message += `🔖 *Orden:* #${orderId}\n`;
+  }
+  if (customerName) {
+    message += `👤 *Cliente:* ${customerName.trim()}\n`;
+  }
+  if (customerPhone) {
+    message += `📱 *Teléfono:* ${customerPhone.trim()}\n`;
+  }
+  if (customerCity) {
+    message += `📍 *Ciudad:* ${customerCity.trim()}\n`;
+  }
+  if (orderId || customerName || customerPhone || customerCity) {
+    message += `\n`;
+  }
+
+  message += `📦 *DETALLES DEL PEDIDO:*\n`;
+  message += `━━━━━━━━━━━━━━━━━━━━\n`;
+
+  items.forEach((item) => {
+    const colorLabel = item.selectedColor ? `\n   🎨 Color: ${item.selectedColor}` : '';
+    const timeLabel = item.product.manufacturingTime ? `\n   ⏳ Fab: ${item.product.manufacturingTime}` : '';
+    message += `• *${item.quantity}x ${item.product.name}*${colorLabel}${timeLabel}\n`;
+    message += `   💵 Precio: ${formatPrice(item.product.price)} c/u | Subtotal: ${formatPrice(item.subtotal)}\n\n`;
   });
 
   message += `━━━━━━━━━━━━━━━━━━━━\n`;
-  message += `💰 *TOTAL ESTIMADO: ${formatPrice(total)}*\n\n`;
+  message += `💰 *TOTAL A ABONAR: ${formatPrice(total)}*\n\n`;
 
   if (customerNote && customerNote.trim()) {
     message += `📝 *Nota adicional:* ${customerNote.trim()}\n\n`;

@@ -88,12 +88,20 @@ public class OrdersController : ControllerBase
             timestamps.Add(now);
         }
 
+        var customerCity = dto.CustomerCity?.Trim();
+        if (string.IsNullOrWhiteSpace(customerCity) && !string.IsNullOrWhiteSpace(dto.Notes))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(dto.Notes, @"(?i)Ciudad:\s*([^\r\n]+)");
+            if (match.Success) customerCity = match.Groups[1].Value.Trim();
+        }
+
         var order = new Order
         {
             Id = $"ORD-{Guid.NewGuid().ToString("N")[..8].ToUpper()}",
             CustomerName = string.IsNullOrWhiteSpace(dto.CustomerName) ? "Cliente Web" : dto.CustomerName.Trim(),
             CustomerPhone = dto.CustomerPhone?.Trim(),
             CustomerEmail = dto.CustomerEmail?.Trim(),
+            CustomerCity = customerCity,
             Notes = dto.Notes?.Trim(),
             Total = dto.Total,
             ItemsJson = JsonSerializer.Serialize(dto.Items ?? new List<OrderItemDto>()),
@@ -111,8 +119,8 @@ public class OrdersController : ControllerBase
         {
             try
             {
-                var summary = string.Join("\n", (dto.Items ?? new List<OrderItemDto>())
-                    .Select(i => $"   • {i.Quantity}x {i.ProductName} (₲ {i.Subtotal:N0})"));
+                var summary = string.Join("\n\n", (dto.Items ?? new List<OrderItemDto>())
+                    .Select(i => $"• *{i.Quantity}x {i.ProductName}*\n  💵 Precio: ₲ {i.Price:N0} c/u | Subtotal: ₲ {i.Subtotal:N0}"));
 
                 await _whatsappService.SendOrderNotificationAsync(order, summary);
             }
@@ -182,6 +190,13 @@ public class OrdersController : ControllerBase
         return NoContent();
     }
 
+    private static string? ExtractCityFromNotes(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes)) return null;
+        var match = System.Text.RegularExpressions.Regex.Match(notes, @"(?i)Ciudad:\s*([^\r\n]+)");
+        return match.Success ? match.Groups[1].Value.Trim() : null;
+    }
+
     private static OrderDto MapToDto(Order o)
     {
         List<OrderItemDto> items;
@@ -194,12 +209,15 @@ public class OrdersController : ControllerBase
             items = new List<OrderItemDto>();
         }
 
+        var city = !string.IsNullOrWhiteSpace(o.CustomerCity) ? o.CustomerCity : ExtractCityFromNotes(o.Notes);
+
         return new OrderDto
         {
             Id = o.Id,
             CustomerName = o.CustomerName,
             CustomerPhone = o.CustomerPhone,
             CustomerEmail = o.CustomerEmail,
+            CustomerCity = city,
             Notes = o.Notes,
             Total = o.Total,
             Items = items,

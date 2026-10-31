@@ -76,17 +76,23 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
         }
 
         // 1. Mensaje para el WhatsApp del Negocio / Dueño
+        var city = !string.IsNullOrWhiteSpace(order.CustomerCity) ? order.CustomerCity : ExtractCityFromNotes(order.Notes);
+        var cleanNotes = CleanNotesWithoutCity(order.Notes);
+
         var businessMessage = new StringBuilder();
         businessMessage.AppendLine($"🪴 *¡NUEVO PEDIDO RECIBIDO EN LA WEB!*");
         businessMessage.AppendLine($"━━━━━━━━━━━━━━━━━━━━");
-        businessMessage.AppendLine($"🔖 *Pedido:* #{order.Id}");
+        businessMessage.AppendLine($"🔖 *Orden:* #{order.Id}");
         businessMessage.AppendLine($"👤 *Cliente:* {order.CustomerName}");
         if (!string.IsNullOrWhiteSpace(order.CustomerPhone))
             businessMessage.AppendLine($"📱 *Teléfono:* {order.CustomerPhone}");
-        if (!string.IsNullOrWhiteSpace(order.Notes))
-            businessMessage.AppendLine($"📍 *Detalles:* {order.Notes}");
+        if (!string.IsNullOrWhiteSpace(city))
+            businessMessage.AppendLine($"📍 *Ciudad:* {city}");
+        if (!string.IsNullOrWhiteSpace(cleanNotes))
+            businessMessage.AppendLine($"📝 *Nota:* {cleanNotes}");
         businessMessage.AppendLine();
-        businessMessage.AppendLine($"📦 *PRODUCTOS:*");
+        businessMessage.AppendLine($"📦 *DETALLES DEL PEDIDO:*");
+        businessMessage.AppendLine($"━━━━━━━━━━━━━━━━━━━━");
         businessMessage.AppendLine(itemsSummary);
         businessMessage.AppendLine($"━━━━━━━━━━━━━━━━━━━━");
         businessMessage.AppendLine($"💰 *TOTAL:* ₲ {order.Total:N0}");
@@ -94,12 +100,19 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
         // 2. Mensaje de confirmación para el WhatsApp del Cliente (si dejó su número)
         var clientMessage = new StringBuilder();
         clientMessage.AppendLine($"🌿 *¡Hola {order.CustomerName}! Gracias por tu compra en {companyName}.*");
-        clientMessage.AppendLine($"Hemos registrado tu pedido *#{order.Id}* exitosamente.");
+        clientMessage.AppendLine($"━━━━━━━━━━━━━━━━━━━━");
+        clientMessage.AppendLine($"🔖 *Orden:* #{order.Id}");
+        clientMessage.AppendLine($"👤 *Cliente:* {order.CustomerName}");
+        if (!string.IsNullOrWhiteSpace(order.CustomerPhone))
+            clientMessage.AppendLine($"📱 *Teléfono:* {order.CustomerPhone}");
+        if (!string.IsNullOrWhiteSpace(city))
+            clientMessage.AppendLine($"📍 *Ciudad:* {city}");
         clientMessage.AppendLine();
-        clientMessage.AppendLine($"📦 *DETALLE DE TU PEDIDO:*");
+        clientMessage.AppendLine($"📦 *DETALLES DE TU PEDIDO:*");
+        clientMessage.AppendLine($"━━━━━━━━━━━━━━━━━━━━");
         clientMessage.AppendLine(itemsSummary);
         clientMessage.AppendLine($"━━━━━━━━━━━━━━━━━━━━");
-        clientMessage.AppendLine($"💰 *TOTAL:* ₲ {order.Total:N0}");
+        clientMessage.AppendLine($"💰 *TOTAL A ABONAR:* ₲ {order.Total:N0}");
         clientMessage.AppendLine();
         clientMessage.AppendLine($"En breve nos pondremos en contacto con vos para coordinar los detalles de pago y entrega.");
         clientMessage.AppendLine($"¡Muchas gracias por elegirnos!");
@@ -233,7 +246,7 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
                 }
                 catch {}
 
-                var summary = string.Join("\n", items.Select(i => $"   • {i.Quantity}x {i.ProductName} (₲ {i.Subtotal:N0})"));
+                var summary = string.Join("\n\n", items.Select(i => $"• *{i.Quantity}x {i.ProductName}*\n  💵 Precio: ₲ {i.Price:N0} c/u | Subtotal: ₲ {i.Subtotal:N0}"));
                 var ok = await SendOrderNotificationAsync(ord, summary);
                 if (ok)
                 {
@@ -351,5 +364,19 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
         }
 
         return digits;
+    }
+
+    private static string? ExtractCityFromNotes(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes)) return null;
+        var match = System.Text.RegularExpressions.Regex.Match(notes, @"(?i)Ciudad:\s*([^\r\n]+)");
+        return match.Success ? match.Groups[1].Value.Trim() : null;
+    }
+
+    private static string? CleanNotesWithoutCity(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes)) return null;
+        var cleaned = System.Text.RegularExpressions.Regex.Replace(notes, @"(?i)Ciudad:\s*[^\r\n]+", "").Trim();
+        return string.IsNullOrWhiteSpace(cleaned) ? null : cleaned;
     }
 }
