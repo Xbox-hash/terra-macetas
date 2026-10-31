@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
@@ -17,12 +18,13 @@ public class LinesController : ControllerBase
         _context = context;
     }
 
+    [AllowAnonymous] // público: lo usa la tienda
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProductLineDto>>> GetAll([FromQuery] bool? onlyActive = null)
     {
         var query = _context.ProductLines.AsNoTracking().AsQueryable();
 
-        if (onlyActive == true)
+        if (onlyActive == true || User.Identity?.IsAuthenticated != true) // visitantes: solo activos
         {
             query = query.Where(l => l.Active);
         }
@@ -46,6 +48,7 @@ public class LinesController : ControllerBase
         return Ok(dtos);
     }
 
+    [AllowAnonymous] // público: lo usa la tienda
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductLineDto>> GetById(string id)
     {

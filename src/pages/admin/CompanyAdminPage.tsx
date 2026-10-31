@@ -422,8 +422,10 @@ export const CompanyAdminPage: React.FC = () => {
                     </label>
                     <input
                       type="password"
+                      autoComplete="new-password"
                       value={form.whatsappApiKey || ''}
                       onChange={(e) => setForm({ ...form, whatsappApiKey: e.target.value })}
+                      placeholder={form.whatsappApiKeyConfigured ? '•••••••• guardada (dejar vacío para mantenerla)' : 'Sin configurar'}
                       className="w-full px-3.5 py-2.5 bg-[#141A15] border border-[#2B372C] rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>

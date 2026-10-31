@@ -1,5 +1,5 @@
 import { ProductColor } from '../types';
-import { API_BASE } from './apiConfig';
+import { API_BASE, apiFetch } from './apiConfig';
 import { DEFAULT_POT_PALETTE } from '../data/potColors';
 
 const API_BASE_URL = `${API_BASE}/colors`;
@@ -31,7 +31,7 @@ const saveLocalColors = (colors: ProductColor[]) => {
 export const colorService = {
   async getAll(): Promise<ProductColor[]> {
     try {
-      const res = await fetch(API_BASE_URL);
+      const res = await apiFetch(API_BASE_URL);
       if (res.ok) {
         const data: ProductColor[] = await res.json();
         if (Array.isArray(data)) {
@@ -71,7 +71,7 @@ export const colorService = {
     };
 
     try {
-      const res = await fetch(API_BASE_URL, {
+      const res = await apiFetch(API_BASE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newColor),
@@ -99,7 +99,7 @@ export const colorService = {
 
   async update(id: string, updates: Partial<ProductColor>): Promise<ProductColor> {
     try {
-      const res = await fetch(`${API_BASE_URL}/${id}`, {
+      const res = await apiFetch(`${API_BASE_URL}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -132,7 +132,7 @@ export const colorService = {
 
   async delete(id: string): Promise<void> {
     try {
-      const res = await fetch(`${API_BASE_URL}/${id}`, {
+      const res = await apiFetch(`${API_BASE_URL}/${id}`, {
         method: 'DELETE',
       });
       if (res.ok || res.status === 404) {
@@ -151,7 +151,7 @@ export const colorService = {
   async resetToDefaults(): Promise<ProductColor[]> {
     try {
       for (const col of DEFAULT_POT_PALETTE) {
-        await fetch(API_BASE_URL, {
+        await apiFetch(API_BASE_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(col),

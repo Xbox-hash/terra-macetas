@@ -1,5 +1,5 @@
 import { CartItem, Order } from '../types';
-import { API_BASE } from './apiConfig';
+import { API_BASE, apiFetch } from './apiConfig';
 
 const API_BASE_URL = API_BASE;
 
@@ -20,7 +20,7 @@ export const orderService = {
   async getAll(status?: string): Promise<Order[]> {
     try {
       const url = status ? `${API_BASE_URL}/orders?status=${status}` : `${API_BASE_URL}/orders`;
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (res.ok) return await res.json();
     } catch (e) {
       console.warn('Fallo petición API orders', e);
@@ -45,7 +45,7 @@ export const orderService = {
       subtotal: item.subtotal,
     }));
 
-    const res = await fetch(`${API_BASE_URL}/orders`, {
+    const res = await apiFetch(`${API_BASE_URL}/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -64,7 +64,7 @@ export const orderService = {
   },
 
   async closeOrder(orderId: string, userName?: string): Promise<Order> {
-    const res = await fetch(`${API_BASE_URL}/orders/${orderId}/close`, {
+    const res = await apiFetch(`${API_BASE_URL}/orders/${orderId}/close`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user: userName || 'Administrador' }),
@@ -74,7 +74,7 @@ export const orderService = {
   },
 
   async reopenOrder(orderId: string, userName?: string): Promise<Order> {
-    const res = await fetch(`${API_BASE_URL}/orders/${orderId}/reopen`, {
+    const res = await apiFetch(`${API_BASE_URL}/orders/${orderId}/reopen`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user: userName || 'Administrador' }),
@@ -84,7 +84,7 @@ export const orderService = {
   },
 
   async cancelOrder(orderId: string, userName?: string): Promise<Order> {
-    const res = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
+    const res = await apiFetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user: userName || 'Administrador' }),
@@ -94,7 +94,7 @@ export const orderService = {
   },
 
   async deleteOrder(orderId: string): Promise<void> {
-    const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+    const res = await apiFetch(`${API_BASE_URL}/orders/${orderId}`, {
       method: 'DELETE',
     });
     if (!res.ok) throw new Error('Error al eliminar pedido');
@@ -104,7 +104,7 @@ export const orderService = {
 export const dashboardService = {
   async getStats(): Promise<DashboardStats> {
     try {
-      const res = await fetch(`${API_BASE_URL}/dashboard/stats`);
+      const res = await apiFetch(`${API_BASE_URL}/dashboard/stats`);
       if (res.ok) return await res.json();
     } catch (e) {
       console.warn('Fallo petición stats', e);
@@ -125,7 +125,7 @@ export const dashboardService = {
 
   async recordVisit(pagePath: string): Promise<void> {
     try {
-      await fetch(`${API_BASE_URL}/dashboard/record-visit`, {
+      await apiFetch(`${API_BASE_URL}/dashboard/record-visit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pagePath }),

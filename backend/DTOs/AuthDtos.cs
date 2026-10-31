@@ -39,3 +39,11 @@ public class UpdateAdminUserDto
     public string[]? Permissions { get; set; }
     public bool Active { get; set; }
 }
+
+/// <summary>Respuesta del login: el token JWT que el panel /admin envía en cada llamada.</summary>
+public class LoginResponseDto
+{
+    public string Token { get; set; } = string.Empty;
+    public DateTime ExpiresAt { get; set; }
+    public AdminUserDto User { get; set; } = new();
+}

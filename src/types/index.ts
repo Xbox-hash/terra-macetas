@@ -108,7 +108,10 @@ export interface StoreConfig {
   businessHours: string;
   whatsappGatewayEnabled?: boolean;
   whatsappApiUrl?: string;
+  /** Solo de escritura: el servidor nunca la devuelve. */
   whatsappApiKey?: string;
+  /** true si ya hay una API key guardada en el servidor. */
+  whatsappApiKeyConfigured?: boolean;
   whatsappInstanceName?: string;
   heroImageUrl?: string;
   heroFloatingImageUrl?: string;

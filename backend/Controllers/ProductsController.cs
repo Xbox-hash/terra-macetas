@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
@@ -18,6 +19,7 @@ public class ProductsController : ControllerBase
         _context = context;
     }
 
+    [AllowAnonymous] // público: lo usa la tienda
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetAll(
         [FromQuery] string? lineId = null,
@@ -32,7 +34,8 @@ public class ProductsController : ControllerBase
             query = query.Where(p => p.LineId == lineId);
         }
 
-        if (onlyActive == true)
+        // Los visitantes de la tienda solo ven productos activos; el panel /admin ve todos
+        if (onlyActive == true || User.Identity?.IsAuthenticated != true)
         {
             query = query.Where(p => p.Active);
         }
@@ -57,6 +60,7 @@ public class ProductsController : ControllerBase
         return Ok(dtos);
     }
 
+    [AllowAnonymous] // público: lo usa la tienda
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductDto>> GetById(string id)
     {
@@ -66,6 +70,7 @@ public class ProductsController : ControllerBase
         return Ok(MapToDto(product));
     }
 
+    [AllowAnonymous] // público: lo usa la tienda
     [HttpGet("related/{lineId}")]
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetRelated(string lineId, [FromQuery] string? excludeId = null, [FromQuery] int limit = 4)
     {

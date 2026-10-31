@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
@@ -16,12 +17,13 @@ public class ColorsController : ControllerBase
         _context = context;
     }
 
+    [AllowAnonymous] // público: lo usa la tienda
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PotColor>>> GetAll([FromQuery] bool? onlyActive = null)
     {
         var query = _context.PotColors.AsNoTracking().AsQueryable();
 
-        if (onlyActive == true)
+        if (onlyActive == true || User.Identity?.IsAuthenticated != true) // visitantes: solo activos
         {
             query = query.Where(c => c.Active);
         }
@@ -30,6 +32,7 @@ public class ColorsController : ControllerBase
         return Ok(colors);
     }
 
+    [AllowAnonymous] // público: lo usa la tienda
     [HttpGet("{id}")]
     public async Task<ActionResult<PotColor>> GetById(string id)
     {

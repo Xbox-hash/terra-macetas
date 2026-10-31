@@ -1,8 +1,13 @@
 import { User, AuthState } from '../types';
-import { API_BASE } from './apiConfig';
+import { API_BASE, apiFetch, AUTH_STORAGE_KEY } from './apiConfig';
 
 const API_BASE_URL = `${API_BASE}/auth`;
-const AUTH_STORAGE_KEY = 'terra_auth_state';
+
+interface LoginResponse {
+  token: string;
+  expiresAt: string;
+  user: User;
+}
 
 export interface CreateUserData {
   name: string;
@@ -43,7 +48,7 @@ export const authService = {
 
   async login(email: string, password: string, _remember = false): Promise<User> {
     try {
-      const res = await fetch(`${API_BASE_URL}/login`, {
+      const res = await apiFetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -54,10 +59,11 @@ export const authService = {
         throw new Error(err.message || 'Credenciales incorrectas');
       }
 
-      const user: User = await res.json();
+      // El backend devuelve un JWT firmado; apiFetch lo envía en cada llamada de /admin
+      const { token, user }: LoginResponse = await res.json();
       const state: AuthState = {
         user,
-        token: 'session_token_' + user.id,
+        token,
         isAuthenticated: true,
       };
 
@@ -77,7 +83,7 @@ export const authService = {
 
   async getUsers(): Promise<User[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/users`);
+      const res = await apiFetch(`${API_BASE_URL}/users`);
       if (res.ok) return await res.json();
     } catch (e) {
       console.warn('Fallo al obtener usuarios', e);
@@ -86,7 +92,7 @@ export const authService = {
   },
 
   async createUser(data: CreateUserData): Promise<User> {
-    const res = await fetch(`${API_BASE_URL}/users`, {
+    const res = await apiFetch(`${API_BASE_URL}/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -99,7 +105,7 @@ export const authService = {
   },
 
   async updateUser(id: string, data: UpdateUserData): Promise<User> {
-    const res = await fetch(`${API_BASE_URL}/users/${id}`, {
+    const res = await apiFetch(`${API_BASE_URL}/users/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -112,7 +118,7 @@ export const authService = {
   },
 
   async deleteUser(id: string): Promise<void> {
-    const res = await fetch(`${API_BASE_URL}/users/${id}`, {
+    const res = await apiFetch(`${API_BASE_URL}/users/${id}`, {
       method: 'DELETE',
     });
     if (!res.ok) {

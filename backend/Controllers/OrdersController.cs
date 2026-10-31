@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
@@ -13,18 +14,21 @@ namespace TerraMacetas.Api.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly AppDbContext _context;
-    private readonly IWhatsAppNotificationService _whatsappService;
+    private readonly INotificationQueue _queue;
     private readonly ILogger<OrdersController> _logger;
 
     public OrdersController(
         AppDbContext context,
-        IWhatsAppNotificationService whatsappService,
+        INotificationQueue queue,
         ILogger<OrdersController> logger)
     {
         _context = context;
-        _whatsappService = whatsappService;
+        _queue = queue;
         _logger = logger;
     }
+
+    // Quién hizo la acción: el usuario del token, no un texto que manda el navegador.
+    private string CurrentUserName => User.Identity?.Name ?? "Administrador";
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<OrderDto>>> GetAll([FromQuery] string? status = null)
@@ -63,8 +67,10 @@ public class OrdersController : ControllerBase
     // 🛡️ Memoria para Rate Limiting de Pedidos (Máximo 5 pedidos por IP por minuto)
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, List<DateTime>> _orderRateLimits = new();
 
+    // Público: cualquier visitante de la tienda puede hacer un pedido.
+    [AllowAnonymous]
     [HttpPost]
-    public async Task<ActionResult<OrderDto>> Create([FromBody] CreateOrderDto dto)
+    public async Task<ActionResult<OrderDto>> Create([FromBody] CreateOrderDto dto, CancellationToken ct)
     {
         // 1. 🛡️ Honeypot Anti-Bot (Si un bot completó el campo trampa 'website', descartamos silenciosamente)
         if (!string.IsNullOrWhiteSpace(dto.Website))
@@ -95,6 +101,26 @@ public class OrdersController : ControllerBase
             if (match.Success) customerCity = match.Groups[1].Value.Trim();
         }
 
+        // 3. 💰 Precios y total calculados en el servidor con los datos de la base.
+        // El precio, subtotal y total que manda el navegador se ignoran (se pueden manipular).
+        var productIds = (dto.Items ?? new List<OrderItemDto>()).Select(i => i.ProductId).Distinct().ToList();
+        var products = await _context.Products
+            .AsNoTracking()
+            .Where(p => productIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, ct);
+
+        var pricing = OrderPricing.Calculate(dto.Items, products);
+        if (!pricing.IsSuccess)
+        {
+            return BadRequest(new { message = pricing.Error });
+        }
+
+        if (dto.Total != pricing.Value!.Total)
+        {
+            _logger.LogWarning("Total del navegador ({ClientTotal}) distinto del calculado ({ServerTotal}). Se usa el del servidor.",
+                dto.Total, pricing.Value.Total);
+        }
+
         var order = new Order
         {
             Id = $"ORD-{Guid.NewGuid().ToString("N")[..8].ToUpper()}",
@@ -103,8 +129,8 @@ public class OrdersController : ControllerBase
             CustomerEmail = dto.CustomerEmail?.Trim(),
             CustomerCity = customerCity,
             Notes = dto.Notes?.Trim(),
-            Total = dto.Total,
-            ItemsJson = JsonSerializer.Serialize(dto.Items ?? new List<OrderItemDto>()),
+            Total = pricing.Value.Total,
+            ItemsJson = JsonSerializer.Serialize(pricing.Value.Items),
             Status = "Pendiente",
             PaymentStatus = "Pendiente",
             Channel = string.IsNullOrWhiteSpace(dto.Channel) ? "WhatsApp" : dto.Channel,
@@ -112,23 +138,14 @@ public class OrdersController : ControllerBase
         };
 
         _context.Orders.Add(order);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
 
-        // 🚀 Disparar el envío automático por WhatsApp en segundo plano (Evolution API)
-        _ = Task.Run(async () =>
+        // 🚀 El aviso por WhatsApp se procesa en segundo plano (NotificationWorker), fuera del request.
+        // Si no entra en la cola, el pedido queda con WhatsAppNotified = false y se reenvía después.
+        if (!_queue.EnqueueOrderCreated(order.Id))
         {
-            try
-            {
-                var summary = string.Join("\n\n", (dto.Items ?? new List<OrderItemDto>())
-                    .Select(i => $"• *{i.Quantity}x {i.ProductName}*\n  💵 Precio: ₲ {i.Price:N0} c/u | Subtotal: ₲ {i.Subtotal:N0}"));
-
-                await _whatsappService.SendOrderNotificationAsync(order, summary);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fallo al enviar notificación automática de WhatsApp.");
-            }
-        });
+            _logger.LogWarning("Cola de notificaciones llena; el pedido #{OrderId} se notificará en el próximo reenvío.", order.Id);
+        }
 
         return CreatedAtAction(nameof(GetById), new { id = order.Id }, MapToDto(order));
     }
@@ -141,7 +158,7 @@ public class OrdersController : ControllerBase
 
         order.Status = "Cerrado";
         order.ClosedAt = DateTime.UtcNow;
-        order.ClosedBy = !string.IsNullOrWhiteSpace(req?.User) ? req.User.Trim() : "Administrador";
+        order.ClosedBy = CurrentUserName;
         order.CancelledAt = null;
         await _context.SaveChangesAsync();
 
@@ -156,7 +173,7 @@ public class OrdersController : ControllerBase
 
         order.Status = "Cancelado";
         order.CancelledAt = DateTime.UtcNow;
-        order.CancelledBy = !string.IsNullOrWhiteSpace(req?.User) ? req.User.Trim() : "Administrador";
+        order.CancelledBy = CurrentUserName;
         order.ClosedAt = null;
         await _context.SaveChangesAsync();
 
@@ -170,7 +187,7 @@ public class OrdersController : ControllerBase
         if (order == null) return NotFound(new { message = "Pedido no encontrado" });
 
         order.Status = "Pendiente";
-        order.ReopenedBy = !string.IsNullOrWhiteSpace(req?.User) ? req.User.Trim() : "Administrador";
+        order.ReopenedBy = CurrentUserName;
         order.ClosedAt = null;
         order.CancelledAt = null;
         await _context.SaveChangesAsync();

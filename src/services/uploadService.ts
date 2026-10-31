@@ -1,4 +1,4 @@
-import { API_BASE } from './apiConfig';
+import { API_BASE, apiFetch } from './apiConfig';
 
 const UPLOAD_API_URL = `${API_BASE}/upload`;
 
@@ -11,7 +11,7 @@ export const uploadService = {
     formData.append('file', file);
     formData.append('folder', folder);
 
-    const res = await fetch(UPLOAD_API_URL, {
+    const res = await apiFetch(UPLOAD_API_URL, {
       method: 'POST',
       body: formData,
     });
@@ -35,7 +35,7 @@ export const uploadService = {
       return base64;
     }
 
-    const res = await fetch(`${UPLOAD_API_URL}/base64`, {
+    const res = await apiFetch(`${UPLOAD_API_URL}/base64`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
@@ -102,6 +103,7 @@ public class DashboardController : ControllerBase
         });
     }
 
+    [AllowAnonymous] // público: lo usa la tienda
     [HttpPost("record-visit")]
     public async Task<IActionResult> RecordVisit([FromBody] RecordVisitDto dto)
     {

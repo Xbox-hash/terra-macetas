@@ -55,7 +55,8 @@ public class CompanyConfig
     public string? WhatsappApiUrl { get; set; } = "http://localhost:8080";
 
     [MaxLength(250)]
-    public string? WhatsappApiKey { get; set; } = "TerraSecretApiKey2026_WhatsAppGateway!";
+    // Sin valor por defecto: si está vacía se usa WhatsAppGateway__ApiKey del entorno
+    public string? WhatsappApiKey { get; set; }
 
     [MaxLength(100)]
     public string? WhatsappInstanceName { get; set; } = "terra_bot";
