@@ -175,11 +175,11 @@ public class ApiSecurityTests : IClassFixture<TerraApiFactory>, IAsyncLifetime
         Assert.Equal(120_000m, order.GetProperty("total").GetDecimal()); // 3 x 40.000
     }
 
-    // Simula una visita que llega por Caddy desde la IP indicada.
+    // Simula una visita que llega por Cloudflare desde la IP indicada.
     private Task<HttpResponseMessage> PostFromIp(string ip, string url, object body)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(body) };
-        request.Headers.Add("X-Forwarded-For", ip);
+        request.Headers.Add("CF-Connecting-IP", ip);
         return _client.SendAsync(request);
     }
 

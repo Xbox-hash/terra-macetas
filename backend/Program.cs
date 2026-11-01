@@ -107,9 +107,13 @@ builder.Services.AddCors(options =>
     });
 });
 
+// IP real del visitante. El tráfico llega por Cloudflare -> túnel (cloudflared) -> Caddy -> API,
+// y en esa cadena X-Forwarded-For no identifica al visitante. Cloudflare siempre manda su IP
+// en CF-Connecting-IP. Si el encabezado no viene (llamadas directas, tests), se usa la IP de la conexión.
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
 {
     o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.ForwardedForHeaderName = "CF-Connecting-IP";
     o.KnownNetworks.Clear();
     o.KnownProxies.Clear();
 });
