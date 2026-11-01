@@ -36,51 +36,90 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
+            # Qué desplegar:
+            #  - push a master/main  -> producción (+ servicios compartidos: SQL Server y Evolution)
+            #  - push a test         -> solo el ambiente de test (terra_api_test / terra_front_test)
+            #  - ejecución manual    -> lo elegido en "target" (all = ambos)
+            TARGET="${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'test' && 'test' || 'production') }}"
+
+            REPO_URL="https://github.com/Xbox-hash/terra-macetas.git"
+            PROD_DIR="/opt/terra-macetas"
+            TEST_DIR="/opt/terra-macetas-test"
+            # Mismo nombre de proyecto para los dos: así compose maneja los contenedores
+            # y volúmenes que ya existen (terra-macetas_terra_uploads_test, etc.)
+            PROJECT="terra-macetas"
+            # Secretos: un único .env que vive solo en el servidor (nunca en git)
+            ENV_ARGS=""
+            if [ -f "$PROD_DIR/.env" ]; then ENV_ARGS="--env-file $PROD_DIR/.env"; fi
+
             echo "=========================================================="
-            echo "🚀 Iniciando despliegue de Donna Botánica en Contabo VPS"
+            echo "🚀 Despliegue de Donna Botánica en Contabo VPS (target: $TARGET)"
             echo "=========================================================="
 
-            # 1. Asegurar directorio de la aplicación sin bloquear por sudo
-            if [ ! -d "/opt/terra-macetas" ]; then
-              echo "${{ secrets.VPS_PASSWORD }}" | sudo -S mkdir -p /opt/terra-macetas
-              echo "${{ secrets.VPS_PASSWORD }}" | sudo -S chown -R $(whoami):$(whoami) /opt/terra-macetas
-            fi
+            # Clona o actualiza una carpeta del servidor a la última versión de una rama
+            sync_repo() {
+              local dir="$1" branch="$2"
+              if [ ! -d "$dir" ]; then
+                echo "${{ secrets.VPS_PASSWORD }}" | sudo -S mkdir -p "$dir"
+                echo "${{ secrets.VPS_PASSWORD }}" | sudo -S chown -R $(whoami):$(whoami) "$dir"
+              fi
+              if [ ! -d "$dir/.git" ]; then
+                echo "📦 Clonando $branch en $dir..."
+                git clone "$REPO_URL" "$dir"
+              fi
+              cd "$dir"
+              git fetch origin "$branch"
+              git reset --hard "origin/$branch"
+              echo "📌 $dir en $branch @ $(git rev-parse --short HEAD)"
+            }
 
-            # 2. Descargar últimos cambios del repositorio
-            if [ ! -d "/opt/terra-macetas/.git" ]; then
-              echo "📦 Clonando repositorio por primera vez..."
-              git clone https://github.com/Xbox-hash/terra-macetas.git /opt/terra-macetas
-            else
-              echo "🔄 Actualizando código con git pull..."
-              cd /opt/terra-macetas
-              git fetch --all
-              git reset --hard origin/master
-            fi
+            # ---------- PRODUCCIÓN (rama master) ----------
+            if [ "$TARGET" = "production" ] || [ "$TARGET" = "all" ]; then
+              sync_repo "$PROD_DIR" master
+              cd "$PROD_DIR"
 
-            cd /opt/terra-macetas
-
-            # 3. Construir y levantar contenedores según ambiente
-            echo "🐳 Levantando contenedores Docker..."
-            docker rm -f terra_front_prod terra_front_test 2>/dev/null || true
-            for net in $(docker network ls --filter name=terra-macetas -q 2>/dev/null); do
-              for c in $(docker network inspect $net -f '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null); do
-                docker network disconnect -f $net $c 2>/dev/null || true
+              echo "🐳 Levantando producción y servicios compartidos..."
+              docker rm -f terra_front_prod 2>/dev/null || true
+              for net in $(docker network ls --filter name=terra-macetas -q 2>/dev/null); do
+                for c in $(docker network inspect $net -f '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null); do
+                  docker network disconnect -f $net $c 2>/dev/null || true
+                done
+                docker network rm $net 2>/dev/null || true
               done
-              docker network rm $net 2>/dev/null || true
-            done
-            docker network disconnect -f terra-macetas_terra_network terra_evolution_db 2>/dev/null || true
-            docker compose -f docker-compose.server.yml up -d --build --remove-orphans
+              docker network disconnect -f terra-macetas_terra_network terra_evolution_db 2>/dev/null || true
+              # Solo servicios de producción: el ambiente de test se despliega desde su propia rama
+              docker compose -p "$PROJECT" $ENV_ARGS -f docker-compose.server.yml up -d --build --remove-orphans                 terra_sqlserver terra_evolution_db terra_evolution_api terra_api_prod terra_front_prod
+            fi
 
-            # 4. Conectar el contenedor Caddy a terra_network para resolución interna
+            # ---------- TEST (rama test) ----------
+            if [ "$TARGET" = "test" ] || [ "$TARGET" = "all" ]; then
+              sync_repo "$TEST_DIR" test
+              cd "$TEST_DIR"
+
+              echo "🧪 Levantando ambiente de test..."
+              docker rm -f terra_front_test 2>/dev/null || true
+              # --no-deps: no toca SQL Server, Evolution ni producción
+              docker compose -p "$PROJECT" $ENV_ARGS -f docker-compose.server.yml up -d --build --no-deps                 terra_api_test terra_front_test
+            fi
+
+            # Conectar el contenedor Caddy a terra_network para resolución interna
             docker network connect terra_network nelson-caddy 2>/dev/null || true
 
-            # 5. Integrar con Caddy asegurando conexión directa a contenedores
+            # Caddy, túnel y cron son de infraestructura compartida: solo en despliegues de producción
+            if [ "$TARGET" = "test" ]; then
+              echo "=========================================================="
+              echo "🎉 Test desplegado: https://test.donnabotanica.com.py"
+              echo "=========================================================="
+              exit 0
+            fi
+
+            # Integrar con Caddy asegurando conexión directa a contenedores
             if [ -f "/opt/app-nelson/Caddyfile" ]; then
               echo "🌐 Actualizando configuración de Caddy para Donna Botánica..."
               cp /opt/app-nelson/Caddyfile /opt/app-nelson/Caddyfile.bak
               sed -i '/DONNA BOTANICA/,$d' /opt/app-nelson/Caddyfile
               sed -i '/donnabotanica/,$d' /opt/app-nelson/Caddyfile
-              cat /opt/terra-macetas/Caddyfile.snippet >> /opt/app-nelson/Caddyfile
+              cat "$PROD_DIR/Caddyfile.snippet" >> /opt/app-nelson/Caddyfile
               docker exec -i nelson-caddy sh -c "cat > /etc/caddy/Caddyfile" < /opt/app-nelson/Caddyfile
               docker exec nelson-caddy caddy reload --config /etc/caddy/Caddyfile || true
               echo "✅ Caddy actualizado y recargado con éxito."
@@ -88,10 +127,16 @@ jobs:
 
             # 6. Asegurar contenedor de Cloudflare Tunnel activo
             echo "🚇 Verificando Cloudflare Tunnel..."
-            docker rm -f cloudflared 2>/dev/null || true
-            docker run -d --name cloudflared --restart always --network host \
-              cloudflare/cloudflared:latest tunnel --no-autoupdate run --token eyJhIjoiMDAzNTg4NGEzN2Q4MGM4YzA5NjgzMjFiNGUyZWIzMWMiLCJ0IjoiZTIxMDY2OTMtMzczMS00MTNjLWFjNjEtNWFjOTgxYmVhMjliIiwicyI6Ik9EYzROMlZoTkdZdE1HTXlNeTAwWTJObExXSXpOMll0WkRObVl6RTNObUl6T0RjdyJ9
-            echo "✅ Cloudflare Tunnel conectado con éxito."
+            # El token vive en el secret CLOUDFLARE_TUNNEL_TOKEN de GitHub, no en el repo.
+            # Si el secret no está cargado, se deja el túnel que ya corre (no se tira el sitio).
+            CF_TUNNEL_TOKEN="${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
+            if [ -n "$CF_TUNNEL_TOKEN" ]; then
+              docker rm -f cloudflared 2>/dev/null || true
+              docker run -d --name cloudflared --restart always --network host                 -e TUNNEL_TOKEN="$CF_TUNNEL_TOKEN"                 cloudflare/cloudflared:latest tunnel --no-autoupdate run
+              echo "✅ Cloudflare Tunnel conectado con éxito."
+            else
+              echo "⚠️ Falta el secret CLOUDFLARE_TUNNEL_TOKEN: se mantiene el contenedor cloudflared actual."
+            fi
 
             # 7. Prevenir expiración del certificado SSL interno de Caddy (rotación automática)
             echo "⏰ Configurando renovación automática para certificados SSL de Caddy..."

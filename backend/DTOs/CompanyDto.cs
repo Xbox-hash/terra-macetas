@@ -17,7 +17,10 @@ public class CompanyConfigDto
     public string BusinessHours { get; set; } = string.Empty;
     public bool WhatsappGatewayEnabled { get; set; } = true;
     public string? WhatsappApiUrl { get; set; } = "http://localhost:8080";
-    public string? WhatsappApiKey { get; set; } = "TerraSecretApiKey2026_WhatsAppGateway!";
+    /// <summary>Solo de escritura: el servidor nunca la devuelve. Vacía al guardar = se mantiene la actual.</summary>
+    public string? WhatsappApiKey { get; set; }
+    /// <summary>Indica al panel si ya hay una API key guardada (sin mostrarla).</summary>
+    public bool WhatsappApiKeyConfigured { get; set; }
     public string? WhatsappInstanceName { get; set; } = "terra_bot";
     public string? HeroImageUrl { get; set; }
     public string? HeroFloatingImageUrl { get; set; }

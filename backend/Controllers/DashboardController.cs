@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
@@ -57,12 +58,15 @@ public class DashboardController : ControllerBase
             try { items = JsonSerializer.Deserialize<List<OrderItemDto>>(o.ItemsJson) ?? new(); }
             catch { items = new(); }
 
+            var city = !string.IsNullOrWhiteSpace(o.CustomerCity) ? o.CustomerCity : ExtractCityFromNotes(o.Notes);
+
             return new OrderDto
             {
                 Id = o.Id,
                 CustomerName = o.CustomerName,
                 CustomerPhone = o.CustomerPhone,
                 CustomerEmail = o.CustomerEmail,
+                CustomerCity = city,
                 Notes = o.Notes,
                 Total = o.Total,
                 Items = items,
@@ -99,6 +103,7 @@ public class DashboardController : ControllerBase
         });
     }
 
+    [AllowAnonymous] // público: lo usa la tienda
     [HttpPost("record-visit")]
     public async Task<IActionResult> RecordVisit([FromBody] RecordVisitDto dto)
     {
@@ -112,5 +117,12 @@ public class DashboardController : ControllerBase
         _context.SiteVisits.Add(visit);
         await _context.SaveChangesAsync();
         return Ok(new { success = true });
+    }
+
+    private static string? ExtractCityFromNotes(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes)) return null;
+        var match = System.Text.RegularExpressions.Regex.Match(notes, @"(?i)Ciudad:\s*([^\r\n]+)");
+        return match.Success ? match.Groups[1].Value.Trim() : null;
     }
 }

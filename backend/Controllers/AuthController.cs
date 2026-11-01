@@ -1,84 +1,137 @@
-using System.Security.Cryptography;
-using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using TerraMacetas.Api.Data;
 using TerraMacetas.Api.DTOs;
 using TerraMacetas.Api.Models;
+using TerraMacetas.Api.Services;
 
 namespace TerraMacetas.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = "ManageUsers")]
 public class AuthController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IPasswordService _passwords;
+    private readonly ITokenService _tokens;
+    private readonly IConfiguration _configuration;
+    private readonly IWebHostEnvironment _env;
+    private readonly ILogger<AuthController> _logger;
+    private readonly IMemoryCache _cache;
 
-    public AuthController(AppDbContext context)
+    public AuthController(
+        AppDbContext context,
+        IPasswordService passwords,
+        ITokenService tokens,
+        IConfiguration configuration,
+        IWebHostEnvironment env,
+        ILogger<AuthController> logger,
+        IMemoryCache cache)
     {
         _context = context;
+        _passwords = passwords;
+        _tokens = tokens;
+        _configuration = configuration;
+        _env = env;
+        _logger = logger;
+        _cache = cache;
     }
 
-    // 🛡️ Memoria para Bloqueo de Fuerza Bruta (Máximo 5 intentos fallidos, bloqueo de 15 min)
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (int FailedAttempts, DateTime LockoutUntil)> _loginAttempts = new();
+    // Bloqueo de fuerza bruta: 5 intentos fallidos (misma IP + mismo usuario) bloquean 15 min.
+    // Se guarda en IMemoryCache, que borra solo las entradas vencidas.
+    private const int MaxFailedAttempts = 5;
+    private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
 
+    private sealed class FailedLogins
+    {
+        public int Count;
+        public DateTime LockoutUntil;
+    }
+
+    [AllowAnonymous]
+    [EnableRateLimiting("login")]
     [HttpPost("login")]
-    public async Task<ActionResult<AdminUserDto>> Login([FromBody] LoginRequestDto request)
+    public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginRequestDto request)
     {
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var identifier = (request.Email ?? string.Empty).Trim().ToLower();
-        var key = $"{clientIp}_{identifier}";
+        var key = $"login-fail:{clientIp}_{identifier}";
         var now = DateTime.UtcNow;
 
         // Verificar si está bloqueado temporalmente
-        if (_loginAttempts.TryGetValue(key, out var attemptInfo))
+        if (_cache.TryGetValue<FailedLogins>(key, out var failed) && failed!.LockoutUntil > now)
         {
-            if (attemptInfo.LockoutUntil > now)
-            {
-                var remainingMinutes = Math.Ceiling((attemptInfo.LockoutUntil - now).TotalMinutes);
-                return StatusCode(429, new { message = $"Demasiados intentos fallidos. Acceso bloqueado temporalmente por {remainingMinutes} minuto(s) por seguridad." });
-            }
+            var remainingMinutes = Math.Ceiling((failed.LockoutUntil - now).TotalMinutes);
+            return StatusCode(429, new { message = $"Demasiados intentos fallidos. Acceso bloqueado temporalmente por {remainingMinutes} minuto(s) por seguridad." });
         }
 
         var user = await _context.AdminUsers.FirstOrDefaultAsync(u => 
             (u.Email.ToLower() == identifier || u.Name.ToLower() == identifier) && u.Active);
 
-        // Si no hay usuarios en la base de datos, crear el administrador principal inicial
+        // Si no hay usuarios, se crea el admin inicial con la contraseña de Admin__InitialPassword.
+        // Solo en Development se permite la contraseña de prueba "admin123".
         if (user == null && !await _context.AdminUsers.AnyAsync())
         {
+            var initialPassword = _configuration["Admin:InitialPassword"]
+                ?? (_env.IsDevelopment() ? "admin123" : null);
+
+            if (string.IsNullOrWhiteSpace(initialPassword))
+            {
+                _logger.LogWarning("No hay usuarios admin y Admin__InitialPassword no está configurada.");
+                return Unauthorized(new { message = "El panel no tiene usuarios. Configure Admin__InitialPassword en el servidor." });
+            }
+
             user = new AdminUser
             {
                 Id = "USR-ADMIN-1",
                 Name = "admin",
                 Email = "admin@terra.com",
-                PasswordHash = HashPassword("admin123"),
                 Role = "Admin",
                 Active = true,
                 CreatedAt = DateTime.UtcNow
             };
+            user.PasswordHash = _passwords.Hash(user, initialPassword);
             _context.AdminUsers.Add(user);
             await _context.SaveChangesAsync();
         }
 
-        if (user == null || !VerifyPassword(request.Password, user.PasswordHash))
+        var check = user == null ? PasswordCheck.Invalid : _passwords.Verify(user, request.Password);
+        if (user == null || check == PasswordCheck.Invalid)
         {
-            // Registrar intento fallido
-            _loginAttempts.AddOrUpdate(key, 
-                _ => (1, DateTime.MinValue), 
-                (_, old) =>
-                {
-                    var newCount = old.FailedAttempts + 1;
-                    var lockUntil = newCount >= 5 ? now.AddMinutes(15) : DateTime.MinValue;
-                    return (newCount, lockUntil);
-                });
+            // Registrar intento fallido (los intentos se cuentan en una ventana de 15 min)
+            var entry = _cache.GetOrCreate(key, e =>
+            {
+                e.AbsoluteExpirationRelativeToNow = LockoutDuration;
+                return new FailedLogins();
+            })!;
+
+            if (Interlocked.Increment(ref entry.Count) >= MaxFailedAttempts)
+            {
+                entry.LockoutUntil = now.Add(LockoutDuration);
+                _cache.Set(key, entry, LockoutDuration); // el bloqueo dura 15 min desde ahora
+            }
 
             return Unauthorized(new { message = "Usuario / correo o contraseña incorrectos." });
         }
 
         // Si el login fue exitoso, limpiar los intentos fallidos
-        _loginAttempts.TryRemove(key, out _);
+        _cache.Remove(key);
 
-        return Ok(MapToDto(user));
+        // Contraseña vieja (SHA256 sin salt): se vuelve a guardar con el formato seguro
+        if (check == PasswordCheck.ValidNeedsRehash)
+        {
+            user.PasswordHash = _passwords.Hash(user, request.Password);
+            await _context.SaveChangesAsync();
+        }
+
+        var dto = MapToDto(user);
+        var (token, expiresAt) = _tokens.CreateToken(user, dto.Permissions);
+
+        return Ok(new LoginResponseDto { Token = token, ExpiresAt = expiresAt, User = dto });
     }
 
     [HttpGet("users")]
@@ -114,7 +167,6 @@ public class AuthController : ControllerBase
             Id = $"USR-{Guid.NewGuid().ToString("N")[..8].ToUpper()}",
             Name = name,
             Email = !string.IsNullOrWhiteSpace(email) ? email : $"{name.ToLower().Replace(" ", "")}@terra.com",
-            PasswordHash = HashPassword(dto.Password),
             Role = dto.Role ?? "Admin",
             AvatarUrl = dto.AvatarUrl,
             Permissions = dto.Permissions != null && dto.Permissions.Length > 0 
@@ -123,6 +175,7 @@ public class AuthController : ControllerBase
             Active = dto.Active,
             CreatedAt = DateTime.UtcNow
         };
+        user.PasswordHash = _passwords.Hash(user, dto.Password);
 
         _context.AdminUsers.Add(user);
         await _context.SaveChangesAsync();
@@ -169,7 +222,7 @@ public class AuthController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(dto.NewPassword))
         {
-            user.PasswordHash = HashPassword(dto.NewPassword);
+            user.PasswordHash = _passwords.Hash(user, dto.NewPassword);
         }
 
         await _context.SaveChangesAsync();
@@ -230,17 +283,5 @@ public class AuthController : ControllerBase
             Active = u.Active,
             CreatedAt = u.CreatedAt
         };
-    }
-
-    private static string HashPassword(string password)
-    {
-        using var sha = SHA256.Create();
-        var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return Convert.ToBase64String(bytes);
-    }
-
-    private static bool VerifyPassword(string password, string hash)
-    {
-        return HashPassword(password) == hash;
     }
 }

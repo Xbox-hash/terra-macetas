@@ -27,12 +27,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, pass: string, remember = false) => {
-    const user = await authService.login(email, pass, remember);
-    setAuthState({
-      user,
-      token: 'mock_jwt_token',
-      isAuthenticated: true,
-    });
+    await authService.login(email, pass, remember);
+    // authService ya guardó el token real; se toma de ahí
+    setAuthState(authService.getCurrentState());
   };
 
   const logout = async () => {

@@ -1,7 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using TerraMacetas.Api.Data;
+using TerraMacetas.Api.Options;
 using TerraMacetas.Api.DTOs;
 using TerraMacetas.Api.Models;
 
@@ -11,63 +13,64 @@ public interface IWhatsAppNotificationService
 {
     Task<bool> SendOrderNotificationAsync(Order order, string itemsSummary);
     Task<int> ResendPendingOrdersAsync();
+    Task<WhatsAppSettings> ResolveSettingsAsync();
 }
+
+/// <summary>Configuración efectiva del gateway: la del panel admin (BD) tiene prioridad sobre la del entorno.</summary>
+public record WhatsAppSettings(bool Enabled, string BaseUrl, string? ApiKey, string InstanceName, string CompanyName, string CompanyPhone);
 
 public class EvolutionWhatsAppService : IWhatsAppNotificationService
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IConfiguration _configuration;
+    private readonly WhatsAppOptions _options;
     private readonly ILogger<EvolutionWhatsAppService> _logger;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public EvolutionWhatsAppService(
         IHttpClientFactory httpClientFactory,
-        IConfiguration configuration,
+        IOptions<WhatsAppOptions> options,
         ILogger<EvolutionWhatsAppService> logger,
-        IServiceProvider serviceProvider)
+        IServiceScopeFactory scopeFactory)
     {
         _httpClientFactory = httpClientFactory;
-        _configuration = configuration;
+        _options = options.Value;
         _logger = logger;
-        _serviceProvider = serviceProvider;
+        _scopeFactory = scopeFactory;
     }
+
+    public async Task<WhatsAppSettings> ResolveSettingsAsync()
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var config = await db.CompanyConfigs.AsNoTracking().FirstOrDefaultAsync();
+
+        var baseUrl = !string.IsNullOrWhiteSpace(config?.WhatsappApiUrl) && !config.WhatsappApiUrl.Contains("localhost")
+            ? config.WhatsappApiUrl
+            : _options.BaseUrl;
+
+        var instanceName = !string.IsNullOrWhiteSpace(config?.WhatsappInstanceName) && config.WhatsappInstanceName != "terra_bot"
+            ? config.WhatsappInstanceName
+            : _options.InstanceName;
+
+        var apiKey = !string.IsNullOrWhiteSpace(config?.WhatsappApiKey) ? config.WhatsappApiKey : _options.ApiKey;
+
+        return new WhatsAppSettings(
+            Enabled: config?.WhatsappGatewayEnabled ?? _options.Enabled,
+            BaseUrl: baseUrl.TrimEnd('/'),
+            ApiKey: apiKey,
+            InstanceName: instanceName,
+            CompanyName: config?.StoreName ?? "TERRA",
+            CompanyPhone: config?.WhatsappNumber ?? string.Empty);
+    }
+
+    public static string BuildItemsSummary(IEnumerable<OrderItemDto> items) =>
+        string.Join("\n\n", items.Select(i =>
+            $"• *{i.Quantity}x {i.ProductName}*\n  💵 Precio: ₲ {i.Price:N0} c/u | Subtotal: ₲ {i.Subtotal:N0}"));
 
     public async Task<bool> SendOrderNotificationAsync(Order order, string itemsSummary)
     {
-        var isEnabled = _configuration.GetValue<bool>("WhatsAppGateway:Enabled", true);
-        var baseUrl = _configuration.GetValue<string>("WhatsAppGateway:BaseUrl") ?? "http://localhost:8080";
-        var apiKey = _configuration.GetValue<string>("WhatsAppGateway:ApiKey") ?? "TerraSecretApiKey2026_WhatsAppGateway!";
-        var instanceName = _configuration.GetValue<string>("WhatsAppGateway:InstanceName") ?? "terra_bot";
-
-        // Obtener datos de la empresa y configuración dinámica de la base de datos
-        string companyName = "TERRA";
-        string companyPhone = "595981234567";
-
-        using (var scope = _serviceProvider.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var config = await db.CompanyConfigs.FirstOrDefaultAsync();
-            if (config != null)
-            {
-                companyName = config.StoreName;
-                companyPhone = config.WhatsappNumber;
-                isEnabled = config.WhatsappGatewayEnabled;
-                var envBaseUrl = _configuration.GetValue<string>("WhatsAppGateway:BaseUrl");
-                var envInstanceName = _configuration.GetValue<string>("WhatsAppGateway:InstanceName");
-
-                if (!string.IsNullOrWhiteSpace(config.WhatsappApiUrl) && !config.WhatsappApiUrl.Contains("localhost"))
-                    baseUrl = config.WhatsappApiUrl;
-                else if (!string.IsNullOrWhiteSpace(envBaseUrl))
-                    baseUrl = envBaseUrl;
-
-                if (!string.IsNullOrWhiteSpace(config.WhatsappApiKey)) apiKey = config.WhatsappApiKey;
-
-                if (!string.IsNullOrWhiteSpace(config.WhatsappInstanceName) && config.WhatsappInstanceName != "terra_bot")
-                    instanceName = config.WhatsappInstanceName;
-                else if (!string.IsNullOrWhiteSpace(envInstanceName))
-                    instanceName = envInstanceName;
-            }
-        }
+        var settings = await ResolveSettingsAsync();
+        var (isEnabled, baseUrl, apiKey, instanceName, companyName, companyPhone) = settings;
 
         if (!isEnabled)
         {
@@ -75,18 +78,30 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
             return false;
         }
 
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            _logger.LogWarning("No hay API key de WhatsApp configurada (panel admin o WhatsAppGateway__ApiKey). Pedido #{OrderId} queda pendiente.", order.Id);
+            return false;
+        }
+
         // 1. Mensaje para el WhatsApp del Negocio / Dueño
+        var city = !string.IsNullOrWhiteSpace(order.CustomerCity) ? order.CustomerCity : ExtractCityFromNotes(order.Notes);
+        var cleanNotes = CleanNotesWithoutCity(order.Notes);
+
         var businessMessage = new StringBuilder();
         businessMessage.AppendLine($"🪴 *¡NUEVO PEDIDO RECIBIDO EN LA WEB!*");
         businessMessage.AppendLine($"━━━━━━━━━━━━━━━━━━━━");
-        businessMessage.AppendLine($"🔖 *Pedido:* #{order.Id}");
+        businessMessage.AppendLine($"🔖 *Orden:* #{order.Id}");
         businessMessage.AppendLine($"👤 *Cliente:* {order.CustomerName}");
         if (!string.IsNullOrWhiteSpace(order.CustomerPhone))
             businessMessage.AppendLine($"📱 *Teléfono:* {order.CustomerPhone}");
-        if (!string.IsNullOrWhiteSpace(order.Notes))
-            businessMessage.AppendLine($"📍 *Detalles:* {order.Notes}");
+        if (!string.IsNullOrWhiteSpace(city))
+            businessMessage.AppendLine($"📍 *Ciudad:* {city}");
+        if (!string.IsNullOrWhiteSpace(cleanNotes))
+            businessMessage.AppendLine($"📝 *Nota:* {cleanNotes}");
         businessMessage.AppendLine();
-        businessMessage.AppendLine($"📦 *PRODUCTOS:*");
+        businessMessage.AppendLine($"📦 *DETALLES DEL PEDIDO:*");
+        businessMessage.AppendLine($"━━━━━━━━━━━━━━━━━━━━");
         businessMessage.AppendLine(itemsSummary);
         businessMessage.AppendLine($"━━━━━━━━━━━━━━━━━━━━");
         businessMessage.AppendLine($"💰 *TOTAL:* ₲ {order.Total:N0}");
@@ -94,12 +109,19 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
         // 2. Mensaje de confirmación para el WhatsApp del Cliente (si dejó su número)
         var clientMessage = new StringBuilder();
         clientMessage.AppendLine($"🌿 *¡Hola {order.CustomerName}! Gracias por tu compra en {companyName}.*");
-        clientMessage.AppendLine($"Hemos registrado tu pedido *#{order.Id}* exitosamente.");
+        clientMessage.AppendLine($"━━━━━━━━━━━━━━━━━━━━");
+        clientMessage.AppendLine($"🔖 *Orden:* #{order.Id}");
+        clientMessage.AppendLine($"👤 *Cliente:* {order.CustomerName}");
+        if (!string.IsNullOrWhiteSpace(order.CustomerPhone))
+            clientMessage.AppendLine($"📱 *Teléfono:* {order.CustomerPhone}");
+        if (!string.IsNullOrWhiteSpace(city))
+            clientMessage.AppendLine($"📍 *Ciudad:* {city}");
         clientMessage.AppendLine();
-        clientMessage.AppendLine($"📦 *DETALLE DE TU PEDIDO:*");
+        clientMessage.AppendLine($"📦 *DETALLES DE TU PEDIDO:*");
+        clientMessage.AppendLine($"━━━━━━━━━━━━━━━━━━━━");
         clientMessage.AppendLine(itemsSummary);
         clientMessage.AppendLine($"━━━━━━━━━━━━━━━━━━━━");
-        clientMessage.AppendLine($"💰 *TOTAL:* ₲ {order.Total:N0}");
+        clientMessage.AppendLine($"💰 *TOTAL A ABONAR:* ₲ {order.Total:N0}");
         clientMessage.AppendLine();
         clientMessage.AppendLine($"En breve nos pondremos en contacto con vos para coordinar los detalles de pago y entrega.");
         clientMessage.AppendLine($"¡Muchas gracias por elegirnos!");
@@ -138,7 +160,7 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
 
             if (sentToCompany || sentToClient)
             {
-                using var updateScope = _serviceProvider.CreateScope();
+                using var updateScope = _scopeFactory.CreateScope();
                 var db = updateScope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var dbOrder = await db.Orders.FindAsync(order.Id);
                 if (dbOrder != null)
@@ -166,36 +188,9 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
 
     public async Task<int> ResendPendingOrdersAsync()
     {
-        var baseUrl = _configuration.GetValue<string>("WhatsAppGateway:BaseUrl") ?? "http://localhost:8080";
-        var apiKey = _configuration.GetValue<string>("WhatsAppGateway:ApiKey") ?? "TerraSecretApiKey2026_WhatsAppGateway!";
-        var instanceName = _configuration.GetValue<string>("WhatsAppGateway:InstanceName") ?? "terra_bot";
-        var isEnabled = true;
+        var (isEnabled, baseUrl, apiKey, instanceName, _, _) = await ResolveSettingsAsync();
 
-        using (var scope = _serviceProvider.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var config = await db.CompanyConfigs.FirstOrDefaultAsync();
-            if (config != null)
-            {
-                isEnabled = config.WhatsappGatewayEnabled;
-                var envBaseUrl = _configuration.GetValue<string>("WhatsAppGateway:BaseUrl");
-                var envInstanceName = _configuration.GetValue<string>("WhatsAppGateway:InstanceName");
-
-                if (!string.IsNullOrWhiteSpace(config.WhatsappApiUrl) && !config.WhatsappApiUrl.Contains("localhost"))
-                    baseUrl = config.WhatsappApiUrl;
-                else if (!string.IsNullOrWhiteSpace(envBaseUrl))
-                    baseUrl = envBaseUrl;
-
-                if (!string.IsNullOrWhiteSpace(config.WhatsappApiKey)) apiKey = config.WhatsappApiKey;
-
-                if (!string.IsNullOrWhiteSpace(config.WhatsappInstanceName) && config.WhatsappInstanceName != "terra_bot")
-                    instanceName = config.WhatsappInstanceName;
-                else if (!string.IsNullOrWhiteSpace(envInstanceName))
-                    instanceName = envInstanceName;
-            }
-        }
-
-        if (!isEnabled) return 0;
+        if (!isEnabled || string.IsNullOrWhiteSpace(apiKey)) return 0;
 
         var client = _httpClientFactory.CreateClient();
         client.Timeout = TimeSpan.FromSeconds(5);
@@ -208,7 +203,7 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
             return 0;
         }
 
-        using var dbScope = _serviceProvider.CreateScope();
+        using var dbScope = _scopeFactory.CreateScope();
         var dbContext = dbScope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
@@ -233,8 +228,7 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
                 }
                 catch {}
 
-                var summary = string.Join("\n", items.Select(i => $"   • {i.Quantity}x {i.ProductName} (₲ {i.Subtotal:N0})"));
-                var ok = await SendOrderNotificationAsync(ord, summary);
+                var ok = await SendOrderNotificationAsync(ord, BuildItemsSummary(items));
                 if (ok)
                 {
                     sentCount++;
@@ -351,5 +345,19 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
         }
 
         return digits;
+    }
+
+    private static string? ExtractCityFromNotes(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes)) return null;
+        var match = System.Text.RegularExpressions.Regex.Match(notes, @"(?i)Ciudad:\s*([^\r\n]+)");
+        return match.Success ? match.Groups[1].Value.Trim() : null;
+    }
+
+    private static string? CleanNotesWithoutCity(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes)) return null;
+        var cleaned = System.Text.RegularExpressions.Regex.Replace(notes, @"(?i)Ciudad:\s*[^\r\n]+", "").Trim();
+        return string.IsNullOrWhiteSpace(cleaned) ? null : cleaned;
     }
 }

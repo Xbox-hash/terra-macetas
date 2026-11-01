@@ -1,6 +1,6 @@
 import { StoreConfig } from '../types';
 import { INITIAL_STORE_CONFIG } from '../data/initialConfig';
-import { API_BASE } from './apiConfig';
+import { API_BASE, apiFetch } from './apiConfig';
 
 const API_BASE_URL = `${API_BASE}/company`;
 const LOCAL_STORAGE_KEY = 'terra_company_config';
@@ -8,7 +8,7 @@ const LOCAL_STORAGE_KEY = 'terra_company_config';
 export const companyService = {
   async getConfig(): Promise<StoreConfig> {
     try {
-      const res = await fetch(API_BASE_URL);
+      const res = await apiFetch(API_BASE_URL);
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
@@ -31,7 +31,7 @@ export const companyService = {
 
   async updateConfig(config: StoreConfig): Promise<StoreConfig> {
     try {
-      const res = await fetch(API_BASE_URL, {
+      const res = await apiFetch(API_BASE_URL, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
@@ -19,6 +20,7 @@ public class CompanyController : ControllerBase
         _configuration = configuration;
     }
 
+    [AllowAnonymous] // público: lo usa la tienda
     [HttpGet]
     public async Task<ActionResult<CompanyConfigDto>> GetConfig()
     {
@@ -58,7 +60,11 @@ public class CompanyController : ControllerBase
         config.BusinessHours = dto.BusinessHours?.Trim() ?? string.Empty;
         config.WhatsappGatewayEnabled = dto.WhatsappGatewayEnabled;
         config.WhatsappApiUrl = string.IsNullOrWhiteSpace(dto.WhatsappApiUrl) ? "http://localhost:8080" : dto.WhatsappApiUrl.Trim();
-        config.WhatsappApiKey = string.IsNullOrWhiteSpace(dto.WhatsappApiKey) ? "TerraSecretApiKey2026_WhatsAppGateway!" : dto.WhatsappApiKey.Trim();
+        // La API key es de solo escritura: si viene vacía se conserva la que ya estaba guardada
+        if (!string.IsNullOrWhiteSpace(dto.WhatsappApiKey))
+        {
+            config.WhatsappApiKey = dto.WhatsappApiKey.Trim();
+        }
         config.WhatsappInstanceName = string.IsNullOrWhiteSpace(dto.WhatsappInstanceName) ? "terra_bot" : dto.WhatsappInstanceName.Trim();
         config.HeroImageUrl = dto.HeroImageUrl;
         config.HeroFloatingImageUrl = dto.HeroFloatingImageUrl;
@@ -83,6 +89,9 @@ public class CompanyController : ControllerBase
             ? c.WhatsappInstanceName
             : (envInstanceName ?? c.WhatsappInstanceName ?? "terra_bot");
 
+        // Datos internos del gateway (URL, instancia): solo para usuarios logueados en /admin
+        var isAdmin = User.Identity?.IsAuthenticated == true;
+
         return new CompanyConfigDto
         {
             StoreName = c.StoreName,
@@ -99,9 +108,10 @@ public class CompanyController : ControllerBase
             Country = c.Country,
             BusinessHours = c.BusinessHours,
             WhatsappGatewayEnabled = c.WhatsappGatewayEnabled,
-            WhatsappApiUrl = whatsappUrl,
-            WhatsappApiKey = c.WhatsappApiKey,
-            WhatsappInstanceName = instanceName,
+            WhatsappApiUrl = isAdmin ? whatsappUrl : null,
+            WhatsappApiKey = null, // nunca se devuelve
+            WhatsappApiKeyConfigured = isAdmin && !string.IsNullOrWhiteSpace(c.WhatsappApiKey),
+            WhatsappInstanceName = isAdmin ? instanceName : null,
             HeroImageUrl = c.HeroImageUrl,
             HeroFloatingImageUrl = c.HeroFloatingImageUrl,
             PhilosophyImageUrl = c.PhilosophyImageUrl

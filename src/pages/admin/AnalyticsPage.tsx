@@ -267,16 +267,28 @@ export const AnalyticsPage: React.FC = () => {
     return Object.values(map).sort((a, b) => b.unidades - a.unidades).slice(0, 5);
   }, [filteredOrders]);
 
+  // Helper to extract city
+  const getCity = (o: Order): string => {
+    if (o.customerCity && o.customerCity.trim()) return o.customerCity.trim();
+    if (o.notes) {
+      const match = o.notes.match(/ciudad:\s*([^\r\n]+)/i);
+      if (match && match[1]) return match[1].trim();
+    }
+    return '';
+  };
+
   // EXPORT TO EXCEL (.XLSX)
   const exportToExcel = () => {
     const rows = filteredOrders.map((o) => {
       const itemsStr = o.items?.map((i: any) => `${i.quantity || i.Quantity}x ${i.productName || i.product?.name || i.ProductName}`).join(', ') || '';
+      const notesClean = o.notes ? o.notes.replace(/ciudad:\s*[^\r\n]+/i, '').trim() : '';
       return {
         'ID Pedido': o.id,
         'Fecha y Hora': new Date(o.createdAt).toLocaleString('es-PY'),
         'Cliente': o.customerName || 'Cliente WhatsApp',
         'Teléfono': o.customerPhone || '',
-        'Detalles / Ciudad': o.notes || '',
+        'Ciudad': getCity(o),
+        'Notas': notesClean,
         'Productos': itemsStr,
         'Monto Total (PYG)': o.total,
         'Estado': o.status,
@@ -289,7 +301,7 @@ export const AnalyticsPage: React.FC = () => {
     const sheetName = (config.storeName || 'Ventas').slice(0, 30);
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 
-    worksheet['!cols'] = [{ wch: 14 }, { wch: 18 }, { wch: 20 }, { wch: 16 }, { wch: 22 }, { wch: 40 }, { wch: 16 }, { wch: 14 }, { wch: 12 }];
+    worksheet['!cols'] = [{ wch: 14 }, { wch: 18 }, { wch: 20 }, { wch: 16 }, { wch: 18 }, { wch: 22 }, { wch: 40 }, { wch: 16 }, { wch: 14 }, { wch: 12 }];
 
     const cleanStoreName = (config.storeName || 'Reporte').replace(/[^a-zA-Z0-9]/g, '_');
     XLSX.writeFile(workbook, `${cleanStoreName}_Reporte_Ventas_${startDate || 'Historico'}_al_${endDate || 'Actual'}.xlsx`);
@@ -337,6 +349,7 @@ export const AnalyticsPage: React.FC = () => {
       new Date(o.createdAt).toLocaleDateString('es-PY'),
       o.customerName || 'Cliente',
       o.customerPhone || '-',
+      getCity(o) || '-',
       o.items?.map((i: any) => `${i.quantity || i.Quantity}x ${i.productName || i.product?.name || i.ProductName}`).join(', ') || '-',
       `Gs. ${Number(o.total).toLocaleString('es-PY')}`,
       o.status
@@ -344,7 +357,7 @@ export const AnalyticsPage: React.FC = () => {
 
     autoTable(doc, {
       startY: 75,
-      head: [['ID', 'Fecha', 'Cliente', 'Teléfono', 'Productos', 'Total', 'Estado']],
+      head: [['ID', 'Fecha', 'Cliente', 'Teléfono', 'Ciudad', 'Productos', 'Total', 'Estado']],
       body: tableData,
       theme: 'grid',
       headStyles: {
@@ -814,7 +827,12 @@ export const AnalyticsPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-3.5 align-top">
                         <span className="font-bold text-xs text-[#222A21] block">{o.customerName || 'Cliente'}</span>
-                        {o.customerPhone && <span className="text-[11px] text-[#4A5D4E]">{o.customerPhone}</span>}
+                        {o.customerPhone && <span className="text-[11px] text-[#4A5D4E] block">{o.customerPhone}</span>}
+                        {getCity(o) && (
+                          <span className="inline-block mt-0.5 text-[10px] font-semibold text-[#2D3A2F] bg-[#EAE4D7] px-1.5 py-0.5 rounded">
+                            📍 {getCity(o)}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-3.5 align-top max-w-sm">
                         <span className="text-xs text-[#4F5D4E] line-clamp-2">

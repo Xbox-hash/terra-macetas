@@ -18,7 +18,8 @@ import {
   Calendar,
   AlertCircle,
   Ban,
-  CheckCheck
+  CheckCheck,
+  MapPin
 } from 'lucide-react';
 import { AdminHeader } from '../../components/admin/AdminHeader';
 import { Button } from '../../components/common/Button';
@@ -28,6 +29,21 @@ import { dashboardService, orderService, DashboardStats } from '../../services/o
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Order } from '../../types';
+
+const getOrderCity = (order: Order): string => {
+  if (order.customerCity && order.customerCity.trim()) return order.customerCity.trim();
+  if (order.notes) {
+    const match = order.notes.match(/ciudad:\s*([^\r\n]+)/i);
+    if (match && match[1]) return match[1].trim();
+  }
+  return '';
+};
+
+const getOrderDisplayNotes = (order: Order): string => {
+  if (!order.notes) return '';
+  const cleaned = order.notes.replace(/ciudad:\s*[^\r\n]+/i, '').trim();
+  return cleaned;
+};
 
 export const DashboardPage: React.FC = () => {
   const { openMobileSidebar } = useOutletContext<{ openMobileSidebar: () => void }>();
@@ -275,7 +291,8 @@ export const DashboardPage: React.FC = () => {
               <thead className="bg-[#F8F5EE] text-[#556253] uppercase text-[10px] font-bold tracking-wider border-b border-[#EFE9DE]">
                 <tr>
                   <th className="px-6 py-4">ID Pedido / Fecha</th>
-                  <th className="px-6 py-4">Cliente / Notas</th>
+                  <th className="px-6 py-4">Cliente</th>
+                  <th className="px-6 py-4">Ciudad</th>
                   <th className="px-6 py-4">Productos</th>
                   <th className="px-6 py-4">Total</th>
                   <th className="px-6 py-4">Estado</th>
@@ -285,13 +302,13 @@ export const DashboardPage: React.FC = () => {
               <tbody className="divide-y divide-[#F2ECE2]">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-[#7E8B7D]">
+                    <td colSpan={7} className="px-6 py-12 text-center text-[#7E8B7D]">
                       Cargando pedidos...
                     </td>
                   </tr>
                 ) : filteredOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-[#7E8B7D]">
+                    <td colSpan={7} className="px-6 py-12 text-center text-[#7E8B7D]">
                       <div className="max-w-sm mx-auto space-y-2">
                         <ShoppingBag className="w-8 h-8 opacity-40 mx-auto text-[#4A5D4E]" />
                         <p className="font-semibold text-sm text-[#222A21]">No hay pedidos con este filtro</p>
@@ -305,6 +322,8 @@ export const DashboardPage: React.FC = () => {
                   filteredOrders.map((order) => {
                     const isClosed = order.status.toLowerCase() === 'cerrado';
                     const isCancelled = order.status.toLowerCase() === 'cancelado';
+                    const orderCity = getOrderCity(order);
+                    const displayNotes = getOrderDisplayNotes(order);
 
                     return (
                       <tr key={order.id} className="hover:bg-[#FAF8F4] transition-colors">
@@ -382,10 +401,21 @@ export const DashboardPage: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          {order.notes && (
-                            <p className="text-xs text-[#5D6B5C] bg-[#F2EDE4] p-2 rounded-lg mt-1 leading-snug">
-                              {order.notes}
+                          {displayNotes && (
+                            <p className="text-xs text-[#5D6B5C] bg-[#F2EDE4] p-2 rounded-lg mt-1.5 leading-snug">
+                              {displayNotes}
                             </p>
+                          )}
+                        </td>
+
+                        <td className="px-6 py-4 align-top whitespace-nowrap">
+                          {orderCity ? (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold bg-[#EAE4D7] text-[#2D3A2F] border border-[#DDD5C7] shadow-2xs">
+                              <MapPin className="w-3.5 h-3.5 text-[#4A5D4E] shrink-0" />
+                              <span>{orderCity}</span>
+                            </div>
+                          ) : (
+                            <span className="text-neutral-400 italic text-xs">No especificada</span>
                           )}
                         </td>
 

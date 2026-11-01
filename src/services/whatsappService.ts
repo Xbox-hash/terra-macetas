@@ -1,4 +1,4 @@
-import { API_BASE } from './apiConfig';
+import { API_BASE, apiFetch } from './apiConfig';
 
 export interface WhatsAppStatus {
   isOnline: boolean;
@@ -17,7 +17,7 @@ export interface WhatsAppQrResponse {
 export const whatsappService = {
   async getStatus(): Promise<WhatsAppStatus> {
     try {
-      const res = await fetch(`${API_BASE}/whatsapp/status`);
+      const res = await apiFetch(`${API_BASE}/whatsapp/status`);
       if (!res.ok) {
         return { isOnline: false, state: 'offline' };
       }
@@ -28,7 +28,7 @@ export const whatsappService = {
   },
 
   async getQr(): Promise<WhatsAppQrResponse> {
-    const res = await fetch(`${API_BASE}/whatsapp/qr`);
+    const res = await apiFetch(`${API_BASE}/whatsapp/qr`);
     if (!res.ok) {
       throw new Error('No se pudo obtener el código QR');
     }

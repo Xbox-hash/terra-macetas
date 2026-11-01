@@ -14,17 +14,17 @@ public class Order
 
     public string? CustomerEmail { get; set; }
 
+    [MaxLength(150)]
+    public string? CustomerCity { get; set; }
+
     public string? Notes { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal Total { get; set; }
-
-    // Stored as JSON of items: product name, quantity, price, subtotal
     public string ItemsJson { get; set; } = "[]";
 
     [MaxLength(50)]
-    public string Status { get; set; } = "Pendiente"; // "Pendiente", "Cerrado", "Cancelado"
-
+    public string Status { get; set; } = "Pendiente";
     [MaxLength(50)]
     public string PaymentStatus { get; set; } = "Pendiente"; // "Pendiente", "Pagado"
 

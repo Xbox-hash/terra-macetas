@@ -1,5 +1,7 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
 using TerraMacetas.Api.DTOs;
@@ -13,18 +15,21 @@ namespace TerraMacetas.Api.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly AppDbContext _context;
-    private readonly IWhatsAppNotificationService _whatsappService;
+    private readonly INotificationQueue _queue;
     private readonly ILogger<OrdersController> _logger;
 
     public OrdersController(
         AppDbContext context,
-        IWhatsAppNotificationService whatsappService,
+        INotificationQueue queue,
         ILogger<OrdersController> logger)
     {
         _context = context;
-        _whatsappService = whatsappService;
+        _queue = queue;
         _logger = logger;
     }
+
+    // Quién hizo la acción: el usuario del token, no un texto que manda el navegador.
+    private string CurrentUserName => User.Identity?.Name ?? "Administrador";
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<OrderDto>>> GetAll([FromQuery] string? status = null)
@@ -60,11 +65,12 @@ public class OrdersController : ControllerBase
         return Ok(MapToDto(order));
     }
 
-    // 🛡️ Memoria para Rate Limiting de Pedidos (Máximo 5 pedidos por IP por minuto)
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, List<DateTime>> _orderRateLimits = new();
-
+    // Público: cualquier visitante de la tienda puede hacer un pedido.
+    // Límite anti-spam: 5 pedidos por minuto por IP (política "orders" en Program.cs).
+    [AllowAnonymous]
+    [EnableRateLimiting("orders")]
     [HttpPost]
-    public async Task<ActionResult<OrderDto>> Create([FromBody] CreateOrderDto dto)
+    public async Task<ActionResult<OrderDto>> Create([FromBody] CreateOrderDto dto, CancellationToken ct)
     {
         // 1. 🛡️ Honeypot Anti-Bot (Si un bot completó el campo trampa 'website', descartamos silenciosamente)
         if (!string.IsNullOrWhiteSpace(dto.Website))
@@ -73,19 +79,31 @@ public class OrdersController : ControllerBase
             return Ok(new OrderDto { Id = "ORD-BOT", CustomerName = "Bot Detected", Status = "Cancelado" });
         }
 
-        // 2. 🛡️ Rate Limiting Anti-Spam (Máximo 5 pedidos por minuto por IP)
-        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var now = DateTime.UtcNow;
-        var timestamps = _orderRateLimits.GetOrAdd(clientIp, _ => new List<DateTime>());
-
-        lock (timestamps)
+        var customerCity = dto.CustomerCity?.Trim();
+        if (string.IsNullOrWhiteSpace(customerCity) && !string.IsNullOrWhiteSpace(dto.Notes))
         {
-            timestamps.RemoveAll(t => t < now.AddMinutes(-1));
-            if (timestamps.Count >= 5)
-            {
-                return StatusCode(429, new { message = "Demasiados pedidos en poco tiempo. Por favor espere un momento antes de volver a intentar." });
-            }
-            timestamps.Add(now);
+            var match = System.Text.RegularExpressions.Regex.Match(dto.Notes, @"(?i)Ciudad:\s*([^\r\n]+)");
+            if (match.Success) customerCity = match.Groups[1].Value.Trim();
+        }
+
+        // 3. 💰 Precios y total calculados en el servidor con los datos de la base.
+        // El precio, subtotal y total que manda el navegador se ignoran (se pueden manipular).
+        var productIds = (dto.Items ?? new List<OrderItemDto>()).Select(i => i.ProductId).Distinct().ToList();
+        var products = await _context.Products
+            .AsNoTracking()
+            .Where(p => productIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, ct);
+
+        var pricing = OrderPricing.Calculate(dto.Items, products);
+        if (!pricing.IsSuccess)
+        {
+            return BadRequest(new { message = pricing.Error });
+        }
+
+        if (dto.Total != pricing.Value!.Total)
+        {
+            _logger.LogWarning("Total del navegador ({ClientTotal}) distinto del calculado ({ServerTotal}). Se usa el del servidor.",
+                dto.Total, pricing.Value.Total);
         }
 
         var order = new Order
@@ -94,9 +112,10 @@ public class OrdersController : ControllerBase
             CustomerName = string.IsNullOrWhiteSpace(dto.CustomerName) ? "Cliente Web" : dto.CustomerName.Trim(),
             CustomerPhone = dto.CustomerPhone?.Trim(),
             CustomerEmail = dto.CustomerEmail?.Trim(),
+            CustomerCity = customerCity,
             Notes = dto.Notes?.Trim(),
-            Total = dto.Total,
-            ItemsJson = JsonSerializer.Serialize(dto.Items ?? new List<OrderItemDto>()),
+            Total = pricing.Value.Total,
+            ItemsJson = JsonSerializer.Serialize(pricing.Value.Items),
             Status = "Pendiente",
             PaymentStatus = "Pendiente",
             Channel = string.IsNullOrWhiteSpace(dto.Channel) ? "WhatsApp" : dto.Channel,
@@ -104,23 +123,14 @@ public class OrdersController : ControllerBase
         };
 
         _context.Orders.Add(order);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
 
-        // 🚀 Disparar el envío automático por WhatsApp en segundo plano (Evolution API)
-        _ = Task.Run(async () =>
+        // 🚀 El aviso por WhatsApp se procesa en segundo plano (NotificationWorker), fuera del request.
+        // Si no entra en la cola, el pedido queda con WhatsAppNotified = false y se reenvía después.
+        if (!_queue.EnqueueOrderCreated(order.Id))
         {
-            try
-            {
-                var summary = string.Join("\n", (dto.Items ?? new List<OrderItemDto>())
-                    .Select(i => $"   • {i.Quantity}x {i.ProductName} (₲ {i.Subtotal:N0})"));
-
-                await _whatsappService.SendOrderNotificationAsync(order, summary);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fallo al enviar notificación automática de WhatsApp.");
-            }
-        });
+            _logger.LogWarning("Cola de notificaciones llena; el pedido #{OrderId} se notificará en el próximo reenvío.", order.Id);
+        }
 
         return CreatedAtAction(nameof(GetById), new { id = order.Id }, MapToDto(order));
     }
@@ -133,7 +143,7 @@ public class OrdersController : ControllerBase
 
         order.Status = "Cerrado";
         order.ClosedAt = DateTime.UtcNow;
-        order.ClosedBy = !string.IsNullOrWhiteSpace(req?.User) ? req.User.Trim() : "Administrador";
+        order.ClosedBy = CurrentUserName;
         order.CancelledAt = null;
         await _context.SaveChangesAsync();
 
@@ -148,7 +158,7 @@ public class OrdersController : ControllerBase
 
         order.Status = "Cancelado";
         order.CancelledAt = DateTime.UtcNow;
-        order.CancelledBy = !string.IsNullOrWhiteSpace(req?.User) ? req.User.Trim() : "Administrador";
+        order.CancelledBy = CurrentUserName;
         order.ClosedAt = null;
         await _context.SaveChangesAsync();
 
@@ -162,7 +172,7 @@ public class OrdersController : ControllerBase
         if (order == null) return NotFound(new { message = "Pedido no encontrado" });
 
         order.Status = "Pendiente";
-        order.ReopenedBy = !string.IsNullOrWhiteSpace(req?.User) ? req.User.Trim() : "Administrador";
+        order.ReopenedBy = CurrentUserName;
         order.ClosedAt = null;
         order.CancelledAt = null;
         await _context.SaveChangesAsync();
@@ -182,6 +192,13 @@ public class OrdersController : ControllerBase
         return NoContent();
     }
 
+    private static string? ExtractCityFromNotes(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes)) return null;
+        var match = System.Text.RegularExpressions.Regex.Match(notes, @"(?i)Ciudad:\s*([^\r\n]+)");
+        return match.Success ? match.Groups[1].Value.Trim() : null;
+    }
+
     private static OrderDto MapToDto(Order o)
     {
         List<OrderItemDto> items;
@@ -194,12 +211,15 @@ public class OrdersController : ControllerBase
             items = new List<OrderItemDto>();
         }
 
+        var city = !string.IsNullOrWhiteSpace(o.CustomerCity) ? o.CustomerCity : ExtractCityFromNotes(o.Notes);
+
         return new OrderDto
         {
             Id = o.Id,
             CustomerName = o.CustomerName,
             CustomerPhone = o.CustomerPhone,
             CustomerEmail = o.CustomerEmail,
+            CustomerCity = city,
             Notes = o.Notes,
             Total = o.Total,
             Items = items,

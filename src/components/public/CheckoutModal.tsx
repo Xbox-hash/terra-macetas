@@ -39,6 +39,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       const createdOrder = await orderService.createOrder({
         customerName: name.trim(),
         customerPhone: phone.trim(),
+        customerCity: city.trim(),
         notes: fullNote,
         total: totalAmount,
         items,
@@ -47,20 +48,23 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       const orderId = createdOrder.id || `ORD-${Date.now().toString().slice(-6)}`;
       setOrderNumber(orderId);
 
-      // 2. Preparar el mensaje de WhatsApp estructurado con colores y tiempos
-      let message = `✨ *¡Hola ${config.storeName || 'DONNA BOTANICA'}! Quiero realizar un pedido:*\n\n`;
+      // 2. Preparar el mensaje de WhatsApp estructurado: Orden, Cliente, Ciudad, Detalles con Precio
+      let message = `🌿 *¡Hola ${config.storeName || 'TERRA MACETAS'}! Quiero realizar el siguiente pedido:*\n\n`;
+      message += `🔖 *Orden:* #${orderId}\n`;
       message += `👤 *Cliente:* ${name.trim()}\n`;
-      message += `📱 *Teléfono / WhatsApp:* ${phone.trim()}\n`;
-      message += `📍 *Ciudad de entrega:* ${city.trim()}\n\n`;
-      message += `📦 *DETALLE DEL PEDIDO (#${orderId}):*\n`;
+      message += `📱 *Teléfono:* ${phone.trim()}\n`;
+      message += `📍 *Ciudad:* ${city.trim()}\n\n`;
+      message += `📦 *DETALLES DEL PEDIDO:*\n`;
+      message += `━━━━━━━━━━━━━━━━━━━━\n`;
 
       items.forEach((item) => {
-        const colorLabel = item.selectedColor ? ` [Color: ${item.selectedColor}]` : '';
-        const timeLabel = item.product.manufacturingTime ? ` _(Fab: ${item.product.manufacturingTime})_` : '';
-        message += `   • ${item.quantity}x *${item.product.name}*${colorLabel}${timeLabel} (${formatPrice(item.subtotal)})\n`;
+        const colorLabel = item.selectedColor ? `\n   🎨 Color: ${item.selectedColor}` : '';
+        const timeLabel = item.product.manufacturingTime ? `\n   ⏳ Fab: ${item.product.manufacturingTime}` : '';
+        message += `• *${item.quantity}x ${item.product.name}*${colorLabel}${timeLabel}\n`;
+        message += `   💵 Precio: ${formatPrice(item.product.price)} c/u | Subtotal: ${formatPrice(item.subtotal)}\n\n`;
       });
 
-      message += `\n━━━━━━━━━━━━━━━━━━━━\n`;
+      message += `━━━━━━━━━━━━━━━━━━━━\n`;
       message += `💰 *TOTAL A ABONAR: ${formatPrice(totalAmount)}*\n\n`;
       message += `Quedo a la espera de su confirmación para coordinar el pago y el envío. ¡Muchas gracias!`;
 

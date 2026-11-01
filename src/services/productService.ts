@@ -1,12 +1,12 @@
 import { Product } from '../types';
-import { API_BASE } from './apiConfig';
+import { API_BASE, apiFetch } from './apiConfig';
 
 const API_BASE_URL = `${API_BASE}/products`;
 
 export const productService = {
   async getAll(): Promise<Product[]> {
     try {
-      const res = await fetch(API_BASE_URL);
+      const res = await apiFetch(API_BASE_URL);
       if (!res.ok) throw new Error('Error al obtener productos');
       return await res.json();
     } catch (e) {
@@ -17,7 +17,7 @@ export const productService = {
 
   async getActive(): Promise<Product[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}?onlyActive=true`);
+      const res = await apiFetch(`${API_BASE_URL}?onlyActive=true`);
       if (!res.ok) throw new Error('Error al obtener productos activos');
       return await res.json();
     } catch (e) {
@@ -28,7 +28,7 @@ export const productService = {
 
   async getFeatured(): Promise<Product[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}?onlyActive=true&onlyFeatured=true`);
+      const res = await apiFetch(`${API_BASE_URL}?onlyActive=true&onlyFeatured=true`);
       if (!res.ok) throw new Error('Error al obtener productos destacados');
       return await res.json();
     } catch (e) {
@@ -39,7 +39,7 @@ export const productService = {
 
   async getById(id: string): Promise<Product | undefined> {
     try {
-      const res = await fetch(`${API_BASE_URL}/${id}`);
+      const res = await apiFetch(`${API_BASE_URL}/${id}`);
       if (!res.ok) return undefined;
       return await res.json();
     } catch {
@@ -49,7 +49,7 @@ export const productService = {
 
   async getByLine(lineId: string): Promise<Product[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}?lineId=${lineId}&onlyActive=true`);
+      const res = await apiFetch(`${API_BASE_URL}?lineId=${lineId}&onlyActive=true`);
       if (!res.ok) return [];
       return await res.json();
     } catch {
@@ -59,7 +59,7 @@ export const productService = {
 
   async getRelated(lineId: string, currentProductId: string, limit = 4): Promise<Product[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/related/${lineId}?excludeId=${currentProductId}&limit=${limit}`);
+      const res = await apiFetch(`${API_BASE_URL}/related/${lineId}?excludeId=${currentProductId}&limit=${limit}`);
       if (!res.ok) return [];
       return await res.json();
     } catch {
@@ -68,7 +68,7 @@ export const productService = {
   },
 
   async create(product: Omit<Product, 'id' | 'createdAt'>): Promise<Product> {
-    const res = await fetch(API_BASE_URL, {
+    const res = await apiFetch(API_BASE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(product),
@@ -81,7 +81,7 @@ export const productService = {
   },
 
   async update(id: string, updates: Partial<Product>): Promise<Product> {
-    const res = await fetch(`${API_BASE_URL}/${id}`, {
+    const res = await apiFetch(`${API_BASE_URL}/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
@@ -94,7 +94,7 @@ export const productService = {
   },
 
   async toggleActive(id: string): Promise<Product> {
-    const res = await fetch(`${API_BASE_URL}/${id}/toggle-active`, {
+    const res = await apiFetch(`${API_BASE_URL}/${id}/toggle-active`, {
       method: 'PATCH',
     });
     if (!res.ok) throw new Error('Error al cambiar estado del producto');
@@ -102,7 +102,7 @@ export const productService = {
   },
 
   async delete(id: string): Promise<void> {
-    const res = await fetch(`${API_BASE_URL}/${id}`, {
+    const res = await apiFetch(`${API_BASE_URL}/${id}`, {
       method: 'DELETE',
     });
     if (!res.ok) {

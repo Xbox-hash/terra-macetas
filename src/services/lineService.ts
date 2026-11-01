@@ -1,12 +1,12 @@
 import { ProductLine } from '../types';
-import { API_BASE } from './apiConfig';
+import { API_BASE, apiFetch } from './apiConfig';
 
 const API_BASE_URL = `${API_BASE}/lines`;
 
 export const lineService = {
   async getAll(): Promise<ProductLine[]> {
     try {
-      const res = await fetch(API_BASE_URL);
+      const res = await apiFetch(API_BASE_URL);
       if (!res.ok) throw new Error('Error al obtener líneas');
       return await res.json();
     } catch (e) {
@@ -17,7 +17,7 @@ export const lineService = {
 
   async getActive(): Promise<ProductLine[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}?onlyActive=true`);
+      const res = await apiFetch(`${API_BASE_URL}?onlyActive=true`);
       if (!res.ok) throw new Error('Error al obtener líneas activas');
       return await res.json();
     } catch (e) {
@@ -28,7 +28,7 @@ export const lineService = {
 
   async getById(id: string): Promise<ProductLine | undefined> {
     try {
-      const res = await fetch(`${API_BASE_URL}/${id}`);
+      const res = await apiFetch(`${API_BASE_URL}/${id}`);
       if (!res.ok) return undefined;
       return await res.json();
     } catch {
@@ -42,7 +42,7 @@ export const lineService = {
   },
 
   async create(line: Omit<ProductLine, 'id'>): Promise<ProductLine> {
-    const res = await fetch(API_BASE_URL, {
+    const res = await apiFetch(API_BASE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(line),
@@ -55,7 +55,7 @@ export const lineService = {
   },
 
   async update(id: string, updates: Partial<ProductLine>): Promise<ProductLine> {
-    const res = await fetch(`${API_BASE_URL}/${id}`, {
+    const res = await apiFetch(`${API_BASE_URL}/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
@@ -68,7 +68,7 @@ export const lineService = {
   },
 
   async toggleActive(id: string): Promise<ProductLine> {
-    const res = await fetch(`${API_BASE_URL}/${id}/toggle-active`, {
+    const res = await apiFetch(`${API_BASE_URL}/${id}/toggle-active`, {
       method: 'PATCH',
     });
     if (!res.ok) throw new Error('Error al cambiar estado de la línea');
@@ -76,7 +76,7 @@ export const lineService = {
   },
 
   async delete(id: string): Promise<void> {
-    const res = await fetch(`${API_BASE_URL}/${id}`, {
+    const res = await apiFetch(`${API_BASE_URL}/${id}`, {
       method: 'DELETE',
     });
     if (!res.ok) {

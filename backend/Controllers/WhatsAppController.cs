@@ -1,7 +1,12 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using TerraMacetas.Api.Data;
+using TerraMacetas.Api.Options;
 using TerraMacetas.Api.Services;
 
 namespace TerraMacetas.Api.Controllers;
@@ -12,48 +17,47 @@ public class WhatsAppController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IConfiguration _configuration;
     private readonly IWhatsAppNotificationService _whatsappService;
+    private readonly INotificationQueue _queue;
     private readonly ILogger<WhatsAppController> _logger;
-
-    // Control para evitar reenvíos simultáneos en ráfaga
-    private static bool _isResending = false;
+    private readonly WhatsAppOptions _options;
 
     public WhatsAppController(
         AppDbContext context,
         IHttpClientFactory httpClientFactory,
-        IConfiguration configuration,
         IWhatsAppNotificationService whatsappService,
-        ILogger<WhatsAppController> logger)
+        INotificationQueue queue,
+        ILogger<WhatsAppController> logger,
+        IOptions<WhatsAppOptions> options)
     {
         _context = context;
         _httpClientFactory = httpClientFactory;
-        _configuration = configuration;
         _whatsappService = whatsappService;
+        _queue = queue;
         _logger = logger;
+        _options = options.Value;
+    }
+
+    private bool WebhookTokenIsValid(string? token)
+    {
+        var expected = _options.WebhookToken;
+        if (string.IsNullOrWhiteSpace(expected))
+        {
+            _logger.LogWarning("Webhook de WhatsApp rechazado: WhatsAppGateway__WebhookToken no está configurado.");
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(token)) return false;
+
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(token),
+            Encoding.UTF8.GetBytes(expected));
     }
 
     private async Task<(string baseUrl, string apiKey, string instanceName)> GetConfigAsync()
     {
-        var config = await _context.CompanyConfigs.FirstOrDefaultAsync();
-        var envBaseUrl = _configuration.GetValue<string>("WhatsAppGateway:BaseUrl");
-        var envApiKey = _configuration.GetValue<string>("WhatsAppGateway:ApiKey");
-        var envInstanceName = _configuration.GetValue<string>("WhatsAppGateway:InstanceName");
-
-        // Priorizar variable de entorno si estamos en Docker y la DB tiene 'localhost'
-        var baseUrl = !string.IsNullOrWhiteSpace(envBaseUrl) && (string.IsNullOrWhiteSpace(config?.WhatsappApiUrl) || config.WhatsappApiUrl.Contains("localhost"))
-            ? envBaseUrl
-            : (config?.WhatsappApiUrl ?? envBaseUrl ?? "http://localhost:8080");
-
-        var apiKey = !string.IsNullOrWhiteSpace(config?.WhatsappApiKey)
-            ? config.WhatsappApiKey
-            : (envApiKey ?? "TerraSecretApiKey2026_WhatsAppGateway!");
-
-        var instanceName = !string.IsNullOrWhiteSpace(envInstanceName) && (string.IsNullOrWhiteSpace(config?.WhatsappInstanceName) || config.WhatsappInstanceName == "terra_bot")
-            ? envInstanceName
-            : (config?.WhatsappInstanceName ?? envInstanceName ?? "terra_bot");
-
-        return (baseUrl.TrimEnd('/'), apiKey, instanceName);
+        var settings = await _whatsappService.ResolveSettingsAsync();
+        return (settings.BaseUrl, settings.ApiKey ?? string.Empty, settings.InstanceName);
     }
 
     [HttpGet("status")]
@@ -89,27 +93,9 @@ public class WhatsAppController : ControllerBase
 
             bool isOnline = state == "open";
 
-            // 🚀 Si detectamos que WhatsApp está conectado ('open') y no estamos reenviando:
-            // Verificamos si hay pedidos acumulados sin notificar y los despachamos en segundo plano
-            if (isOnline && !_isResending)
+            if (isOnline)
             {
-                _ = Task.Run(async () =>
-                {
-                    if (_isResending) return;
-                    _isResending = true;
-                    try
-                    {
-                        await _whatsappService.ResendPendingOrdersAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error en reenvío automático en segundo plano.");
-                    }
-                    finally
-                    {
-                        _isResending = false;
-                    }
-                });
+                _queue.EnqueueResendPending();
             }
 
             return Ok(new
@@ -121,12 +107,12 @@ public class WhatsAppController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogWarning(ex, "No se pudo consultar el estado de Evolution API.");
             return Ok(new
             {
                 isOnline = false,
                 state = "offline",
-                error = "Servidor Docker no responde",
-                details = ex.Message
+                error = "Servidor Docker no responde"
             });
         }
     }
@@ -234,9 +220,11 @@ public class WhatsAppController : ControllerBase
         }
     }
 
+    [AllowAnonymous] // lo llama Evolution API, protegido con un token propio
     [HttpPost("webhook")]
-    public async Task<IActionResult> HandleWebhook([FromBody] JsonElement payload)
+    public async Task<IActionResult> HandleWebhook([FromQuery] string? token, [FromBody] JsonElement payload)
     {
+        if (!WebhookTokenIsValid(token)) return Unauthorized();
         try
         {
             if (payload.TryGetProperty("data", out var dataProp))

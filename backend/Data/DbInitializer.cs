@@ -10,9 +10,65 @@ public static class DbInitializer
         // Solo asegurar que la estructura y tablas de la base de datos existan
         await context.Database.EnsureCreatedAsync();
 
+        // Asegurar que las columnas añadidas existan en tablas ya creadas
+        await EnsureColumnsExistAsync(context);
+
         if (env != null)
         {
             await MigrateBase64ImagesToFilesAsync(context, env);
+        }
+    }
+
+    /// <summary>
+    /// Verifica y agrega defensivamente columnas nuevas a tablas existentes sin requerir migraciones complejas.
+    /// </summary>
+    private static async Task EnsureColumnsExistAsync(AppDbContext context)
+    {
+        try
+        {
+            if (context.Database.IsSqlServer())
+            {
+                await context.Database.ExecuteSqlRawAsync(@"
+                    IF NOT EXISTS (
+                        SELECT 1 FROM sys.columns 
+                        WHERE object_id = OBJECT_ID(N'[dbo].[Orders]') 
+                        AND name = 'CustomerCity'
+                    )
+                    BEGIN
+                        ALTER TABLE [dbo].[Orders] ADD [CustomerCity] NVARCHAR(150) NULL;
+                    END
+                ");
+            }
+            else if (context.Database.IsSqlite())
+            {
+                using var conn = context.Database.GetDbConnection();
+                await conn.OpenAsync();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "PRAGMA table_info(Orders);";
+                bool hasCity = false;
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var colName = reader["name"]?.ToString();
+                        if (string.Equals(colName, "CustomerCity", StringComparison.OrdinalIgnoreCase))
+                        {
+                            hasCity = true;
+                            break;
+                        }
+                    }
+                }
+                if (!hasCity)
+                {
+                    using var alterCmd = conn.CreateCommand();
+                    alterCmd.CommandText = "ALTER TABLE Orders ADD COLUMN CustomerCity TEXT NULL;";
+                    await alterCmd.ExecuteNonQueryAsync();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DbInitializer] Nota al verificar columnas: {ex.Message}");
         }
     }
 
