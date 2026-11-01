@@ -125,18 +125,11 @@ jobs:
               echo "✅ Caddy actualizado y recargado con éxito."
             fi
 
-            # 6. Asegurar contenedor de Cloudflare Tunnel activo
-            echo "🚇 Verificando Cloudflare Tunnel..."
-            # El token vive en el secret CLOUDFLARE_TUNNEL_TOKEN de GitHub, no en el repo.
-            # Si el secret no está cargado, se deja el túnel que ya corre (no se tira el sitio).
-            CF_TUNNEL_TOKEN="${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
-            if [ -n "$CF_TUNNEL_TOKEN" ]; then
-              docker rm -f cloudflared 2>/dev/null || true
-              docker run -d --name cloudflared --restart always --network host                 -e TUNNEL_TOKEN="$CF_TUNNEL_TOKEN"                 cloudflare/cloudflared:latest tunnel --no-autoupdate run
-              echo "✅ Cloudflare Tunnel conectado con éxito."
-            else
-              echo "⚠️ Falta el secret CLOUDFLARE_TUNNEL_TOKEN: se mantiene el contenedor cloudflared actual."
-            fi
+            # El túnel de Cloudflare NO se maneja desde aquí: es infraestructura compartida del
+            # servidor (también publica zentropos). Corre como servicio del sistema
+            # (systemctl cloudflared) con el token en /etc/cloudflared/token.
+            # Un contenedor viejo de un deploy anterior se elimina para no tener dos conectores.
+            docker rm -f cloudflared 2>/dev/null || true
 
             # 7. Prevenir expiración del certificado SSL interno de Caddy (rotación automática)
             echo "⏰ Configurando renovación automática para certificados SSL de Caddy..."
