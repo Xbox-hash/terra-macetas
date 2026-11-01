@@ -11,57 +11,54 @@ public class CompanyConfig
 
     [Required]
     [MaxLength(150)]
-    public string StoreName { get; set; } = "TERRA";
+    public string StoreName { get; set; } = string.Empty;
 
     [MaxLength(250)]
-    public string Tagline { get; set; } = "Macetas de autor & diseño decorativo";
+    public string Tagline { get; set; } = string.Empty;
 
     public string LogoUrl { get; set; } = string.Empty;
 
     [MaxLength(10)]
-    public string Currency { get; set; } = "PYG";
+    public string Currency { get; set; } = string.Empty;
 
     [MaxLength(10)]
-    public string CurrencySymbol { get; set; } = "₲";
+    public string CurrencySymbol { get; set; } = string.Empty;
 
     [MaxLength(50)]
-    public string WhatsappNumber { get; set; } = "595981234567";
+    public string WhatsappNumber { get; set; } = string.Empty;
 
     [MaxLength(50)]
-    public string WhatsappDisplay { get; set; } = "+595 981 234 567";
+    public string WhatsappDisplay { get; set; } = string.Empty;
 
     [MaxLength(150)]
-    public string Email { get; set; } = "contacto@terramacetas.com";
+    public string Email { get; set; } = string.Empty;
 
     [MaxLength(100)]
-    public string Instagram { get; set; } = "@terra.macetas";
+    public string Instagram { get; set; } = string.Empty;
 
     [MaxLength(300)]
-    public string Address { get; set; } = "Av. Santa Teresa 1420 c/ Aviadores";
+    public string Address { get; set; } = string.Empty;
 
     [MaxLength(100)]
-    public string City { get; set; } = "Asunción";
+    public string City { get; set; } = string.Empty;
 
     [MaxLength(100)]
-    public string Country { get; set; } = "Paraguay";
+    public string Country { get; set; } = string.Empty;
 
     [MaxLength(200)]
-    public string BusinessHours { get; set; } = "Lunes a Sábados: 09:00 - 18:30 hs";
+    public string BusinessHours { get; set; } = string.Empty;
 
-    // 🤖 WhatsApp Automated Gateway Configuration (Evolution API)
     public bool WhatsappGatewayEnabled { get; set; } = true;
 
     [MaxLength(250)]
-    public string? WhatsappApiUrl { get; set; } = "http://localhost:8080";
+    public string? WhatsappApiUrl { get; set; }
 
     [MaxLength(250)]
-    // Sin valor por defecto: si está vacía se usa WhatsAppGateway__ApiKey del entorno
     public string? WhatsappApiKey { get; set; }
 
     [MaxLength(100)]
-    public string? WhatsappInstanceName { get; set; } = "terra_bot";
+    public string? WhatsappInstanceName { get; set; }
 
-    // 🖼️ Home Page Banner & Philosophy Visuals
     public string? HeroImageUrl { get; set; }
 
     public string? HeroFloatingImageUrl { get; set; }

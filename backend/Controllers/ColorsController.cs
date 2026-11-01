@@ -23,7 +23,7 @@ public class ColorsController : ControllerBase
     {
         var query = _context.PotColors.AsNoTracking().AsQueryable();
 
-        if (onlyActive == true || User.Identity?.IsAuthenticated != true) // visitantes: solo activos
+        if (onlyActive == true || User.Identity?.IsAuthenticated != true) //
         {
             query = query.Where(c => c.Active);
         }

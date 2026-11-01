@@ -21,12 +21,6 @@ public interface INotificationQueue
     void MarkResendFinished();
 }
 
-/// <summary>
-/// Cola en memoria (Channel) para enviar WhatsApp fuera del request HTTP.
-/// Reemplaza a "_ = Task.Run(...)": el trabajo lo procesa un BackgroundService que la app
-/// controla y espera al apagarse. Si un aviso se pierde (reinicio o cola llena), el pedido
-/// sigue con WhatsAppNotified = false en la base y el reenvío de pendientes lo recupera.
-/// </summary>
 public class NotificationQueue : INotificationQueue
 {
     private readonly Channel<NotificationJob> _channel = Channel.CreateBounded<NotificationJob>(

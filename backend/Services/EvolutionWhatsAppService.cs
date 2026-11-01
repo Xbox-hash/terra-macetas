@@ -38,10 +38,6 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
         _scopeFactory = scopeFactory;
     }
 
-    /// <summary>
-    /// Une la configuración del entorno con la guardada en CompanyConfig.
-    /// Es Singleton y AppDbContext es Scoped, por eso abre su propio scope.
-    /// </summary>
     public async Task<WhatsAppSettings> ResolveSettingsAsync()
     {
         using var scope = _scopeFactory.CreateScope();
@@ -67,7 +63,6 @@ public class EvolutionWhatsAppService : IWhatsAppNotificationService
             CompanyPhone: config?.WhatsappNumber ?? string.Empty);
     }
 
-    /// <summary>Arma el detalle de productos del mensaje (usado al crear y al reenviar pedidos).</summary>
     public static string BuildItemsSummary(IEnumerable<OrderItemDto> items) =>
         string.Join("\n\n", items.Select(i =>
             $"• *{i.Quantity}x {i.ProductName}*\n  💵 Precio: ₲ {i.Price:N0} c/u | Subtotal: ₲ {i.Subtotal:N0}"));
