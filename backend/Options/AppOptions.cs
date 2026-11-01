@@ -30,4 +30,5 @@ public class WhatsAppOptions
     // Token secreto que Evolution manda en la URL del webhook (?token=...).
     // Se toma de WhatsAppGateway__WebhookToken. Si está vacío, el webhook rechaza todo.
     public string? WebhookToken { get; set; }
+    public int ResendIntervalMinutes { get; set; } = 2;
 }

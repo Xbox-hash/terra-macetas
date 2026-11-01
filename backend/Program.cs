@@ -54,6 +54,7 @@ builder.Services.Configure<WhatsAppOptions>(builder.Configuration.GetSection(Wha
 builder.Services.AddSingleton<IWhatsAppNotificationService, EvolutionWhatsAppService>();
 builder.Services.AddSingleton<INotificationQueue, NotificationQueue>();
 builder.Services.AddHostedService<NotificationWorker>();
+builder.Services.AddHostedService<PendingNotificationsScheduler>(); 
 
 // 5. Autenticación JWT para el panel /admin
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.Section).Get<JwtOptions>() ?? new JwtOptions();
@@ -83,19 +84,13 @@ builder.Services
 
 builder.Services.AddAuthorization(options =>
 {
-    // Seguro por defecto: todo endpoint exige login, salvo los marcados con [AllowAnonymous]
-    // (catálogo, crear pedido, registrar visita, login y webhook de WhatsApp).
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
-
-    // Gestionar usuarios del panel exige el permiso "users" (o "all")
     options.AddPolicy("ManageUsers", policy =>
         policy.RequireClaim(TokenService.PermissionClaim, "users", "all"));
 });
 
-// 6. CORS: el frontend llama a /api por el mismo dominio (proxy), así que no hace falta abrir a todos.
-// Si algún día se sirve desde otro dominio, se agrega en Cors__AllowedOrigins__0, __1, ...
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 builder.Services.AddCors(options =>
 {
@@ -107,9 +102,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-// IP real del visitante. El tráfico llega por Cloudflare -> túnel (cloudflared) -> Caddy -> API,
-// y en esa cadena X-Forwarded-For no identifica al visitante. Cloudflare siempre manda su IP
-// en CF-Connecting-IP. Si el encabezado no viene (llamadas directas, tests), se usa la IP de la conexión.
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
 {
     o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -117,9 +109,6 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
     o.KnownNetworks.Clear();
     o.KnownProxies.Clear();
 });
-
-// Límites anti-spam por IP real del cliente (gracias a UseForwardedHeaders).
-// La memoria la maneja .NET y se libera sola; antes eran diccionarios que crecían sin límite.
 builder.Services.AddMemoryCache();
 builder.Services.AddRateLimiter(options =>
 {
@@ -134,7 +123,6 @@ builder.Services.AddRateLimiter(options =>
 
     static string ClientIp(HttpContext http) => http.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-    // Crear pedido: máximo 5 por minuto por IP
     options.AddPolicy("orders", http => RateLimitPartition.GetSlidingWindowLimiter(ClientIp(http), _ =>
         new SlidingWindowRateLimiterOptions
         {
@@ -143,9 +131,6 @@ builder.Services.AddRateLimiter(options =>
             SegmentsPerWindow = 6,
             QueueLimit = 0
         }));
-
-    // Login: máximo 20 intentos por minuto por IP (frena que se prueben muchos usuarios distintos).
-    // El bloqueo de 15 min por usuario está en AuthController.
     options.AddPolicy("login", http => RateLimitPartition.GetSlidingWindowLimiter(ClientIp(http), _ =>
         new SlidingWindowRateLimiterOptions
         {
@@ -158,7 +143,6 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
-// 7. Seed database on startup
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;

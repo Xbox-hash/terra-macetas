@@ -1,7 +1,9 @@
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 using System.Threading.Channels;
 using TerraMacetas.Api.Data;
 using TerraMacetas.Api.DTOs;
+using TerraMacetas.Api.Options;
 
 namespace TerraMacetas.Api.Services;
 
@@ -103,5 +105,26 @@ public class NotificationWorker : BackgroundService
 
         var items = JsonSerializer.Deserialize<List<OrderItemDto>>(order.ItemsJson) ?? new List<OrderItemDto>();
         await _whatsApp.SendOrderNotificationAsync(order, EvolutionWhatsAppService.BuildItemsSummary(items));
+    }
+}
+public class PendingNotificationsScheduler : BackgroundService
+{
+    private readonly INotificationQueue _queue;
+    private readonly TimeSpan _interval;
+
+    public PendingNotificationsScheduler(INotificationQueue queue, IOptions<WhatsAppOptions> options)
+    {
+        _queue = queue;
+        _interval = TimeSpan.FromMinutes(Math.Max(1, options.Value.ResendIntervalMinutes));
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        using var timer = new PeriodicTimer(_interval);
+        do
+        {
+            _queue.EnqueueResendPending();
+        }
+        while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 }
