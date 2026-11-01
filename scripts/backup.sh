@@ -89,9 +89,14 @@ log "Listo: $(du -sh "$DEST" | cut -f1)"
 if [[ -n "$RCLONE_REMOTE" ]]; then
   if command -v rclone >/dev/null 2>&1; then
     log "Subiendo a $RCLONE_REMOTE/$STAMP..."
-    rclone copy "$DEST" "$RCLONE_REMOTE/$STAMP"
-    rclone delete "$RCLONE_REMOTE" --min-age "${KEEP_DAYS}d" || true
-    rclone rmdirs "$RCLONE_REMOTE" --leave-root || true
+    # Si la subida falla, el respaldo local ya está guardado: se avisa y se sigue
+    if rclone copy "$DEST" "$RCLONE_REMOTE/$STAMP"; then
+      rclone delete "$RCLONE_REMOTE" --min-age "${KEEP_DAYS}d" || true
+      rclone rmdirs "$RCLONE_REMOTE" --leave-root || true
+      log "Subida terminada."
+    else
+      log "AVISO: falló la subida a $RCLONE_REMOTE. El respaldo local sí quedó guardado."
+    fi
   else
     log "AVISO: RCLONE_REMOTE está configurado pero rclone no está instalado."
   fi
