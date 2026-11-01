@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -104,6 +107,51 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.KnownNetworks.Clear();
+    o.KnownProxies.Clear();
+});
+
+// Límites anti-spam por IP real del cliente (gracias a UseForwardedHeaders).
+// La memoria la maneja .NET y se libera sola; antes eran diccionarios que crecían sin límite.
+builder.Services.AddMemoryCache();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, ct) =>
+    {
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            message = "Demasiadas solicitudes en poco tiempo. Por favor espere un momento antes de volver a intentar."
+        }, ct);
+    };
+
+    static string ClientIp(HttpContext http) => http.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+    // Crear pedido: máximo 5 por minuto por IP
+    options.AddPolicy("orders", http => RateLimitPartition.GetSlidingWindowLimiter(ClientIp(http), _ =>
+        new SlidingWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            SegmentsPerWindow = 6,
+            QueueLimit = 0
+        }));
+
+    // Login: máximo 20 intentos por minuto por IP (frena que se prueben muchos usuarios distintos).
+    // El bloqueo de 15 min por usuario está en AuthController.
+    options.AddPolicy("login", http => RateLimitPartition.GetSlidingWindowLimiter(ClientIp(http), _ =>
+        new SlidingWindowRateLimiterOptions
+        {
+            PermitLimit = 20,
+            Window = TimeSpan.FromMinutes(1),
+            SegmentsPerWindow = 6,
+            QueueLimit = 0
+        }));
+});
+
 var app = builder.Build();
 
 // 7. Seed database on startup
@@ -121,11 +169,10 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "Ocurrió un error al inicializar la base de datos SQL Server.");
     }
 }
-
-// 8. Configure the HTTP request pipeline.
-// Errores no controlados: respuesta ProblemDetails (RFC 7807) sin exponer el stack trace
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+app.UseForwardedHeaders();
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -138,8 +185,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseResponseCompression();
 
-// Servir archivos estáticos desde wwwroot/uploads con encabezados de caché del navegador
-// (va antes de la autenticación: las imágenes del catálogo son públicas)
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
@@ -150,6 +195,8 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseCors("AllowFrontend");
 
+app.UseRateLimiter();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -157,5 +204,4 @@ app.MapControllers();
 
 app.Run();
 
-// Permite que los tests de integración (WebApplicationFactory<Program>) levanten la API
 public partial class Program { }

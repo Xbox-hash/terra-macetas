@@ -1,8 +1,12 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using TerraMacetas.Api.Data;
+using TerraMacetas.Api.Options;
 using TerraMacetas.Api.Services;
 
 namespace TerraMacetas.Api.Controllers;
@@ -16,19 +20,38 @@ public class WhatsAppController : ControllerBase
     private readonly IWhatsAppNotificationService _whatsappService;
     private readonly INotificationQueue _queue;
     private readonly ILogger<WhatsAppController> _logger;
+    private readonly WhatsAppOptions _options;
 
     public WhatsAppController(
         AppDbContext context,
         IHttpClientFactory httpClientFactory,
         IWhatsAppNotificationService whatsappService,
         INotificationQueue queue,
-        ILogger<WhatsAppController> logger)
+        ILogger<WhatsAppController> logger,
+        IOptions<WhatsAppOptions> options)
     {
         _context = context;
         _httpClientFactory = httpClientFactory;
         _whatsappService = whatsappService;
         _queue = queue;
         _logger = logger;
+        _options = options.Value;
+    }
+
+    private bool WebhookTokenIsValid(string? token)
+    {
+        var expected = _options.WebhookToken;
+        if (string.IsNullOrWhiteSpace(expected))
+        {
+            _logger.LogWarning("Webhook de WhatsApp rechazado: WhatsAppGateway__WebhookToken no está configurado.");
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(token)) return false;
+
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(token),
+            Encoding.UTF8.GetBytes(expected));
     }
 
     private async Task<(string baseUrl, string apiKey, string instanceName)> GetConfigAsync()
@@ -70,8 +93,6 @@ public class WhatsAppController : ControllerBase
 
             bool isOnline = state == "open";
 
-            // 🚀 Si WhatsApp está conectado ('open'), se encola el reenvío de pedidos sin notificar.
-            // La cola ignora el pedido si ya hay un reenvío encolado o en curso.
             if (isOnline)
             {
                 _queue.EnqueueResendPending();
@@ -199,10 +220,11 @@ public class WhatsAppController : ControllerBase
         }
     }
 
-    [AllowAnonymous] // público: lo usa la tienda
+    [AllowAnonymous] // lo llama Evolution API, protegido con un token propio
     [HttpPost("webhook")]
-    public async Task<IActionResult> HandleWebhook([FromBody] JsonElement payload)
+    public async Task<IActionResult> HandleWebhook([FromQuery] string? token, [FromBody] JsonElement payload)
     {
+        if (!WebhookTokenIsValid(token)) return Unauthorized();
         try
         {
             if (payload.TryGetProperty("data", out var dataProp))

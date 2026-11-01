@@ -17,6 +17,7 @@ namespace TerraMacetas.Api.Tests;
 public class TerraApiFactory : WebApplicationFactory<Program>
 {
     public const string AdminPassword = "Clave-De-Prueba-2026";
+    public const string WebhookToken = "token-webhook-solo-para-tests";
 
     // Base en memoria compartida: todas las conexiones ven las mismas tablas.
     // _keepAlive queda abierta para que SQLite no la borre mientras duran los tests.
@@ -27,6 +28,7 @@ public class TerraApiFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Testing");
         builder.UseSetting("Jwt:Key", "clave-de-firma-solo-para-tests-con-mas-de-32-caracteres");
+        builder.UseSetting("WhatsAppGateway:WebhookToken", WebhookToken);
 
         builder.ConfigureServices(services =>
         {
@@ -171,5 +173,74 @@ public class ApiSecurityTests : IClassFixture<TerraApiFactory>, IAsyncLifetime
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var order = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal(120_000m, order.GetProperty("total").GetDecimal()); // 3 x 40.000
+    }
+
+    // Simula una visita que llega por Caddy desde la IP indicada.
+    private Task<HttpResponseMessage> PostFromIp(string ip, string url, object body)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(body) };
+        request.Headers.Add("X-Forwarded-For", ip);
+        return _client.SendAsync(request);
+    }
+
+    private static object PedidoSimple() => new
+    {
+        customerName = "Cliente Test",
+        items = new[] { new { productId = "prod-test", quantity = 1 } }
+    };
+
+    [Fact]
+    public async Task El_limite_de_pedidos_es_por_IP_y_no_bloquea_a_otros_clientes()
+    {
+        for (var i = 0; i < 5; i++)
+        {
+            var ok = await PostFromIp("203.0.113.10", "/api/orders", PedidoSimple());
+            Assert.Equal(HttpStatusCode.Created, ok.StatusCode);
+        }
+
+        var sexto = await PostFromIp("203.0.113.10", "/api/orders", PedidoSimple());
+        Assert.Equal(HttpStatusCode.TooManyRequests, sexto.StatusCode);
+
+        // Otro cliente, en el mismo minuto, sigue pudiendo comprar
+        var otroCliente = await PostFromIp("203.0.113.20", "/api/orders", PedidoSimple());
+        Assert.Equal(HttpStatusCode.Created, otroCliente.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/api/whatsapp/webhook")]
+    [InlineData("/api/whatsapp/webhook?token=token-incorrecto")]
+    public async Task El_webhook_de_WhatsApp_rechaza_llamadas_sin_el_token_correcto(string url)
+    {
+        var response = await _client.PostAsJsonAsync(url, new { data = new { key = new { id = "MSG-1" }, status = "READ" } });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task El_webhook_de_WhatsApp_acepta_el_token_correcto()
+    {
+        var response = await _client.PostAsJsonAsync($"/api/whatsapp/webhook?token={TerraApiFactory.WebhookToken}",
+            new { data = new { key = new { id = "MSG-1" }, status = "READ" } });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Fallar_el_login_desde_otra_IP_no_bloquea_al_admin()
+    {
+        for (var i = 0; i < 5; i++)
+        {
+            await PostFromIp("198.51.100.66", "/api/auth/login", new { email = "tester@terra.com", password = "incorrecta" });
+        }
+
+        // El atacante queda bloqueado aunque ahora acierte la contraseña
+        var atacante = await PostFromIp("198.51.100.66", "/api/auth/login",
+            new { email = "tester@terra.com", password = TerraApiFactory.AdminPassword });
+        Assert.Equal(HttpStatusCode.TooManyRequests, atacante.StatusCode);
+
+        // El admin, desde su propia IP, entra sin problema
+        var admin = await PostFromIp("198.51.100.7", "/api/auth/login",
+            new { email = "tester@terra.com", password = TerraApiFactory.AdminPassword });
+        Assert.Equal(HttpStatusCode.OK, admin.StatusCode);
     }
 }

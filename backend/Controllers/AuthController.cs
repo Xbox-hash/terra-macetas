@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using TerraMacetas.Api.Data;
 using TerraMacetas.Api.DTOs;
 using TerraMacetas.Api.Models;
@@ -19,6 +21,7 @@ public class AuthController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly IWebHostEnvironment _env;
     private readonly ILogger<AuthController> _logger;
+    private readonly IMemoryCache _cache;
 
     public AuthController(
         AppDbContext context,
@@ -26,7 +29,8 @@ public class AuthController : ControllerBase
         ITokenService tokens,
         IConfiguration configuration,
         IWebHostEnvironment env,
-        ILogger<AuthController> logger)
+        ILogger<AuthController> logger,
+        IMemoryCache cache)
     {
         _context = context;
         _passwords = passwords;
@@ -34,28 +38,35 @@ public class AuthController : ControllerBase
         _configuration = configuration;
         _env = env;
         _logger = logger;
+        _cache = cache;
     }
 
-    // 🛡️ Memoria para Bloqueo de Fuerza Bruta (Máximo 5 intentos fallidos, bloqueo de 15 min)
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (int FailedAttempts, DateTime LockoutUntil)> _loginAttempts = new();
+    // Bloqueo de fuerza bruta: 5 intentos fallidos (misma IP + mismo usuario) bloquean 15 min.
+    // Se guarda en IMemoryCache, que borra solo las entradas vencidas.
+    private const int MaxFailedAttempts = 5;
+    private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+
+    private sealed class FailedLogins
+    {
+        public int Count;
+        public DateTime LockoutUntil;
+    }
 
     [AllowAnonymous]
+    [EnableRateLimiting("login")]
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginRequestDto request)
     {
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var identifier = (request.Email ?? string.Empty).Trim().ToLower();
-        var key = $"{clientIp}_{identifier}";
+        var key = $"login-fail:{clientIp}_{identifier}";
         var now = DateTime.UtcNow;
 
         // Verificar si está bloqueado temporalmente
-        if (_loginAttempts.TryGetValue(key, out var attemptInfo))
+        if (_cache.TryGetValue<FailedLogins>(key, out var failed) && failed!.LockoutUntil > now)
         {
-            if (attemptInfo.LockoutUntil > now)
-            {
-                var remainingMinutes = Math.Ceiling((attemptInfo.LockoutUntil - now).TotalMinutes);
-                return StatusCode(429, new { message = $"Demasiados intentos fallidos. Acceso bloqueado temporalmente por {remainingMinutes} minuto(s) por seguridad." });
-            }
+            var remainingMinutes = Math.Ceiling((failed.LockoutUntil - now).TotalMinutes);
+            return StatusCode(429, new { message = $"Demasiados intentos fallidos. Acceso bloqueado temporalmente por {remainingMinutes} minuto(s) por seguridad." });
         }
 
         var user = await _context.AdminUsers.FirstOrDefaultAsync(u => 
@@ -91,21 +102,24 @@ public class AuthController : ControllerBase
         var check = user == null ? PasswordCheck.Invalid : _passwords.Verify(user, request.Password);
         if (user == null || check == PasswordCheck.Invalid)
         {
-            // Registrar intento fallido
-            _loginAttempts.AddOrUpdate(key, 
-                _ => (1, DateTime.MinValue), 
-                (_, old) =>
-                {
-                    var newCount = old.FailedAttempts + 1;
-                    var lockUntil = newCount >= 5 ? now.AddMinutes(15) : DateTime.MinValue;
-                    return (newCount, lockUntil);
-                });
+            // Registrar intento fallido (los intentos se cuentan en una ventana de 15 min)
+            var entry = _cache.GetOrCreate(key, e =>
+            {
+                e.AbsoluteExpirationRelativeToNow = LockoutDuration;
+                return new FailedLogins();
+            })!;
+
+            if (Interlocked.Increment(ref entry.Count) >= MaxFailedAttempts)
+            {
+                entry.LockoutUntil = now.Add(LockoutDuration);
+                _cache.Set(key, entry, LockoutDuration); // el bloqueo dura 15 min desde ahora
+            }
 
             return Unauthorized(new { message = "Usuario / correo o contraseña incorrectos." });
         }
 
         // Si el login fue exitoso, limpiar los intentos fallidos
-        _loginAttempts.TryRemove(key, out _);
+        _cache.Remove(key);
 
         // Contraseña vieja (SHA256 sin salt): se vuelve a guardar con el formato seguro
         if (check == PasswordCheck.ValidNeedsRehash)

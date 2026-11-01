@@ -78,6 +78,7 @@ services:
       - WhatsAppGateway__BaseUrl=http://terra_evolution_api:8080
       - WhatsAppGateway__ApiKey=TerraSecretApiKey2026_WhatsAppGateway!
       - WhatsAppGateway__InstanceName=terra_bot_prod
+      - WhatsAppGateway__WebhookToken=${TERRA_WEBHOOK_TOKEN_PROD:-}
       - Jwt__Key=${TERRA_JWT_KEY_PROD:-}
     volumes:
       - terra_uploads_prod:/app/wwwroot/uploads
@@ -116,6 +117,7 @@ services:
       - WhatsAppGateway__BaseUrl=http://terra_evolution_api:8080
       - WhatsAppGateway__ApiKey=TerraSecretApiKey2026_WhatsAppGateway!
       - WhatsAppGateway__InstanceName=terra_bot_test
+      - WhatsAppGateway__WebhookToken=${TERRA_WEBHOOK_TOKEN_TEST:-}
       - Jwt__Key=${TERRA_JWT_KEY_TEST:-}
     volumes:
       - terra_uploads_test:/app/wwwroot/uploads

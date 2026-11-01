@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using TerraMacetas.Api.Data;
 using TerraMacetas.Api.DTOs;
@@ -64,11 +65,10 @@ public class OrdersController : ControllerBase
         return Ok(MapToDto(order));
     }
 
-    // 🛡️ Memoria para Rate Limiting de Pedidos (Máximo 5 pedidos por IP por minuto)
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, List<DateTime>> _orderRateLimits = new();
-
     // Público: cualquier visitante de la tienda puede hacer un pedido.
+    // Límite anti-spam: 5 pedidos por minuto por IP (política "orders" en Program.cs).
     [AllowAnonymous]
+    [EnableRateLimiting("orders")]
     [HttpPost]
     public async Task<ActionResult<OrderDto>> Create([FromBody] CreateOrderDto dto, CancellationToken ct)
     {
@@ -77,21 +77,6 @@ public class OrdersController : ControllerBase
         {
             _logger.LogWarning("Intento de pedido descartado por detección de bot (Honeypot).");
             return Ok(new OrderDto { Id = "ORD-BOT", CustomerName = "Bot Detected", Status = "Cancelado" });
-        }
-
-        // 2. 🛡️ Rate Limiting Anti-Spam (Máximo 5 pedidos por minuto por IP)
-        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var now = DateTime.UtcNow;
-        var timestamps = _orderRateLimits.GetOrAdd(clientIp, _ => new List<DateTime>());
-
-        lock (timestamps)
-        {
-            timestamps.RemoveAll(t => t < now.AddMinutes(-1));
-            if (timestamps.Count >= 5)
-            {
-                return StatusCode(429, new { message = "Demasiados pedidos en poco tiempo. Por favor espere un momento antes de volver a intentar." });
-            }
-            timestamps.Add(now);
         }
 
         var customerCity = dto.CustomerCity?.Trim();

@@ -26,4 +26,8 @@ public class WhatsAppOptions
     public string BaseUrl { get; set; } = "http://localhost:8080";
     public string? ApiKey { get; set; }
     public string InstanceName { get; set; } = "terra_bot";
+
+    // Token secreto que Evolution manda en la URL del webhook (?token=...).
+    // Se toma de WhatsAppGateway__WebhookToken. Si está vacío, el webhook rechaza todo.
+    public string? WebhookToken { get; set; }
 }
