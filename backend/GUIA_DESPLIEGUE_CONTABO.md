@@ -51,13 +51,13 @@ Esta guía explica paso a paso cómo configurar **Evolution API (WhatsApp Autón
    ```bash
    curl -X POST "http://localhost:8080/instance/create" \
      -H "Content-Type: application/json" \
-     -H "apikey: TerraSecretApiKey2026_WhatsAppGateway!" \
+     -H "apikey: <TERRA_EVOLUTION_API_KEY>" \
      -d '{"instanceName": "terra_bot", "qrcode": true, "integration": "WHATSAPP-BAILEYS"}'
    ```
 2. Obtené el código QR de conexión:
    ```bash
    curl -X GET "http://localhost:8080/instance/connect/terra_bot" \
-     -H "apikey: TerraSecretApiKey2026_WhatsAppGateway!"
+     -H "apikey: <TERRA_EVOLUTION_API_KEY>"
    ```
 3. Escaneá el QR desde el teléfono del negocio (**WhatsApp > Ajustes > Dispositivos vinculados > Vincular dispositivo**).
 
@@ -75,7 +75,7 @@ Una vez que la web esté publicada en tu dominio:
 4. Verás la tarjeta exclusiva para desarrollador:
    - **URL Servidor Evolution API:** `http://localhost:8080` (o `http://127.0.0.1:8080`).
    - **Nombre de Instancia:** `terra_bot`.
-   - **API Key:** `TerraSecretApiKey2026_WhatsAppGateway!`.
+   - **API Key:** el valor de `TERRA_EVOLUTION_API_KEY` del archivo `.env` del servidor.
 5. Presioná **Guardar Información**.
 
 ---

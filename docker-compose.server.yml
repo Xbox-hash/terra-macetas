@@ -10,7 +10,7 @@ services:
     restart: always
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=TerraPass2026_MacetasDbSecret!
+      - MSSQL_SA_PASSWORD=${TERRA_SQL_SA_PASSWORD:?Falta TERRA_SQL_SA_PASSWORD en .env}
       - MSSQL_PID=Express
     volumes:
       - terra_mssql_data:/var/opt/mssql
@@ -29,7 +29,7 @@ services:
     environment:
       POSTGRES_DB: evolution
       POSTGRES_USER: evolution_user
-      POSTGRES_PASSWORD: EvoSecretDbPassword2026!
+      POSTGRES_PASSWORD: ${TERRA_EVOLUTION_DB_PASSWORD:?Falta TERRA_EVOLUTION_DB_PASSWORD en .env}
     volumes:
       - terra_evo_data:/var/lib/postgresql/data
     networks:
@@ -45,10 +45,10 @@ services:
       - "127.0.0.1:8088:8080"
     environment:
       - SERVER_URL=http://127.0.0.1:8088
-      - AUTHENTICATION_API_KEY=TerraSecretApiKey2026_WhatsAppGateway!
+      - AUTHENTICATION_API_KEY=${TERRA_EVOLUTION_API_KEY:?Falta TERRA_EVOLUTION_API_KEY en .env}
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://evolution_user:EvoSecretDbPassword2026!@terra_evolution_db:5432/evolution
+      - DATABASE_CONNECTION_URI=postgresql://evolution_user:${TERRA_EVOLUTION_DB_PASSWORD}@terra_evolution_db:5432/evolution
       - DATABASE_SAVE_DATA_INSTANCE=true
       - DATABASE_SAVE_MESSAGE_HISTORIC=true
       - CACHE_REDIS_ENABLED=false
@@ -73,10 +73,10 @@ services:
       - "127.0.0.1:5050:5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Server=terra_sqlserver,1433;Database=TerraMacetas_Prod;User Id=sa;Password=TerraPass2026_MacetasDbSecret!;TrustServerCertificate=True;MultipleActiveResultSets=true;
+      - ConnectionStrings__DefaultConnection=Server=terra_sqlserver,1433;Database=TerraMacetas_Prod;User Id=sa;Password=${TERRA_SQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true;
       - WhatsAppGateway__Enabled=true
       - WhatsAppGateway__BaseUrl=http://terra_evolution_api:8080
-      - WhatsAppGateway__ApiKey=TerraSecretApiKey2026_WhatsAppGateway!
+      - WhatsAppGateway__ApiKey=${TERRA_EVOLUTION_API_KEY}
       - WhatsAppGateway__InstanceName=terra_bot_prod
       - WhatsAppGateway__WebhookToken=${TERRA_WEBHOOK_TOKEN_PROD:-}
       - Jwt__Key=${TERRA_JWT_KEY_PROD:-}
@@ -112,10 +112,10 @@ services:
       - "127.0.0.1:5051:5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=terra_sqlserver,1433;Database=TerraMacetas_Test;User Id=sa;Password=TerraPass2026_MacetasDbSecret!;TrustServerCertificate=True;MultipleActiveResultSets=true;
+      - ConnectionStrings__DefaultConnection=Server=terra_sqlserver,1433;Database=TerraMacetas_Test;User Id=sa;Password=${TERRA_SQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true;
       - WhatsAppGateway__Enabled=true
       - WhatsAppGateway__BaseUrl=http://terra_evolution_api:8080
-      - WhatsAppGateway__ApiKey=TerraSecretApiKey2026_WhatsAppGateway!
+      - WhatsAppGateway__ApiKey=${TERRA_EVOLUTION_API_KEY}
       - WhatsAppGateway__InstanceName=terra_bot_test
       - WhatsAppGateway__WebhookToken=${TERRA_WEBHOOK_TOKEN_TEST:-}
       - Jwt__Key=${TERRA_JWT_KEY_TEST:-}
