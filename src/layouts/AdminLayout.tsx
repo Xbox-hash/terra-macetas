@@ -43,7 +43,7 @@ export const AdminLayout: React.FC = () => {
       hasPermission = userPermissions.includes('products');
     } else if (currentPath.includes('/admin/colores')) {
       hasPermission = userPermissions.includes('colors') || userPermissions.includes('products');
-    } else if (currentPath.includes('/admin/empresa')) {
+    } else if (currentPath.includes('/admin/empresa') || currentPath.includes('/admin/whatsapp')) {
       hasPermission = userPermissions.includes('company');
     } else if (currentPath.includes('/admin/usuarios')) {
       hasPermission = userPermissions.includes('users');

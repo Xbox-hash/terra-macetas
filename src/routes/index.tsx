@@ -17,6 +17,7 @@ import { LinesAdminPage } from '../pages/admin/LinesAdminPage';
 import { ProductsAdminPage } from '../pages/admin/ProductsAdminPage';
 import { ColorsAdminPage } from '../pages/admin/ColorsAdminPage';
 import { CompanyAdminPage } from '../pages/admin/CompanyAdminPage';
+import { WhatsAppAdminPage } from '../pages/admin/WhatsAppAdminPage';
 import { UsersAdminPage } from '../pages/admin/UsersAdminPage';
 import { AnalyticsPage } from '../pages/admin/AnalyticsPage';
 
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
       { path: 'productos', element: <ProductsAdminPage /> },
       { path: 'colores', element: <ColorsAdminPage /> },
       { path: 'empresa', element: <CompanyAdminPage /> },
+      { path: 'whatsapp', element: <WhatsAppAdminPage /> },
       { path: 'usuarios', element: <UsersAdminPage /> },
     ],
   },

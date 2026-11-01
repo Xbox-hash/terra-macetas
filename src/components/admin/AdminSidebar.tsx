@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, Layers, Package, Palette, Building2, Users, Settings, LogOut, Sparkles, ExternalLink, X } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Layers, Package, Palette, Building2, MessageCircle, Users, Settings, LogOut, Sparkles, ExternalLink, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompany } from '../../contexts/CompanyContext';
 
@@ -26,6 +26,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
     { key: 'products', label: 'Productos', path: '/admin/productos', icon: Package },
     { key: 'colors', label: 'Colores & Acabados', path: '/admin/colores', icon: Palette },
     { key: 'company', label: 'Datos Empresa', path: '/admin/empresa', icon: Building2 },
+    // Usa el mismo permiso que Datos Empresa
+    { key: 'company', label: 'WhatsApp y Pedidos', path: '/admin/whatsapp', icon: MessageCircle },
     { key: 'users', label: 'Usuarios / Accesos', path: '/admin/usuarios', icon: Users },
   ];
 

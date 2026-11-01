@@ -42,7 +42,7 @@ export const UsersAdminPage: React.FC = () => {
     { key: 'analytics', label: 'Reportes & BI (Power BI)', desc: 'Visualizar gráficos analíticos y exportar reportes Excel/PDF' },
     { key: 'lines', label: 'Líneas de Macetas', desc: 'Crear, editar y organizar categorías de productos' },
     { key: 'products', label: 'Productos del Catálogo', desc: 'Gestionar productos, precios, fotos y características' },
-    { key: 'company', label: 'Datos de la Empresa', desc: 'Editar WhatsApp, dirección, redes y configuraciones generales' },
+    { key: 'company', label: 'Datos de la Empresa', desc: 'Editar datos de la empresa, dirección, redes y la configuración de WhatsApp' },
     { key: 'users', label: 'Gestión de Usuarios', desc: 'Crear otros usuarios y asignar permisos en el sistema' },
   ];
 
