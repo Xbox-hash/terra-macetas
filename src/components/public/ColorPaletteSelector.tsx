@@ -1,6 +1,6 @@
 import React from 'react';
 import { ProductColor } from '../../types';
-import { Check, Sparkles, Info } from 'lucide-react';
+import { Check, Sparkles } from 'lucide-react';
 
 interface ColorPaletteSelectorProps {
   colors: ProductColor[];
@@ -20,6 +20,24 @@ export const ColorPaletteSelector: React.FC<ColorPaletteSelectorProps> = ({
   }
 
   const activeColor = hoveredColor || selectedColor;
+
+  // Un solo color: no hay nada que elegir, alcanza con una línea
+  if (colors.length === 1) {
+    const only = colors[0];
+    const img = only.swatchImage || only.image;
+    return (
+      <div className="flex items-center gap-2.5 text-xs pt-1">
+        <span className="font-semibold uppercase tracking-wider text-[#5A6858]">Color:</span>
+        <span
+          className="w-5 h-5 rounded-full border border-black/15 overflow-hidden shrink-0"
+          style={{ backgroundColor: only.hex }}
+        >
+          {img && <img src={img} alt="" className="w-full h-full object-cover" />}
+        </span>
+        <span className="font-semibold text-sm text-[#222A21]">{only.name}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 pt-2">
@@ -49,7 +67,7 @@ export const ColorPaletteSelector: React.FC<ColorPaletteSelectorProps> = ({
       </div>
 
       {/* Grid de Muestras en Formato Circular (rounded-full) */}
-      <div className="p-3.5 bg-[#F4EFE6] rounded-2xl border border-[#E3DDD1]">
+      <div className="px-1">
         <div className="flex flex-wrap gap-2.5 sm:gap-3 items-center">
           {colors.map((color) => {
             const isSelected = selectedColor.id === color.id;

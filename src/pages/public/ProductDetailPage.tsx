@@ -188,7 +188,8 @@ export const ProductDetailPage: React.FC = () => {
       {/* Main Product Presentation */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
         {/* Left Column: Big Image & Thumbnails */}
-        <div className="lg:col-span-7 space-y-4">
+        {/* La foto entra completa en la pantalla (ancho según el alto de la ventana) y queda fija al bajar */}
+        <div className="lg:col-span-6 space-y-4 w-full max-w-xl mx-auto lg:max-w-[min(100%,calc((100vh-15rem)*0.8))] lg:sticky lg:top-24">
           {/* Main Large Image Container */}
           <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-[#F1EDE5] border border-[#E6E0D4] shadow-sm group">
             <ImageStack
@@ -205,19 +206,6 @@ export const ProductDetailPage: React.FC = () => {
               </span>
             )}
 
-            {/* Active Selected Color Pill Badge */}
-            {productColors.length > 0 && selectedColor && (
-              <div
-                key={selectedColor.id}
-                className="absolute bottom-4 left-4 z-10 bg-[#1E261F]/85 backdrop-blur-md text-white text-xs px-3.5 py-1.5 rounded-full flex items-center gap-2 border border-white/10 shadow-lg animate-fade-in"
-              >
-                <span
-                  className="w-3.5 h-3.5 rounded-full border border-white/50 shadow-xs"
-                  style={{ backgroundColor: selectedColor.hex }}
-                />
-                <span className="font-medium text-[11px] sm:text-xs">Color: {selectedColor.name}</span>
-              </div>
-            )}
           </div>
 
           {/* Gallery Thumbnails */}
@@ -244,7 +232,7 @@ export const ProductDetailPage: React.FC = () => {
         </div>
 
         {/* Right Column: Product Info & Actions */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-6 space-y-6">
           <div>
             {line && (
               <Link
@@ -376,17 +364,11 @@ export const ProductDetailPage: React.FC = () => {
               <Sparkles className="w-4 h-4 text-[#4A5D4E] shrink-0" />
               <span>Diseño original de taller</span>
             </div>
-            {product.manufacturingTime ? (
-              <div className="flex items-center gap-2.5">
-                <Clock className="w-4 h-4 text-[#4A5D4E] shrink-0" />
-                <span>Tiempo de producción: {product.manufacturingTime}</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2.5">
-                <Truck className="w-4 h-4 text-[#4A5D4E] shrink-0" />
-                <span>Embalaje reforzado anti-quiebres</span>
-              </div>
-            )}
+            {/* El tiempo de fabricación ya figura en la ficha técnica: no se repite acá */}
+            <div className="flex items-center gap-2.5">
+              <Truck className="w-4 h-4 text-[#4A5D4E] shrink-0" />
+              <span>Embalaje reforzado anti-quiebres</span>
+            </div>
           </div>
 
           {/* Pedido del cliente: hasta 4 fotos de detalle (impermeabilización, patitas, acabado...) */}
