@@ -153,14 +153,13 @@ export const ProductsAdminPage: React.FC = () => {
       name: '',
       lineId: lines[0]?.id || '',
       description: '',
-      price: 50000,
-      images: [
-        'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=1000&q=80',
-      ],
-      dimensions: 'Ø 20 cm x Alto 22 cm',
-      material: 'Cerámica cocida de taller',
-      finish: 'Mate artesanal',
-      manufacturingTime: '3 a 5 días hábiles',
+      // Todo vacío: los ejemplos se ven como placeholder y no hay que borrarlos para escribir
+      price: 0,
+      images: [],
+      dimensions: '',
+      material: '',
+      finish: '',
+      manufacturingTime: '',
       colors: [],
       instagramUrl: '',
       detailPhotos: [],
@@ -387,7 +386,7 @@ export const ProductsAdminPage: React.FC = () => {
                       required
                       min={1000}
                       step={1000}
-                      placeholder="85000"
+                      placeholder="Ej: 50000"
                       value={formData.price || ''}
                       onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
                     />
@@ -717,21 +716,21 @@ export const ProductsAdminPage: React.FC = () => {
 
                     <FormInput
                       label="Material de fabricación"
-                      placeholder="Ej: Cerámica refractaria"
+                      placeholder="Ej: Cerámica cocida de taller"
                       value={formData.material}
                       onChange={(e) => setFormData({ ...formData, material: e.target.value })}
                     />
 
                     <FormInput
                       label="Acabado y textura"
-                      placeholder="Ej: Esmalte satinado al horno"
+                      placeholder="Ej: Mate artesanal"
                       value={formData.finish}
                       onChange={(e) => setFormData({ ...formData, finish: e.target.value })}
                     />
 
                     <FormInput
                       label="Tiempo de fabricación"
-                      placeholder="Ej: 3 a 5 días hábiles, 2 semanas..."
+                      placeholder="Ej: 3 a 5 días hábiles"
                       value={formData.manufacturingTime}
                       onChange={(e) => setFormData({ ...formData, manufacturingTime: e.target.value })}
                     />
