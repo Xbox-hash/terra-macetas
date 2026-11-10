@@ -57,8 +57,9 @@ public class VisitCounterTests : IClassFixture<TerraApiFactory>, IAsyncLifetime
         await RecordAsync(ana, "/");
         await RecordAsync(beto, "/");
 
-        // No cuentan: un bot, un pedido sin identificador (tienda vieja) y un identificador inválido
+        // No cuentan: alguien que solo entra al panel de admin, un bot, un pedido sin identificador (tienda vieja) y un identificador inválido
         await RecordAsync($"bot-{Guid.NewGuid():N}", "/", "Googlebot/2.1 (+http://www.google.com/bot.html)");
+        await RecordAsync($"admin-{Guid.NewGuid():N}", "/admin/dashboard");
         await RecordAsync(null);
         await RecordAsync("x' OR 1=1");
 

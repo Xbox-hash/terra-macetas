@@ -112,6 +112,11 @@ public class DashboardController : ControllerBase
         if (visitorId is null || !VisitorIdPattern.IsMatch(visitorId) || IsBot(userAgent))
             return Ok(new { success = true, counted = false });
 
+        // Solo cuenta la tienda pública, nunca el panel de administración.
+        var pagePath = string.IsNullOrWhiteSpace(dto.PagePath) ? "/" : dto.PagePath.Trim();
+        if (pagePath.StartsWith("/admin", StringComparison.OrdinalIgnoreCase))
+            return Ok(new { success = true, counted = false });
+
         // Una sola visita por persona por día, aunque recorra muchas pantallas.
         var todayStart = StartOfTodayUtc();
         if (await _context.SiteVisits.AnyAsync(v => v.VisitorId == visitorId && v.VisitedAt >= todayStart))
@@ -120,7 +125,7 @@ public class DashboardController : ControllerBase
         _context.SiteVisits.Add(new SiteVisit
         {
             VisitorId = visitorId,
-            PagePath = string.IsNullOrWhiteSpace(dto.PagePath) ? "/" : dto.PagePath[..Math.Min(dto.PagePath.Length, 300)],
+            PagePath = pagePath[..Math.Min(pagePath.Length, 300)],
             UserAgent = userAgent.Length > 500 ? userAgent[..500] : userAgent,
             VisitedAt = DateTime.UtcNow
         });
