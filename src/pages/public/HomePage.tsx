@@ -10,7 +10,7 @@ import { Button } from '../../components/common/Button';
 import { useCompany } from '../../contexts/CompanyContext';
 import { ImageStack } from '../../components/common/ImageStack';
 import { useSlideshow } from '../../hooks/useSlideshow';
-import { buildProductSlides } from '../../utils/productSlides';
+import { buildProductSlides, ProductSlide } from '../../utils/productSlides';
 
 const MAX_HERO_IMAGES = 6;
 
@@ -35,20 +35,30 @@ export const HomePage: React.FC = () => {
   const [lines, setLines] = useState<ProductLine[]>(getCachedLines);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>(getCachedFeatured);
   const [loading, setLoading] = useState(false);
-  // Productos activos, solo para completar el carrusel de portada si no tiene fotos propias
-  const [heroProducts, setHeroProducts] = useState<Product[]>([]);
-  const needsHeroFill = (config.heroImages ?? []).filter(Boolean).length < 2;
+  // Productos activos: dan las fotos que rotan en las tarjetas de líneas
+  // (y completan el carrusel de portada si no tiene fotos propias)
+  const [activeProducts, setActiveProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    if (!needsHeroFill) return;
     let isMounted = true;
     productService.getActive().then((list) => {
-      if (isMounted) setHeroProducts(list.slice(0, MAX_HERO_IMAGES));
+      if (isMounted) setActiveProducts(list);
     });
     return () => {
       isMounted = false;
     };
-  }, [needsHeroFill]);
+  }, []);
+
+  // Fotos de cada línea: la de la línea + las de sus productos (una por color)
+  const lineSlides = useMemo(() => {
+    const byLine = new Map<string, ProductSlide[]>();
+    for (const p of activeProducts) {
+      const list = byLine.get(p.lineId) ?? [];
+      list.push(...buildProductSlides(p));
+      byLine.set(p.lineId, list);
+    }
+    return byLine;
+  }, [activeProducts]);
 
   useEffect(() => {
     let isMounted = true;
@@ -99,11 +109,11 @@ export const HomePage: React.FC = () => {
     const pool = [
       ...configured,
       config.heroImageUrl || '/images/hero.jpg',
-      ...[...featuredProducts, ...heroProducts].flatMap((p) => buildProductSlides(p).map((s) => s.src)),
+      ...[...featuredProducts, ...activeProducts.slice(0, MAX_HERO_IMAGES)].flatMap((p) => buildProductSlides(p).map((s) => s.src)),
       ...lines.map((l) => l.image),
     ];
     return Array.from(new Set(pool.filter(Boolean))).slice(0, MAX_HERO_IMAGES);
-  }, [config.heroImages, config.heroImageUrl, featuredProducts, heroProducts, lines]);
+  }, [config.heroImages, config.heroImageUrl, featuredProducts, activeProducts, lines]);
   const [heroPaused, setHeroPaused] = useState(false);
   const [heroIndex, setHeroIndex] = useSlideshow({
     count: heroImages.length,
@@ -243,6 +253,7 @@ export const HomePage: React.FC = () => {
                 key={line.id}
                 line={line}
                 productCount={line.productsCount ?? 0}
+                productSlides={lineSlides.get(line.id)}
               />
             ))}
           </div>
