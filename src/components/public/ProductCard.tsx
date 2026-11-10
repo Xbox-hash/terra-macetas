@@ -7,7 +7,7 @@ import { buildProductSlides, stableOffset } from '../../utils/productSlides';
 import { useCart } from '../../contexts/CartContext';
 import { useToast } from '../../contexts/ToastContext';
 import { ImageStack } from '../common/ImageStack';
-import { useInView, useIsTouchDevice, useSlideshow } from '../../hooks/useSlideshow';
+import { useInView, useSlideshow } from '../../hooks/useSlideshow';
 
 interface ProductCardProps {
   product: Product;
@@ -26,15 +26,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, lineName }) =
     return s.length > 0 ? s : [{ src: FALLBACK_IMAGE }];
   }, [product]);
 
-  // En compu las fotos pasan al poner el mouse encima; en el celular, solas mientras la tarjeta está en pantalla
-  const isTouch = useIsTouchDevice();
+  // Las fotos pasan solas mientras la tarjeta está en pantalla (cada tarjeta con su desfase
+  // para que no cambien todas juntas) y más rápido con el mouse encima
   const [hovered, setHovered] = useState(false);
-  const [cardRef, inView] = useInView<HTMLDivElement>(isTouch && slides.length > 1);
+  const [cardRef, inView] = useInView<HTMLDivElement>(slides.length > 1);
   const [index, setIndex] = useSlideshow({
     count: slides.length,
-    intervalMs: isTouch ? 3200 : 1500,
-    playing: isTouch ? inView : hovered,
-    initialDelayMs: isTouch ? 1200 + stableOffset(product.id, 2000) : 500,
+    intervalMs: hovered ? 1500 : 3200,
+    playing: hovered || inView,
+    initialDelayMs: hovered ? 400 : 1200 + stableOffset(product.id, 2000),
   });
 
   const colorsWithPhoto = (product.colors ?? []).filter((c) => slides.some((s) => s.color?.id === c.id));
