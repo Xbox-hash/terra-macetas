@@ -38,6 +38,12 @@ public class ProductColorDto
     public string? Image { get; set; }
 }
 
+public class ProductDetailPhotoDto
+{
+    public string Image { get; set; } = string.Empty;
+    public string Caption { get; set; } = string.Empty;
+}
+
 public class ProductDto
 {
     public string Id { get; set; } = string.Empty;
@@ -53,6 +59,8 @@ public class ProductDto
     public string? Finish { get; set; }
     public string? ManufacturingTime { get; set; }
     public List<ProductColorDto> Colors { get; set; } = new();
+    public string? InstagramUrl { get; set; }
+    public List<ProductDetailPhotoDto> DetailPhotos { get; set; } = new();
     public bool Active { get; set; }
     public bool Featured { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -70,6 +78,8 @@ public class CreateProductDto
     public string? Finish { get; set; }
     public string? ManufacturingTime { get; set; }
     public List<ProductColorDto>? Colors { get; set; }
+    public string? InstagramUrl { get; set; }
+    public List<ProductDetailPhotoDto>? DetailPhotos { get; set; }
     public bool Active { get; set; } = true;
     public bool Featured { get; set; } = false;
 }
@@ -86,6 +96,8 @@ public class UpdateProductDto
     public string? Finish { get; set; }
     public string? ManufacturingTime { get; set; }
     public List<ProductColorDto>? Colors { get; set; }
+    public string? InstagramUrl { get; set; }
+    public List<ProductDetailPhotoDto>? DetailPhotos { get; set; }
     public bool Active { get; set; }
     public bool Featured { get; set; }
 }

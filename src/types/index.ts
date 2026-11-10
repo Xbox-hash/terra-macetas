@@ -24,9 +24,18 @@ export interface Product {
   finish?: string;
   manufacturingTime?: string;
   colors?: ProductColor[];
+  /** Publicación de Instagram con la foto real de la pieza. */
+  instagramUrl?: string;
+  /** Hasta 4 fotos de detalle (impermeabilización, patitas, acabado...). */
+  detailPhotos?: ProductDetailPhoto[];
   active: boolean;
   featured?: boolean;
   createdAt: string;
+}
+
+export interface ProductDetailPhoto {
+  image: string;
+  caption: string;
 }
 
 export interface ProductColor {
@@ -114,6 +123,8 @@ export interface StoreConfig {
   whatsappApiKeyConfigured?: boolean;
   whatsappInstanceName?: string;
   heroImageUrl?: string;
+  /** Fotos del carrusel de la portada. Vacío = se usa heroImageUrl. */
+  heroImages?: string[];
   heroFloatingImageUrl?: string;
   philosophyImageUrl?: string;
 }

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, MessageCircle, Truck, Sparkles, Shield, Check, Info, Clock } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, MessageCircle, Truck, Sparkles, Clock, ChevronLeft, ChevronRight, ZoomIn, ExternalLink } from 'lucide-react';
 import { Product, ProductLine, ProductColor } from '../../types';
 import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
@@ -13,6 +13,9 @@ import { QuantitySelector } from '../../components/common/QuantitySelector';
 import { ProductCard } from '../../components/public/ProductCard';
 import { ColorPaletteSelector } from '../../components/public/ColorPaletteSelector';
 import { colorService } from '../../services/colorService';
+import { ImageStack } from '../../components/common/ImageStack';
+import { InstagramIcon } from '../../components/common/InstagramIcon';
+import { Modal } from '../../components/common/Modal';
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,8 +32,29 @@ export const ProductDetailPage: React.FC = () => {
   const [productColors, setProductColors] = useState<ProductColor[]>([]);
   const [selectedColor, setSelectedColor] = useState<ProductColor | null>(null);
   const [activeImage, setActiveImage] = useState<string>('');
-  const [isColorTransitioning, setIsColorTransitioning] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Foto de detalle abierta en grande (índice) o null si no hay ninguna abierta
+  const [zoomedDetail, setZoomedDetail] = useState<number | null>(null);
+
+  // Todas las fotos que puede mostrar la imagen grande: galería + una por color
+  const mainImages = useMemo(() => {
+    if (!product) return [];
+    const all = [...product.images, ...productColors.map((c) => c.image)];
+    return Array.from(new Set(all.filter((src): src is string => !!src)));
+  }, [product, productColors]);
+
+  const detailPhotos = product?.detailPhotos?.filter((p) => !!p.image) ?? [];
+
+  // Flechas del teclado dentro de la foto de detalle ampliada
+  useEffect(() => {
+    if (zoomedDetail === null || detailPhotos.length < 2) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') setZoomedDetail((i) => (i === null ? i : (i + 1) % detailPhotos.length));
+      if (e.key === 'ArrowLeft') setZoomedDetail((i) => (i === null ? i : (i - 1 + detailPhotos.length) % detailPhotos.length));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [zoomedDetail, detailPhotos.length]);
 
   useEffect(() => {
     async function loadProductData() {
@@ -121,17 +145,16 @@ export const ProductDetailPage: React.FC = () => {
 
   const handleColorChange = (newColor: ProductColor) => {
     if (selectedColor && newColor.id === selectedColor.id) return;
-    setIsColorTransitioning(true);
     setSelectedColor(newColor);
     if (newColor.image) {
       setActiveImage(newColor.image);
     } else {
       setActiveImage(product.images[selectedImageIndex] || product.images[0] || '');
     }
-    setTimeout(() => {
-      setIsColorTransitioning(false);
-    }, 350);
   };
+
+  const shownImage = activeImage || product.images[selectedImageIndex] || product.images[0] || '';
+  const activeMainIndex = Math.max(0, mainImages.indexOf(shownImage));
 
   const handleAddToCart = () => {
     const colorToSave = productColors.length > 0 && selectedColor ? selectedColor.name : undefined;
@@ -168,12 +191,12 @@ export const ProductDetailPage: React.FC = () => {
         <div className="lg:col-span-7 space-y-4">
           {/* Main Large Image Container */}
           <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-[#F1EDE5] border border-[#E6E0D4] shadow-sm group">
-            <img
-              src={activeImage || product.images[selectedImageIndex] || product.images[0] || ''}
+            <ImageStack
+              images={mainImages.length > 0 ? mainImages : [shownImage]}
+              activeIndex={activeMainIndex}
               alt={`${product.name}${selectedColor ? ` - ${selectedColor.name}` : ''}`}
-              className={`w-full h-full object-cover object-center transition-all duration-500 ease-out ${
-                isColorTransitioning ? 'opacity-30 scale-95 blur-[2px]' : 'opacity-100 scale-100 blur-0'
-              }`}
+              fadeMs={650}
+              eager
             />
 
             {product.featured && (
@@ -184,7 +207,10 @@ export const ProductDetailPage: React.FC = () => {
 
             {/* Active Selected Color Pill Badge */}
             {productColors.length > 0 && selectedColor && (
-              <div className="absolute bottom-4 left-4 z-10 bg-[#1E261F]/85 backdrop-blur-md text-white text-xs px-3.5 py-1.5 rounded-full flex items-center gap-2 border border-white/10 shadow-lg">
+              <div
+                key={selectedColor.id}
+                className="absolute bottom-4 left-4 z-10 bg-[#1E261F]/85 backdrop-blur-md text-white text-xs px-3.5 py-1.5 rounded-full flex items-center gap-2 border border-white/10 shadow-lg animate-fade-in"
+              >
                 <span
                   className="w-3.5 h-3.5 rounded-full border border-white/50 shadow-xs"
                   style={{ backgroundColor: selectedColor.hex }}
@@ -281,6 +307,25 @@ export const ProductDetailPage: React.FC = () => {
             )}
           </div>
 
+          {/* Pedido del cliente: link a la publicación con la foto real de la maceta */}
+          {product.instagramUrl && (
+            <a
+              href={product.instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group/ig flex items-center gap-3.5 rounded-2xl border border-[#E3DDD1] bg-white p-3.5 pr-4 hover:border-[#C13584]/40 hover:shadow-md transition-all duration-300"
+            >
+              <span className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center text-white bg-[linear-gradient(45deg,#F58529,#DD2A7B_50%,#8134AF)] transition-transform duration-300 group-hover/ig:scale-110 group-hover/ig:-rotate-6">
+                <InstagramIcon className="w-5 h-5" />
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-sm font-semibold text-[#222A21]">Ver la foto real en Instagram</span>
+                <span className="block text-[11px] text-[#6F7B6D]">Así se ve esta maceta terminada, sin edición</span>
+              </span>
+              <ExternalLink className="w-4 h-4 text-[#8C988A] shrink-0 transition-transform duration-300 group-hover/ig:translate-x-0.5 group-hover/ig:-translate-y-0.5" />
+            </a>
+          )}
+
           {/* Color Palette Selector */}
           {productColors.length > 0 && selectedColor && (
             <ColorPaletteSelector
@@ -343,8 +388,82 @@ export const ProductDetailPage: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Pedido del cliente: hasta 4 fotos de detalle (impermeabilización, patitas, acabado...) */}
+          {detailPhotos.length > 0 && (
+            <div className="border-t border-[#E8E2D6] pt-6">
+              <h3 className="text-xs uppercase font-bold tracking-wider text-[#5A6858] mb-3">
+                Detalles de la pieza
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                {detailPhotos.map((photo, idx) => (
+                  <button
+                    key={photo.image}
+                    type="button"
+                    onClick={() => setZoomedDetail(idx)}
+                    className="group/detail relative aspect-square rounded-2xl overflow-hidden bg-[#F1EDE5] border border-[#E6E0D4] cursor-zoom-in text-left animate-fade-in-up"
+                    style={{ animationDelay: `${idx * 80}ms` }}
+                  >
+                    <img
+                      src={photo.image}
+                      alt={photo.caption || `Detalle ${idx + 1} de ${product.name}`}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/detail:scale-110"
+                    />
+                    <span className="absolute top-2 right-2 p-1.5 rounded-full bg-white/85 text-[#2D3A2F] opacity-0 group-hover/detail:opacity-100 transition-opacity duration-300">
+                      <ZoomIn className="w-3.5 h-3.5" />
+                    </span>
+                    {photo.caption && (
+                      <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-3 pt-6 pb-2.5 text-[11px] sm:text-xs font-semibold text-white leading-snug">
+                        {photo.caption}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Foto de detalle ampliada */}
+      <Modal
+        isOpen={zoomedDetail !== null}
+        onClose={() => setZoomedDetail(null)}
+        title={zoomedDetail !== null ? detailPhotos[zoomedDetail]?.caption || 'Detalle de la pieza' : undefined}
+        maxWidth="2xl"
+      >
+        {zoomedDetail !== null && detailPhotos[zoomedDetail] && (
+          <div className="relative -m-6">
+            <img
+              key={detailPhotos[zoomedDetail].image}
+              src={detailPhotos[zoomedDetail].image}
+              alt={detailPhotos[zoomedDetail].caption || 'Detalle de la pieza'}
+              className="w-full max-h-[75vh] object-contain bg-[#1C221D] animate-fade-in"
+            />
+            {detailPhotos.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Foto anterior"
+                  onClick={() => setZoomedDetail((zoomedDetail - 1 + detailPhotos.length) % detailPhotos.length)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 text-[#2D3A2F] shadow-md hover:bg-white cursor-pointer"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Foto siguiente"
+                  onClick={() => setZoomedDetail((zoomedDetail + 1) % detailPhotos.length)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 text-[#2D3A2F] shadow-md hover:bg-white cursor-pointer"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </Modal>
 
       {/* RELATED PRODUCTS */}
       {relatedProducts.length > 0 && (

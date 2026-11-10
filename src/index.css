@@ -112,3 +112,21 @@
   transform: translateY(-6px);
   box-shadow: 0 20px 30px -10px rgba(45, 58, 47, 0.12);
 }
+
+/* Zoom lento sobre la foto activa del carrusel de portada */
+@keyframes kenBurns {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+
+.animate-ken-burns {
+  animation: kenBurns 7s ease-out both;
+}
+
+/* Quien pidió menos movimiento en su sistema no ve zooms ni carruseles animados */
+@media (prefers-reduced-motion: reduce) {
+  .animate-ken-burns,
+  .animate-bounce-subtle {
+    animation: none;
+  }
+}

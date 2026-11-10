@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, ShieldCheck, Truck, Palette, HeartHandshake } from 'lucide-react';
 import { Product, ProductLine } from '../../types';
@@ -8,6 +8,8 @@ import { ProductCard } from '../../components/public/ProductCard';
 import { LineCard } from '../../components/public/LineCard';
 import { Button } from '../../components/common/Button';
 import { useCompany } from '../../contexts/CompanyContext';
+import { ImageStack } from '../../components/common/ImageStack';
+import { useSlideshow } from '../../hooks/useSlideshow';
 
 const getCachedLines = (): ProductLine[] => {
   try {
@@ -70,6 +72,18 @@ export const HomePage: React.FC = () => {
       isMounted = false;
     };
   }, []);
+
+  // Carrusel de portada: las fotos cargadas en /admin; si no hay, la foto única de siempre
+  const heroImages = useMemo(() => {
+    const list = (config.heroImages ?? []).filter(Boolean);
+    return list.length > 0 ? list : [config.heroImageUrl || '/images/hero.jpg'];
+  }, [config.heroImages, config.heroImageUrl]);
+  const [heroPaused, setHeroPaused] = useState(false);
+  const [heroIndex, setHeroIndex] = useSlideshow({
+    count: heroImages.length,
+    intervalMs: 5500,
+    playing: !heroPaused,
+  });
 
   const linesWithProducts = lines.filter((line) => (line.productsCount ?? 0) > 0);
 
@@ -134,18 +148,44 @@ export const HomePage: React.FC = () => {
             {/* Right Hero Images - Editorial Collage */}
             <div className="lg:col-span-5 relative animate-fade-in delay-200">
               <div className="relative mx-auto max-w-md lg:max-w-none">
-                <div className="relative aspect-4/5 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/80 transition-all duration-700 hover:shadow-3xl hover:border-white">
-                  <img
-                    src={config.heroImageUrl || '/images/hero.jpg'}
+                <div
+                  className="relative aspect-4/5 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/80 transition-all duration-700 hover:shadow-3xl hover:border-white"
+                  onMouseEnter={() => setHeroPaused(true)}
+                  onMouseLeave={() => setHeroPaused(false)}
+                >
+                  <ImageStack
+                    images={heroImages}
+                    activeIndex={heroIndex}
                     alt={config.storeName || 'Donna Botânica'}
-                    className="w-full h-full object-cover object-center transition-transform duration-1000 ease-out hover:scale-105"
+                    kenBurns
+                    fadeMs={1200}
+                    eager
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent transition-opacity duration-300" />
-                  <div className="absolute bottom-6 left-6 right-6 text-white">
-                    <p className="text-xs uppercase tracking-widest text-[#E0EBDC] font-semibold mb-1">
-                      Diseño & Decoración
-                    </p>
-                    <p className="font-serif text-xl sm:text-2xl font-medium">Texturas minerales y tonos tierra</p>
+                  <div className="absolute inset-0 z-[2] bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute bottom-6 left-6 right-6 z-[3] text-white flex items-end justify-between gap-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-widest text-[#E0EBDC] font-semibold mb-1">
+                        Diseño & Decoración
+                      </p>
+                      <p className="font-serif text-xl sm:text-2xl font-medium">Texturas minerales y tonos tierra</p>
+                    </div>
+                    {heroImages.length > 1 && (
+                      <div className="flex gap-1.5 shrink-0 pb-1.5" role="tablist" aria-label="Fotos de portada">
+                        {heroImages.map((src, i) => (
+                          <button
+                            key={src}
+                            type="button"
+                            role="tab"
+                            aria-selected={i === heroIndex}
+                            aria-label={`Ver foto ${i + 1}`}
+                            onClick={() => setHeroIndex(i)}
+                            className={`h-1.5 rounded-full transition-all duration-500 cursor-pointer ${
+                              i === heroIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/55 hover:bg-white/80'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

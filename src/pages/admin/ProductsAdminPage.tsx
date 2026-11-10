@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Power, Search, Filter, Sparkles, X, Package, Check, Palette, Camera, UploadCloud, ArrowLeft, Save, Eye, Clock } from 'lucide-react';
-import { Product, ProductLine, ProductColor } from '../../types';
+import { Product, ProductLine, ProductColor, ProductDetailPhoto } from '../../types';
 import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
 import { AdminHeader } from '../../components/admin/AdminHeader';
 import { Button } from '../../components/common/Button';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { FormInput } from '../../components/common/FormInput';
+import { InstagramIcon } from '../../components/common/InstagramIcon';
 import { ImageUploader } from '../../components/common/ImageUploader';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { formatPrice } from '../../utils';
@@ -53,6 +54,8 @@ export const ProductsAdminPage: React.FC = () => {
     finish: '',
     manufacturingTime: '',
     colors: [] as ProductColor[],
+    instagramUrl: '',
+    detailPhotos: [] as ProductDetailPhoto[],
     active: true,
     featured: false,
   });
@@ -159,6 +162,8 @@ export const ProductsAdminPage: React.FC = () => {
       finish: 'Mate artesanal',
       manufacturingTime: '3 a 5 días hábiles',
       colors: [],
+      instagramUrl: '',
+      detailPhotos: [],
       active: true,
       featured: false,
     });
@@ -180,6 +185,8 @@ export const ProductsAdminPage: React.FC = () => {
       finish: prod.finish || '',
       manufacturingTime: prod.manufacturingTime || '',
       colors: prod.colors || [],
+      instagramUrl: prod.instagramUrl || '',
+      detailPhotos: prod.detailPhotos || [],
       active: prod.active,
       featured: !!prod.featured,
     });
@@ -197,6 +204,8 @@ export const ProductsAdminPage: React.FC = () => {
           images: full.images || prev.images,
           colors: full.colors || prev.colors,
           manufacturingTime: full.manufacturingTime || prev.manufacturingTime,
+          instagramUrl: full.instagramUrl || prev.instagramUrl,
+          detailPhotos: full.detailPhotos || prev.detailPhotos,
         }));
       }
     } catch {}
@@ -224,6 +233,8 @@ export const ProductsAdminPage: React.FC = () => {
         finish: formData.finish,
         manufacturingTime: formData.manufacturingTime.trim() || undefined,
         colors: formData.colors,
+        instagramUrl: formData.instagramUrl.trim() || undefined,
+        detailPhotos: formData.detailPhotos,
         active: formData.active,
         featured: formData.featured,
       };
@@ -724,6 +735,84 @@ export const ProductsAdminPage: React.FC = () => {
                       value={formData.manufacturingTime}
                       onChange={(e) => setFormData({ ...formData, manufacturingTime: e.target.value })}
                     />
+                  </div>
+                </div>
+
+                {/* CARD FOTOS DE DETALLE E INSTAGRAM */}
+                <div className="bg-white p-6 rounded-2xl border border-[#E5DFD4] shadow-xs space-y-5">
+                  <div className="border-b border-[#F0EBE1] pb-3">
+                    <h3 className="font-serif text-base font-bold text-[#222A21] flex items-center gap-2">
+                      <Camera className="w-4 h-4 text-[#4A5D4E]" />
+                      Fotos de Detalle y Foto Real (Opcional)
+                    </h3>
+                    <p className="text-xs text-[#6E7B6C] mt-0.5">
+                      Se muestran en la página del producto, debajo del botón de pedido.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <FormInput
+                      label="Link de Instagram con la foto real"
+                      placeholder="https://www.instagram.com/p/..."
+                      value={formData.instagramUrl}
+                      onChange={(e) => setFormData({ ...formData, instagramUrl: e.target.value })}
+                    />
+                    <p className="text-[11px] text-[#6E7B6C] flex items-center gap-1.5">
+                      <InstagramIcon className="w-3.5 h-3.5 shrink-0" />
+                      Copiá el link de la publicación desde Instagram (Compartir → Copiar enlace). En la tienda aparece el botón "Ver la foto real en Instagram".
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <span className="block text-xs font-semibold text-[#354333]">
+                        Fotos de detalle ({formData.detailPhotos.length} de 4)
+                      </span>
+                      <p className="text-[11px] text-[#6E7B6C] mt-0.5">
+                        Por ejemplo: impermeabilización, patitas del fondo, acabado de cerca. Cada foto lleva un texto corto.
+                      </p>
+                    </div>
+
+                    <ImageUploader
+                      maxImages={4}
+                      value={formData.detailPhotos.map((p) => p.image)}
+                      onChange={(imgs) =>
+                        setFormData({
+                          ...formData,
+                          // Conservar el texto de cada foto que sigue estando
+                          detailPhotos: imgs.map((image) => ({
+                            image,
+                            caption: formData.detailPhotos.find((p) => p.image === image)?.caption ?? '',
+                          })),
+                        })
+                      }
+                    />
+
+                    {formData.detailPhotos.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {formData.detailPhotos.map((photo, idx) => (
+                          <div key={photo.image} className="flex items-center gap-3 p-2 rounded-xl border border-[#EDE7DC] bg-[#FAF8F5]">
+                            <img src={photo.image} alt="" className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                            <input
+                              type="text"
+                              maxLength={120}
+                              placeholder={['Impermeabilización interna', 'Patitas en el fondo', 'Acabado de cerca', 'Otro detalle'][idx]}
+                              value={photo.caption}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  detailPhotos: formData.detailPhotos.map((p, i) =>
+                                    i === idx ? { ...p, caption: e.target.value } : p
+                                  ),
+                                })
+                              }
+                              aria-label={`Texto de la foto de detalle ${idx + 1}`}
+                              className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-[#DCD5C8] bg-white text-sm text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#4A5D4E]/30"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 

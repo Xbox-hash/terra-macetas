@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -67,6 +68,13 @@ public class CompanyController : ControllerBase
         }
         config.WhatsappInstanceName = string.IsNullOrWhiteSpace(dto.WhatsappInstanceName) ? "terra_bot" : dto.WhatsappInstanceName.Trim();
         config.HeroImageUrl = dto.HeroImageUrl;
+        config.HeroImagesJson = JsonSerializer.Serialize(
+            (dto.HeroImages ?? new List<string>())
+                .Where(u => !string.IsNullOrWhiteSpace(u))
+                .Select(u => u.Trim())
+                .Distinct()
+                .Take(MaxHeroImages)
+                .ToList());
         config.HeroFloatingImageUrl = dto.HeroFloatingImageUrl;
         config.PhilosophyImageUrl = dto.PhilosophyImageUrl;
         config.UpdatedAt = DateTime.UtcNow;
@@ -74,6 +82,21 @@ public class CompanyController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(MapToDto(config));
+    }
+
+    private const int MaxHeroImages = 6;
+
+    private static List<string> ReadHeroImages(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return new List<string>();
+        try
+        {
+            return JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
+        }
+        catch (JsonException)
+        {
+            return new List<string>();
+        }
     }
 
     private CompanyConfigDto MapToDto(CompanyConfig c)
@@ -113,6 +136,7 @@ public class CompanyController : ControllerBase
             WhatsappApiKeyConfigured = isAdmin && !string.IsNullOrWhiteSpace(c.WhatsappApiKey),
             WhatsappInstanceName = isAdmin ? instanceName : null,
             HeroImageUrl = c.HeroImageUrl,
+            HeroImages = ReadHeroImages(c.HeroImagesJson),
             HeroFloatingImageUrl = c.HeroFloatingImageUrl,
             PhilosophyImageUrl = c.PhilosophyImageUrl
         };

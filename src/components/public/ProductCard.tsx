@@ -1,19 +1,44 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Eye, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Eye, Ruler } from 'lucide-react';
 import { Product } from '../../types';
 import { formatPrice } from '../../utils';
+import { buildProductSlides, stableOffset } from '../../utils/productSlides';
 import { useCart } from '../../contexts/CartContext';
 import { useToast } from '../../contexts/ToastContext';
+import { ImageStack } from '../common/ImageStack';
+import { useInView, useIsTouchDevice, useSlideshow } from '../../hooks/useSlideshow';
 
 interface ProductCardProps {
   product: Product;
   lineName?: string;
 }
 
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=800&q=80';
+const MAX_SWATCHES = 5;
+
 export const ProductCard: React.FC<ProductCardProps> = ({ product, lineName }) => {
   const { addToCart, openCartDrawer } = useCart();
   const { showToast } = useToast();
+
+  const slides = useMemo(() => {
+    const s = buildProductSlides(product);
+    return s.length > 0 ? s : [{ src: FALLBACK_IMAGE }];
+  }, [product]);
+
+  // En compu las fotos pasan al poner el mouse encima; en el celular, solas mientras la tarjeta está en pantalla
+  const isTouch = useIsTouchDevice();
+  const [hovered, setHovered] = useState(false);
+  const [cardRef, inView] = useInView<HTMLDivElement>(isTouch && slides.length > 1);
+  const [index, setIndex] = useSlideshow({
+    count: slides.length,
+    intervalMs: isTouch ? 3200 : 1500,
+    playing: isTouch ? inView : hovered,
+    initialDelayMs: isTouch ? 1200 + stableOffset(product.id, 2000) : 500,
+  });
+
+  const colorsWithPhoto = (product.colors ?? []).filter((c) => slides.some((s) => s.color?.id === c.id));
+  const activeSlide = slides[index] ?? slides[0];
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -23,27 +48,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, lineName }) =
     openCartDrawer();
   };
 
-  const mainImage = product.images[0] || 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=800&q=80';
-  const secondImage = product.images[1] || mainImage;
+  const showColor = (colorId: string) => {
+    const i = slides.findIndex((s) => s.color?.id === colorId);
+    if (i >= 0) setIndex(i);
+  };
 
   return (
-    <div className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-[#E9E4DB] hover:border-[#4A5D4E]/30 card-hover">
-      {/* Image Container with Hover zoom and secondary image reveal */}
+    <div
+      ref={cardRef}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => {
+        setHovered(false);
+        setIndex(0);
+      }}
+      className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-[#E9E4DB] hover:border-[#4A5D4E]/30 card-hover"
+    >
+      {/* Fotos con fundido entre la principal y cada color */}
       <Link to={`/producto/${product.id}`} className="relative aspect-4/5 overflow-hidden bg-[#F3EFE9] block">
-        <img
-          src={mainImage}
-          alt={product.name}
-          className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-108"
-          loading="lazy"
+        <ImageStack
+          images={slides.map((s) => s.src)}
+          activeIndex={index}
+          alt={`${product.name}${activeSlide.color ? ` - ${activeSlide.color.name}` : ''}`}
+          className="transition-transform duration-700 ease-out group-hover:scale-105"
+          fadeMs={600}
         />
-        {secondImage !== mainImage && (
-          <img
-            src={secondImage}
-            alt={product.name}
-            className="absolute inset-0 w-full h-full object-cover object-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out"
-            loading="lazy"
-          />
-        )}
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
@@ -59,15 +87,38 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, lineName }) =
           )}
         </div>
 
-        {/* Quick View Floating button on Desktop hover */}
-        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4">
-          <span className="translate-y-4 group-hover:translate-y-0 transition-transform duration-300 bg-white/95 backdrop-blur-xs text-[#2D3A2F] text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg inline-flex items-center gap-1.5 hover:bg-white active:scale-95">
+        {/* Nombre del color que se está viendo */}
+        {activeSlide.color && (
+          <span
+            key={activeSlide.color.id}
+            className="absolute bottom-3 left-3 z-10 bg-[#1E261F]/80 backdrop-blur-md text-white text-[10px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1.5 animate-fade-in"
+          >
+            <span className="w-2.5 h-2.5 rounded-full border border-white/60" style={{ backgroundColor: activeSlide.color.hex }} />
+            {activeSlide.color.name}
+          </span>
+        )}
+
+        {/* Indicador de cuántas fotos hay */}
+        {slides.length > 1 && (
+          <div className="absolute bottom-3.5 right-3 z-10 flex gap-1">
+            {slides.map((s, i) => (
+              <span
+                key={s.src}
+                className={`h-1 rounded-full transition-all duration-500 ${i === index ? 'w-4 bg-white' : 'w-1.5 bg-white/55'}`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Ver detalle (solo compu, al pasar el mouse) */}
+        <div className="absolute inset-0 z-[5] bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:flex items-center justify-center p-4 pointer-events-none">
+          <span className="translate-y-4 group-hover:translate-y-0 transition-transform duration-300 bg-white/95 backdrop-blur-xs text-[#2D3A2F] text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg inline-flex items-center gap-1.5">
             <Eye className="w-3.5 h-3.5" /> Ver detalle
           </span>
         </div>
       </Link>
 
-      {/* Info Container */}
+      {/* Info */}
       <div className="p-5 flex-1 flex flex-col justify-between">
         <div>
           {lineName && (
@@ -80,12 +131,47 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, lineName }) =
               {product.name}
             </h3>
           </Link>
-          <p className="text-xs text-[#6F7B6D] line-clamp-2 mt-1.5 leading-relaxed">
-            {product.description}
-          </p>
+
+          {/* Pedido del cliente: en la tarjeta va la medida; la descripción queda para el detalle */}
+          {product.dimensions && (
+            <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-[#4A5748]">
+              <Ruler className="w-3.5 h-3.5 text-[#7D8B7A] shrink-0" />
+              <span className="line-clamp-1">{product.dimensions}</span>
+            </p>
+          )}
+
+          {/* Muestras de color: al tocarlas se ve la maceta en ese color */}
+          {colorsWithPhoto.length > 1 && (
+            <div className="mt-3 flex items-center gap-1.5" role="group" aria-label="Colores disponibles">
+              {colorsWithPhoto.slice(0, MAX_SWATCHES).map((c) => {
+                const active = activeSlide.color?.id === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    title={c.name}
+                    aria-label={`Ver en ${c.name}`}
+                    aria-pressed={active}
+                    onMouseEnter={() => showColor(c.id)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      showColor(c.id);
+                    }}
+                    className={`w-5 h-5 rounded-full border-2 transition-all duration-200 cursor-pointer ${
+                      active ? 'border-[#2D3A2F] scale-110' : 'border-white ring-1 ring-[#DCD5C8] hover:scale-110'
+                    }`}
+                    style={{ backgroundColor: c.hex }}
+                  />
+                );
+              })}
+              {colorsWithPhoto.length > MAX_SWATCHES && (
+                <span className="text-[10px] font-semibold text-[#7D8B7A]">+{colorsWithPhoto.length - MAX_SWATCHES}</span>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Price & Action */}
+        {/* Precio y acción */}
         <div className="pt-4 mt-3 border-t border-[#F2ECE3] flex items-center justify-between gap-2">
           <div>
             <span className="text-[10px] uppercase font-semibold text-[#8C988A] block">Precio</span>

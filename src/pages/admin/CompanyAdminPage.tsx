@@ -117,17 +117,23 @@ export const CompanyAdminPage: React.FC = () => {
               <div className="space-y-2 text-left bg-[#FAF8F5] p-5 rounded-2xl border border-[#EDE7DC]">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#354333]">
-                    1. Foto Principal del Banner (Hero)
+                    1. Fotos del Banner Principal (Carrusel)
                   </label>
                   <p className="text-[11px] text-[#6E7B6C] mt-0.5">
-                    Imagen grande principal que recibe al cliente en la portada. Recomendado: formato vertical o cuadrado con buena iluminación.
+                    Hasta 6 fotos que van pasando con un fundido suave en la portada. La primera es la que se ve al entrar. Recomendado: formato vertical con buena iluminación.
                   </p>
                 </div>
                 <ImageUploader
-                  maxImages={1}
+                  maxImages={6}
                   folder="company"
-                  value={form.heroImageUrl ? [form.heroImageUrl] : []}
-                  onChange={(imgs) => setForm({ ...form, heroImageUrl: imgs[0] || '' })}
+                  value={
+                    form.heroImages && form.heroImages.length > 0
+                      ? form.heroImages
+                      : form.heroImageUrl
+                        ? [form.heroImageUrl]
+                        : []
+                  }
+                  onChange={(imgs) => setForm({ ...form, heroImages: imgs, heroImageUrl: imgs[0] || '' })}
                 />
               </div>
 

@@ -61,6 +61,9 @@ public class CompanyConfig
 
     public string? HeroImageUrl { get; set; }
 
+    /// <summary>Fotos del carrusel de la portada (JSON). Vacío = se usa HeroImageUrl.</summary>
+    public string? HeroImagesJson { get; set; } = "[]";
+
     public string? HeroFloatingImageUrl { get; set; }
 
     public string? PhilosophyImageUrl { get; set; }

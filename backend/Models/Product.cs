@@ -44,6 +44,13 @@ public class Product
 
     public string? ColorsJson { get; set; } = "[]";
 
+    /// <summary>Publicación de Instagram con la foto real de la pieza.</summary>
+    [MaxLength(500)]
+    public string? InstagramUrl { get; set; }
+
+    /// <summary>Hasta 4 fotos de detalle (impermeabilización, patitas, acabado...) como JSON.</summary>
+    public string? DetailPhotosJson { get; set; } = "[]";
+
     public bool Active { get; set; } = true;
 
     public bool Featured { get; set; } = false;

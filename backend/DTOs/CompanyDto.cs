@@ -23,6 +23,7 @@ public class CompanyConfigDto
     public bool WhatsappApiKeyConfigured { get; set; }
     public string? WhatsappInstanceName { get; set; } = "terra_bot";
     public string? HeroImageUrl { get; set; }
+    public List<string> HeroImages { get; set; } = new();
     public string? HeroFloatingImageUrl { get; set; }
     public string? PhilosophyImageUrl { get; set; }
 }

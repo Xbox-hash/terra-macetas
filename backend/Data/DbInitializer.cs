@@ -22,53 +22,81 @@ public static class DbInitializer
     /// <summary>
     /// Verifica y agrega defensivamente columnas nuevas a tablas existentes sin requerir migraciones complejas.
     /// </summary>
+    // Columnas agregadas después de que las tablas ya existían en producción.
+    // Para sumar una nueva alcanza con agregarla a esta lista (todas son opcionales / NULL).
+    private static readonly (string Table, string Column, string SqlServerType, string SqliteType)[] AddedColumns =
+    {
+        ("Orders", "CustomerCity", "NVARCHAR(150)", "TEXT"),
+        ("Products", "InstagramUrl", "NVARCHAR(500)", "TEXT"),
+        ("Products", "DetailPhotosJson", "NVARCHAR(MAX)", "TEXT"),
+        ("CompanyConfigs", "HeroImagesJson", "NVARCHAR(MAX)", "TEXT"),
+    };
+
     private static async Task EnsureColumnsExistAsync(AppDbContext context)
     {
-        try
+        foreach (var (table, column, sqlServerType, sqliteType) in AddedColumns)
         {
-            if (context.Database.IsSqlServer())
+            try
             {
-                await context.Database.ExecuteSqlRawAsync(@"
-                    IF NOT EXISTS (
-                        SELECT 1 FROM sys.columns 
-                        WHERE object_id = OBJECT_ID(N'[dbo].[Orders]') 
-                        AND name = 'CustomerCity'
-                    )
-                    BEGIN
-                        ALTER TABLE [dbo].[Orders] ADD [CustomerCity] NVARCHAR(150) NULL;
-                    END
-                ");
+                if (context.Database.IsSqlServer())
+                {
+                    // Los nombres salen de la lista fija de arriba, nunca de datos externos
+#pragma warning disable EF1002
+                    await context.Database.ExecuteSqlRawAsync($@"
+                        IF NOT EXISTS (
+                            SELECT 1 FROM sys.columns
+                            WHERE object_id = OBJECT_ID(N'[dbo].[{table}]') AND name = '{column}'
+                        )
+                        BEGIN
+                            ALTER TABLE [dbo].[{table}] ADD [{column}] {sqlServerType} NULL;
+                        END
+                    ");
+#pragma warning restore EF1002
+                }
+                else if (context.Database.IsSqlite())
+                {
+                    await EnsureSqliteColumnAsync(context, table, column, sqliteType);
+                }
             }
-            else if (context.Database.IsSqlite())
+            catch (Exception ex)
             {
-                using var conn = context.Database.GetDbConnection();
-                await conn.OpenAsync();
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = "PRAGMA table_info(Orders);";
-                bool hasCity = false;
-                using (var reader = await cmd.ExecuteReaderAsync())
-                {
-                    while (await reader.ReadAsync())
-                    {
-                        var colName = reader["name"]?.ToString();
-                        if (string.Equals(colName, "CustomerCity", StringComparison.OrdinalIgnoreCase))
-                        {
-                            hasCity = true;
-                            break;
-                        }
-                    }
-                }
-                if (!hasCity)
-                {
-                    using var alterCmd = conn.CreateCommand();
-                    alterCmd.CommandText = "ALTER TABLE Orders ADD COLUMN CustomerCity TEXT NULL;";
-                    await alterCmd.ExecuteNonQueryAsync();
-                }
+                Console.WriteLine($"[DbInitializer] Nota al verificar la columna {table}.{column}: {ex.Message}");
             }
         }
-        catch (Exception ex)
+    }
+
+    private static async Task EnsureSqliteColumnAsync(AppDbContext context, string table, string column, string type)
+    {
+        var conn = context.Database.GetDbConnection();
+        var openedHere = conn.State != System.Data.ConnectionState.Open;
+        if (openedHere) await conn.OpenAsync();
+        try
         {
-            Console.WriteLine($"[DbInitializer] Nota al verificar columnas: {ex.Message}");
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = $"PRAGMA table_info({table});";
+            var exists = false;
+            using (var reader = await cmd.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    if (string.Equals(reader["name"]?.ToString(), column, StringComparison.OrdinalIgnoreCase))
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!exists)
+            {
+                using var alterCmd = conn.CreateCommand();
+                alterCmd.CommandText = $"ALTER TABLE {table} ADD COLUMN {column} {type} NULL;";
+                await alterCmd.ExecuteNonQueryAsync();
+            }
+        }
+        finally
+        {
+            if (openedHere) await conn.CloseAsync();
         }
     }
 

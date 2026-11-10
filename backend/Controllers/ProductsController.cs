@@ -100,6 +100,11 @@ public class ProductsController : ControllerBase
             return BadRequest(new { message = "La línea seleccionada no existe" });
         }
 
+        if (!TryNormalizeInstagramUrl(dto.InstagramUrl, out var instagramUrl))
+        {
+            return BadRequest(new { message = InstagramUrlError });
+        }
+
         var product = new Product
         {
             Id = $"prod-{Guid.NewGuid().ToString("N")[..8]}",
@@ -114,6 +119,8 @@ public class ProductsController : ControllerBase
             Finish = dto.Finish?.Trim(),
             ManufacturingTime = dto.ManufacturingTime?.Trim(),
             ColorsJson = JsonSerializer.Serialize(dto.Colors ?? new List<ProductColorDto>()),
+            InstagramUrl = instagramUrl,
+            DetailPhotosJson = JsonSerializer.Serialize(CleanDetailPhotos(dto.DetailPhotos)),
             Active = dto.Active,
             Featured = dto.Featured,
             CreatedAt = DateTime.UtcNow
@@ -133,6 +140,11 @@ public class ProductsController : ControllerBase
         var product = await _context.Products.Include(p => p.Line).FirstOrDefaultAsync(p => p.Id == id);
         if (product == null) return NotFound(new { message = "Producto no encontrado" });
 
+        if (!TryNormalizeInstagramUrl(dto.InstagramUrl, out var instagramUrl))
+        {
+            return BadRequest(new { message = InstagramUrlError });
+        }
+
         if (product.LineId != dto.LineId)
         {
             var lineExists = await _context.ProductLines.AnyAsync(l => l.Id == dto.LineId);
@@ -150,6 +162,8 @@ public class ProductsController : ControllerBase
         product.Finish = dto.Finish?.Trim();
         product.ManufacturingTime = dto.ManufacturingTime?.Trim();
         if (dto.Colors != null) product.ColorsJson = JsonSerializer.Serialize(dto.Colors);
+        product.InstagramUrl = instagramUrl;
+        if (dto.DetailPhotos != null) product.DetailPhotosJson = JsonSerializer.Serialize(CleanDetailPhotos(dto.DetailPhotos));
         product.Active = dto.Active;
         product.Featured = dto.Featured;
 
@@ -182,6 +196,53 @@ public class ProductsController : ControllerBase
         return NoContent();
     }
 
+    private const int MaxDetailPhotos = 4;
+    private const int MaxCaptionLength = 120;
+    private const string InstagramUrlError = "El link de Instagram tiene que ser una dirección de instagram.com (por ejemplo https://www.instagram.com/p/...)";
+
+    /// <summary>
+    /// Acepta vacío (sin link) o un enlace de instagram.com, que se guarda siempre como https.
+    /// Cualquier otro sitio o esquema (por ejemplo "javascript:") se rechaza.
+    /// </summary>
+    public static bool TryNormalizeInstagramUrl(string? raw, out string? normalized)
+    {
+        normalized = null;
+        if (string.IsNullOrWhiteSpace(raw)) return true;
+
+        var value = raw.Trim();
+        if (!value.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+            !value.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            value = "https://" + value;
+        }
+
+        if (value.Length > 500 || !Uri.TryCreate(value, UriKind.Absolute, out var uri)) return false;
+
+        var host = uri.Host.ToLowerInvariant();
+        var isInstagram = host == "instagram.com" || host.EndsWith(".instagram.com") || host == "instagr.am";
+        if (!isInstagram) return false;
+
+        normalized = new UriBuilder(uri) { Scheme = Uri.UriSchemeHttps, Port = -1 }.Uri.ToString();
+        return true;
+    }
+
+    private static List<ProductDetailPhotoDto> CleanDetailPhotos(List<ProductDetailPhotoDto>? photos)
+    {
+        return (photos ?? new List<ProductDetailPhotoDto>())
+            .Where(p => !string.IsNullOrWhiteSpace(p.Image))
+            .Take(MaxDetailPhotos)
+            .Select(p =>
+            {
+                var caption = (p.Caption ?? string.Empty).Trim();
+                return new ProductDetailPhotoDto
+                {
+                    Image = p.Image.Trim(),
+                    Caption = caption.Length > MaxCaptionLength ? caption[..MaxCaptionLength] : caption
+                };
+            })
+            .ToList();
+    }
+
     private static ProductDto MapToDto(Product product, bool isList = false)
     {
         List<string> imagesList;
@@ -204,6 +265,18 @@ public class ProductsController : ControllerBase
         catch
         {
             colorsList = new List<ProductColorDto>();
+        }
+
+        List<ProductDetailPhotoDto> detailPhotos;
+        try
+        {
+            detailPhotos = !string.IsNullOrWhiteSpace(product.DetailPhotosJson)
+                ? JsonSerializer.Deserialize<List<ProductDetailPhotoDto>>(product.DetailPhotosJson) ?? new List<ProductDetailPhotoDto>()
+                : new List<ProductDetailPhotoDto>();
+        }
+        catch
+        {
+            detailPhotos = new List<ProductDetailPhotoDto>();
         }
 
         if (isList)
@@ -234,6 +307,8 @@ public class ProductsController : ControllerBase
             Finish = product.Finish,
             ManufacturingTime = product.ManufacturingTime,
             Colors = colorsList,
+            InstagramUrl = product.InstagramUrl,
+            DetailPhotos = detailPhotos,
             Active = product.Active,
             Featured = product.Featured,
             CreatedAt = product.CreatedAt
