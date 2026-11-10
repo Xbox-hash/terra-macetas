@@ -22,7 +22,6 @@ public class DashboardController : ControllerBase
     [HttpGet("stats")]
     public async Task<ActionResult<DashboardStatsDto>> GetStats()
     {
-        var today = DateTime.UtcNow.Date;
         var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
 
         // Limpiar cancelados de más de 7 días
@@ -36,8 +35,7 @@ public class DashboardController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
-        var totalVisits = await _context.SiteVisits.CountAsync();
-        var visitsToday = await _context.SiteVisits.CountAsync(v => v.VisitedAt >= today);
+        var (totalVisits, visitsToday) = await CountVisitorsAsync(_context);
 
         var totalOrders = await _context.Orders.CountAsync();
         var pendingOrders = await _context.Orders.CountAsync(o => o.Status == "Pendiente");
@@ -107,17 +105,57 @@ public class DashboardController : ControllerBase
     [HttpPost("record-visit")]
     public async Task<IActionResult> RecordVisit([FromBody] RecordVisitDto dto)
     {
-        var visit = new SiteVisit
-        {
-            PagePath = string.IsNullOrWhiteSpace(dto.PagePath) ? "/" : dto.PagePath,
-            UserAgent = Request.Headers.UserAgent.ToString(),
-            VisitedAt = DateTime.UtcNow
-        };
+        var visitorId = dto.VisitorId?.Trim();
+        var userAgent = Request.Headers.UserAgent.ToString();
 
-        _context.SiteVisits.Add(visit);
+        // Sin identificador válido (versión vieja de la tienda) o con pinta de bot: no se cuenta.
+        if (visitorId is null || !VisitorIdPattern.IsMatch(visitorId) || IsBot(userAgent))
+            return Ok(new { success = true, counted = false });
+
+        // Una sola visita por persona por día, aunque recorra muchas pantallas.
+        var todayStart = StartOfTodayUtc();
+        if (await _context.SiteVisits.AnyAsync(v => v.VisitorId == visitorId && v.VisitedAt >= todayStart))
+            return Ok(new { success = true, counted = false });
+
+        _context.SiteVisits.Add(new SiteVisit
+        {
+            VisitorId = visitorId,
+            PagePath = string.IsNullOrWhiteSpace(dto.PagePath) ? "/" : dto.PagePath[..Math.Min(dto.PagePath.Length, 300)],
+            UserAgent = userAgent.Length > 500 ? userAgent[..500] : userAgent,
+            VisitedAt = DateTime.UtcNow
+        });
         await _context.SaveChangesAsync();
-        return Ok(new { success = true });
+        return Ok(new { success = true, counted = true });
     }
+
+    /// <summary>
+    /// Personas distintas (un identificador anónimo por navegador) en total y hoy, no pantallas vistas.
+    /// Los registros viejos sin identificador eran pantallas vistas y no se cuentan.
+    /// </summary>
+    public static async Task<(int Total, int Today)> CountVisitorsAsync(AppDbContext db)
+    {
+        var todayStart = StartOfTodayUtc();
+        var visitors = db.SiteVisits.Where(v => v.VisitorId != null);
+        var total = await visitors.Select(v => v.VisitorId).Distinct().CountAsync();
+        var today = await visitors.Where(v => v.VisitedAt >= todayStart).Select(v => v.VisitorId).Distinct().CountAsync();
+        return (total, today);
+    }
+
+    // Paraguay usa UTC-3 todo el año desde octubre de 2024.
+    private static readonly TimeSpan ParaguayOffset = TimeSpan.FromHours(-3);
+
+    /// <summary>Medianoche de hoy en Paraguay, expresada en UTC.</summary>
+    private static DateTime StartOfTodayUtc() => (DateTime.UtcNow + ParaguayOffset).Date - ParaguayOffset;
+
+    private static readonly System.Text.RegularExpressions.Regex VisitorIdPattern =
+        new(@"^[A-Za-z0-9-]{8,64}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static readonly System.Text.RegularExpressions.Regex BotPattern =
+        new(@"bot|crawl|spider|slurp|headless|lighthouse|pagespeed|facebookexternalhit|preview|monitor|curl|wget|python|java/",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static bool IsBot(string userAgent) =>
+        string.IsNullOrWhiteSpace(userAgent) || BotPattern.IsMatch(userAgent);
 
     private static string? ExtractCityFromNotes(string? notes)
     {

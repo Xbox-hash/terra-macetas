@@ -73,4 +73,5 @@ public class DashboardStatsDto
 public class RecordVisitDto
 {
     public string PagePath { get; set; } = "/";
+    public string? VisitorId { get; set; }
 }

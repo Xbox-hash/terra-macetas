@@ -30,6 +30,7 @@ public static class DbInitializer
         ("Products", "InstagramUrl", "NVARCHAR(500)", "TEXT"),
         ("Products", "DetailPhotosJson", "NVARCHAR(MAX)", "TEXT"),
         ("CompanyConfigs", "HeroImagesJson", "NVARCHAR(MAX)", "TEXT"),
+        ("SiteVisits", "VisitorId", "NVARCHAR(64)", "TEXT"),
     };
 
     private static async Task EnsureColumnsExistAsync(AppDbContext context)

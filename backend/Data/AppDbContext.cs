@@ -52,6 +52,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<SiteVisit>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.VisitorId, e.VisitedAt });
         });
 
         modelBuilder.Entity<AdminUser>(entity =>

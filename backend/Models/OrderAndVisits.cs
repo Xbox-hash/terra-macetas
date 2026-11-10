@@ -66,6 +66,10 @@ public class SiteVisit
     [Key]
     public int Id { get; set; }
 
+    /// <summary>Identificador anónimo del navegador; permite contar personas y no pantallas.</summary>
+    [MaxLength(64)]
+    public string? VisitorId { get; set; }
+
     public string PagePath { get; set; } = "/";
 
     public string? UserAgent { get; set; }

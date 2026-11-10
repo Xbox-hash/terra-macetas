@@ -1,7 +1,55 @@
 import { CartItem, Order } from '../types';
-import { API_BASE, apiFetch } from './apiConfig';
+import { API_BASE, apiFetch, getAuthToken } from './apiConfig';
 
 const API_BASE_URL = API_BASE;
+
+const VISITOR_ID_KEY = 'terra_visitor_id';
+const LAST_VISIT_DAY_KEY = 'terra_last_visit_day';
+const STAFF_DEVICE_KEY = 'terra_staff_device';
+
+// Respaldo si el navegador no deja guardar datos: vale solo mientras la pestaña esté abierta.
+let memoryVisitorId: string | null = null;
+
+function newVisitorId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Fecha de hoy en Paraguay (UTC-3), igual que la usa el backend. */
+function todayInParaguay(): string {
+  return new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/**
+ * Decide si esta carga cuenta como visita y devuelve el identificador anónimo del navegador.
+ * Devuelve null si ya se contó hoy o si es un dispositivo donde se usó el panel de admin.
+ */
+function visitorIdToRecord(): string | null {
+  try {
+    // Si en este navegador alguna vez se inició sesión en /admin, sus visitas no cuentan.
+    if (getAuthToken()) localStorage.setItem(STAFF_DEVICE_KEY, '1');
+    if (localStorage.getItem(STAFF_DEVICE_KEY)) return null;
+
+    let id = localStorage.getItem(VISITOR_ID_KEY);
+    if (!id) {
+      id = newVisitorId();
+      localStorage.setItem(VISITOR_ID_KEY, id);
+    }
+
+    const today = todayInParaguay();
+    if (localStorage.getItem(LAST_VISIT_DAY_KEY) === today) return null;
+    localStorage.setItem(LAST_VISIT_DAY_KEY, today);
+    return id;
+  } catch {
+    if (memoryVisitorId) return null;
+    memoryVisitorId = newVisitorId();
+    return memoryVisitorId;
+  }
+}
 
 export interface DashboardStats {
   totalVisits: number;
@@ -123,15 +171,21 @@ export const dashboardService = {
     };
   },
 
+  /** Cuenta a la persona una vez por día, no cada pantalla que abre. */
   async recordVisit(pagePath: string): Promise<void> {
+    const visitorId = visitorIdToRecord();
+    if (!visitorId) return;
+
     try {
-      await apiFetch(`${API_BASE_URL}/dashboard/record-visit`, {
+      const res = await apiFetch(`${API_BASE_URL}/dashboard/record-visit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pagePath }),
+        body: JSON.stringify({ pagePath, visitorId }),
       });
+      if (!res.ok) throw new Error(`record-visit ${res.status}`);
     } catch {
-      // Silently ignore tracking errors
+      // Si no se pudo registrar, se reintenta en la próxima pantalla
+      try { localStorage.removeItem(LAST_VISIT_DAY_KEY); } catch { /* sin almacenamiento */ }
     }
   }
 };

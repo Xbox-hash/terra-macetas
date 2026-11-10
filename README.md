@@ -41,7 +41,7 @@ terra-macetas/
 
 ### 📊 2. Panel Administrativo (`/admin`)
 - **Dashboard de Métricas en Vivo:**
-  - Contador de visitas totales a la tienda y visitas del día.
+  - Contador de personas que visitaron la tienda (una por navegador y por día, sin bots ni el dispositivo del admin) y personas del día (horario de Paraguay).
   - Pedidos realizados, pedidos pendientes y pedidos cerrados con facturación acumulada.
   - **Gestor de Pedidos:** Tabla con detalle de productos y botón **`Dar por Cerrado` ✅** para registrar la venta concretada.
 - **Gestión de Líneas:** CRUD de familias de macetas con selector de fotos e indicadores de modelos activos.

@@ -151,7 +151,7 @@ export const DashboardPage: React.FC = () => {
           <div className="bg-white p-6 rounded-3xl border border-[#E5DFD4] shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-[#6D7B6C]">
-                Visitas a la Tienda
+                Personas que visitaron
               </span>
               <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center">
                 <Eye className="w-5 h-5" />
@@ -162,7 +162,7 @@ export const DashboardPage: React.FC = () => {
                 {stats.totalVisits.toLocaleString()}
               </h3>
               <p className="text-xs text-[#586656] mt-1 flex items-center gap-1">
-                <span className="font-semibold text-emerald-700">+{stats.visitsToday}</span> visitas hoy
+                <span className="font-semibold text-emerald-700">+{stats.visitsToday}</span> {stats.visitsToday === 1 ? 'persona' : 'personas'} hoy
               </p>
             </div>
           </div>
