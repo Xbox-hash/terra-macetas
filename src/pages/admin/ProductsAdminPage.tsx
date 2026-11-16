@@ -11,6 +11,8 @@ import { FormInput } from '../../components/common/FormInput';
 import { InstagramIcon } from '../../components/common/InstagramIcon';
 import { ImageUploader } from '../../components/common/ImageUploader';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { Pagination } from '../../components/common/Pagination';
+import { usePagination } from '../../hooks/usePagination';
 import { formatPrice } from '../../utils';
 import { useToast } from '../../contexts/ToastContext';
 import { colorService } from '../../services/colorService';
@@ -146,6 +148,12 @@ export const ProductsAdminPage: React.FC = () => {
       return true;
     });
   }, [products, selectedLineFilter, selectedStatusFilter, searchQuery]);
+
+  const productsPagination = usePagination(
+    filteredProducts,
+    10,
+    `${selectedLineFilter}|${selectedStatusFilter}|${searchQuery}`
+  );
 
   const handleOpenCreate = () => {
     setEditingProduct(null);
@@ -1064,7 +1072,7 @@ export const ProductsAdminPage: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredProducts.map((product) => (
+                  productsPagination.pageItems.map((product) => (
                     <tr key={product.id} className="hover:bg-[#FAF8F4] transition-colors">
                       <td className="px-6 py-4">
                         <img
@@ -1152,6 +1160,16 @@ export const ProductsAdminPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+          {!loading && (
+            <Pagination
+              page={productsPagination.page}
+              totalPages={productsPagination.totalPages}
+              totalItems={productsPagination.totalItems}
+              pageSize={productsPagination.pageSize}
+              onPageChange={productsPagination.setPage}
+              itemLabel="productos"
+            />
+          )}
         </div>
       </main>
 
