@@ -25,6 +25,8 @@ import { FormInput } from '../../components/common/FormInput';
 import { compressImageFile } from '../../utils/imageCompressor';
 import { uploadService } from '../../services/uploadService';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { Pagination } from '../../components/common/Pagination';
+import { usePagination } from '../../hooks/usePagination';
 import { useToast } from '../../contexts/ToastContext';
 
 export const ColorsAdminPage: React.FC = () => {
@@ -205,6 +207,8 @@ export const ColorsAdminPage: React.FC = () => {
     return true;
   });
 
+  const colorsPagination = usePagination(filteredColors, 12, `${searchQuery}|${filterType}`);
+
   const totalColors = colors.length;
   const activeColorsCount = colors.filter((c) => c.active !== false).length;
   const withPhotoCount = colors.filter((c) => !!c.image).length;
@@ -346,8 +350,9 @@ export const ColorsAdminPage: React.FC = () => {
             )}
           </div>
         ) : (
+          <div className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filteredColors.map((color) => {
+            {colorsPagination.pageItems.map((color) => {
               const isActive = color.active !== false;
               return (
                 <div
@@ -455,6 +460,22 @@ export const ColorsAdminPage: React.FC = () => {
                 </div>
               );
             })}
+          </div>
+          {colorsPagination.totalPages > 1 && (
+            <div className="bg-white rounded-2xl border border-[#E9E4DB] shadow-2xs overflow-hidden [&>nav]:border-t-0">
+              <Pagination
+                page={colorsPagination.page}
+                totalPages={colorsPagination.totalPages}
+                totalItems={colorsPagination.totalItems}
+                pageSize={colorsPagination.pageSize}
+                onPageChange={(p) => {
+                  colorsPagination.setPage(p);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                itemLabel="colores"
+              />
+            </div>
+          )}
           </div>
         )}
       </main>
