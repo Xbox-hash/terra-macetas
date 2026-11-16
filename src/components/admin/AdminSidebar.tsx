@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, BarChart3, Layers, Package, Palette, Building2, MessageCircle, Users, Settings, LogOut, Sparkles, ExternalLink, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompany } from '../../contexts/CompanyContext';
+import { CanindevsCredit } from '../common/CanindevsCredit';
 
 interface AdminSidebarProps {
   isOpen?: boolean;
@@ -136,6 +137,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
           <LogOut className="w-3.5 h-3.5" />
           Cerrar Sesión
         </button>
+
+        <CanindevsCredit className="w-full mt-3" />
       </div>
     </div>
   );

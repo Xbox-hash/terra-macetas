@@ -6,6 +6,7 @@ import { useCompany } from '../../contexts/CompanyContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Button } from '../../components/common/Button';
 import { FormInput } from '../../components/common/FormInput';
+import { CanindevsCredit } from '../../components/common/CanindevsCredit';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -143,6 +144,10 @@ export const LoginPage: React.FC = () => {
           <Link to="/" className="text-xs text-[#95A893] hover:text-white transition-colors">
             ← Volver a la tienda pública
           </Link>
+        </div>
+
+        <div className="text-center mt-8">
+          <CanindevsCredit />
         </div>
       </div>
     </div>
