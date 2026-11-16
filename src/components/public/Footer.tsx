@@ -120,7 +120,7 @@ export const Footer: React.FC = () => {
 
         {/* Footer Bottom */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-[#8A9688] gap-4">
-          <p className="flex flex-wrap items-center justify-center gap-2 text-sm">
+          <p className="flex flex-wrap items-center justify-center gap-2 text-sm uppercase tracking-wide">
             © {new Date().getFullYear()}
             <a
               href="https://canindevs.nandekuatia.com.py"
