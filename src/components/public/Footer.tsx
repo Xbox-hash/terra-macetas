@@ -120,15 +120,15 @@ export const Footer: React.FC = () => {
 
         {/* Footer Bottom */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-[#8A9688] gap-4">
-          <p className="flex flex-wrap items-center justify-center gap-1.5">
+          <p className="flex flex-wrap items-center justify-center gap-2 text-sm">
             © {new Date().getFullYear()}
             <a
               href="https://canindevs.nandekuatia.com.py"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 font-medium hover:text-white transition-colors"
+              className="inline-flex items-center gap-2 text-base font-semibold text-[#EDE7DC] hover:text-white transition-colors"
             >
-              <img src="/images/canindevs-icono.png" alt="" width={20} height={20} className="w-5 h-5" />
+              <img src="/images/canindevs-icono.png" alt="" width={36} height={36} className="w-9 h-9" />
               CANINDEVS Software E.A.S.
             </a>
             Todos los derechos reservados.
