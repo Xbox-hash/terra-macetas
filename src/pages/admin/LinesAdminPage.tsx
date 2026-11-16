@@ -10,6 +10,8 @@ import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { FormInput } from '../../components/common/FormInput';
 import { ImageUploader } from '../../components/common/ImageUploader';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { Pagination } from '../../components/common/Pagination';
+import { usePagination } from '../../hooks/usePagination';
 import { useToast } from '../../contexts/ToastContext';
 
 const getCachedLines = (): ProductLine[] => {
@@ -48,6 +50,8 @@ export const LinesAdminPage: React.FC = () => {
   // Delete confirm state
   const [deleteTarget, setDeleteTarget] = useState<ProductLine | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const linesPagination = usePagination(lines, 10);
 
   useEffect(() => {
     loadLines();
@@ -221,7 +225,7 @@ export const LinesAdminPage: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  lines.map((line) => (
+                  linesPagination.pageItems.map((line) => (
                     <tr key={line.id} className="hover:bg-[#FAF8F4] transition-colors">
                       <td className="px-6 py-4">
                         {line.image ? (
@@ -281,6 +285,16 @@ export const LinesAdminPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+          {!loading && (
+            <Pagination
+              page={linesPagination.page}
+              totalPages={linesPagination.totalPages}
+              totalItems={linesPagination.totalItems}
+              pageSize={linesPagination.pageSize}
+              onPageChange={linesPagination.setPage}
+              itemLabel="líneas"
+            />
+          )}
         </div>
       </main>
 
