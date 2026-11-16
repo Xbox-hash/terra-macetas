@@ -120,7 +120,19 @@ export const Footer: React.FC = () => {
 
         {/* Footer Bottom */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-[#8A9688] gap-4">
-          <p>© {new Date().getFullYear()} {config.storeName || 'TERRA'} Macetas. Todos los derechos reservados.</p>
+          <p className="flex flex-wrap items-center justify-center gap-1.5">
+            © {new Date().getFullYear()}
+            <a
+              href="https://canindevs.nandekuatia.com.py"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 font-medium hover:text-white transition-colors"
+            >
+              <img src="/images/canindevs-icono.png" alt="" width={20} height={20} className="w-5 h-5" />
+              CANINDEVS Software E.A.S.
+            </a>
+            Todos los derechos reservados.
+          </p>
           <div className="flex items-center gap-6">
             <Link to="/contacto" className="hover:text-white transition-colors">Términos y Envíos</Link>
           </div>

@@ -24,6 +24,8 @@ import {
 import { AdminHeader } from '../../components/admin/AdminHeader';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
+import { Pagination } from '../../components/common/Pagination';
+import { usePagination } from '../../hooks/usePagination';
 import { formatPrice } from '../../utils';
 import { dashboardService, orderService, DashboardStats } from '../../services/orderService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -130,6 +132,8 @@ export const DashboardPage: React.FC = () => {
     if (filterStatus === 'all') return true;
     return o.status?.trim().toLowerCase() === filterStatus.trim().toLowerCase();
   });
+
+  const ordersPagination = usePagination(filteredOrders, 10, filterStatus);
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
@@ -319,7 +323,7 @@ export const DashboardPage: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredOrders.map((order) => {
+                  ordersPagination.pageItems.map((order) => {
                     const isClosed = order.status.toLowerCase() === 'cerrado';
                     const isCancelled = order.status.toLowerCase() === 'cancelado';
                     const orderCity = getOrderCity(order);
@@ -539,6 +543,16 @@ export const DashboardPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+          {!loading && (
+            <Pagination
+              page={ordersPagination.page}
+              totalPages={ordersPagination.totalPages}
+              totalItems={ordersPagination.totalItems}
+              pageSize={ordersPagination.pageSize}
+              onPageChange={ordersPagination.setPage}
+              itemLabel="pedidos"
+            />
+          )}
         </div>
       </main>
 
