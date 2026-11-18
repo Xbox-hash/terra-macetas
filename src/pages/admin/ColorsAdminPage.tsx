@@ -29,6 +29,9 @@ import { Pagination } from '../../components/common/Pagination';
 import { usePagination } from '../../hooks/usePagination';
 import { useToast } from '../../contexts/ToastContext';
 
+/** Igual al límite del servidor (columna Description de PotColors). */
+const MAX_DESCRIPTION = 500;
+
 export const ColorsAdminPage: React.FC = () => {
   const { openMobileSidebar } = useOutletContext<{ openMobileSidebar: () => void }>();
   const { showToast } = useToast();
@@ -182,8 +185,8 @@ export const ColorsAdminPage: React.FC = () => {
         prev.map((c) => (c.id === color.id ? { ...c, active: nextActive } : c))
       );
       showToast(`Color "${color.name}" ahora está ${nextActive ? 'activo' : 'inactivo'}.`);
-    } catch {
-      showToast('Error al actualizar estado del color.', 'error');
+    } catch (err: any) {
+      showToast(err.message || 'No se pudo cambiar el estado del color.', 'error');
     }
   };
 
@@ -576,14 +579,20 @@ export const ColorsAdminPage: React.FC = () => {
                 Descripción del Acabado y Textura
               </label>
               <textarea
+                id="color-description"
                 rows={3}
+                maxLength={MAX_DESCRIPTION}
                 placeholder="Ej: Textura arenisca con micro-granos minerales visibles al tacto, terminación mate que no refleja luz..."
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                aria-describedby="color-description-help"
                 className="w-full px-3.5 py-2.5 bg-white border border-[#D9D3C7] rounded-xl text-xs text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
               />
-              <span className="text-[11px] text-[#717E6F] block">
-                Esta descripción le aparecerá al cliente en la tienda al pasar el cursor o hacer clic sobre la muestra.
+              <span id="color-description-help" className="text-[11px] text-[#717E6F] flex justify-between gap-3">
+                <span>Esta descripción le aparecerá al cliente en la tienda al pasar el cursor o hacer clic sobre la muestra.</span>
+                <span className={`shrink-0 tabular-nums ${formData.description.length >= MAX_DESCRIPTION ? 'text-amber-700 font-semibold' : ''}`}>
+                  {formData.description.length}/{MAX_DESCRIPTION}
+                </span>
               </span>
             </div>
 

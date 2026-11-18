@@ -135,10 +135,10 @@ export const WorksPage: React.FC = () => {
     <div className="max-w-7xl 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-10 sm:py-14 space-y-10">
       <div className="border-b border-[#E8E2D6] pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-2">Hechas por Terra, en su lugar</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-2">Portafolio</span>
           <h1 className="font-serif text-3xl sm:text-5xl font-medium text-[#222A21] mb-3">Trabajos realizados</h1>
           <p className="text-sm sm:text-base text-[#657363] max-w-2xl">
-            Así quedaron nuestras macetas en casas, negocios y oficinas de clientes. Tocá una foto para verla grande.
+            Proyectos realizados para casas, negocios y oficinas. Tocá una foto para verla en detalle.
           </p>
         </div>
         <Link to="/catalogo" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#2D3A2F] hover:text-[#4A5D4E] shrink-0">
