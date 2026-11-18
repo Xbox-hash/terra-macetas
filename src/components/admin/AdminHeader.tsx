@@ -1,20 +1,49 @@
 import React from 'react';
+import { Menu, Sprout, Bell } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface AdminHeaderProps {
   title: string;
   subtitle?: string;
-  /** Ya no se usa: la navegación está en la barra superior / inferior. Se mantiene para no romper las páginas. */
-  onOpenMobileSidebar?: () => void;
+  onOpenMobileSidebar: () => void;
   actions?: React.ReactNode;
 }
 
-/** Título de cada pantalla del panel, con sus acciones a la derecha. */
-export const AdminHeader: React.FC<AdminHeaderProps> = ({ title, subtitle, actions }) => (
-  <div className="max-w-7xl w-full mx-auto px-4 sm:px-8 pt-6 sm:pt-8 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-    <div className="min-w-0">
-      <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#222A21] leading-tight">{title}</h1>
-      {subtitle && <p className="text-sm text-[#6F7D6D] mt-1">{subtitle}</p>}
-    </div>
-    {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
-  </div>
-);
+export const AdminHeader: React.FC<AdminHeaderProps> = ({
+  title,
+  subtitle,
+  onOpenMobileSidebar,
+  actions,
+}) => {
+  const { user } = useAuth();
+
+  return (
+    <header className="bg-white border-b border-[#E7E2D8] sticky top-0 z-30 px-4 sm:px-8 py-4">
+      <div className="flex items-center justify-between gap-4">
+        {/* Left: Mobile trigger & Page titles */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onOpenMobileSidebar}
+            className="md:hidden p-2 rounded-lg text-[#5A6858] hover:bg-[#F2ECE4] transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-serif font-bold text-[#232D24]">{title}</h1>
+            {subtitle && <p className="text-xs text-[#6F7D6D] hidden sm:block mt-0.5">{subtitle}</p>}
+          </div>
+        </div>
+
+        {/* Right: Actions and Status */}
+        <div className="flex items-center gap-3 sm:gap-4">
+          {actions}
+          <div className="h-6 w-px bg-[#E2DBD0] hidden sm:block" />
+          <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-[#465444] bg-[#F4EFE6] px-3 py-1.5 rounded-full border border-[#E4DCCE]">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Sistema en línea</span>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};
