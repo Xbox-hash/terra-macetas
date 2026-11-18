@@ -10,6 +10,9 @@ public static class DbInitializer
         // Solo asegurar que la estructura y tablas de la base de datos existan
         await context.Database.EnsureCreatedAsync();
 
+        // EnsureCreated no agrega tablas nuevas a una base que ya existe: se crean acá
+        await EnsureTablesExistAsync(context);
+
         // Asegurar que las columnas añadidas existan en tablas ya creadas
         await EnsureColumnsExistAsync(context);
 
@@ -32,6 +35,60 @@ public static class DbInitializer
         ("CompanyConfigs", "HeroImagesJson", "NVARCHAR(MAX)", "TEXT"),
         ("SiteVisits", "VisitorId", "NVARCHAR(64)", "TEXT"),
     };
+
+    /// <summary>
+    /// Tablas agregadas después de que la base ya existía en producción.
+    /// Solo crean la tabla si falta: nunca tocan tablas ni datos existentes.
+    /// </summary>
+    private static async Task EnsureTablesExistAsync(AppDbContext context)
+    {
+        try
+        {
+            if (context.Database.IsSqlServer())
+            {
+                await context.Database.ExecuteSqlRawAsync(@"
+                    IF OBJECT_ID(N'[dbo].[ClientWorks]', N'U') IS NULL
+                    BEGIN
+                        CREATE TABLE [dbo].[ClientWorks] (
+                            [Id] NVARCHAR(450) NOT NULL PRIMARY KEY,
+                            [ImagesJson] NVARCHAR(MAX) NOT NULL DEFAULT '[]',
+                            [ClientName] NVARCHAR(150) NULL,
+                            [ShowClientName] BIT NOT NULL DEFAULT 1,
+                            [City] NVARCHAR(120) NULL,
+                            [Description] NVARCHAR(1000) NULL,
+                            [ProductId] NVARCHAR(100) NULL,
+                            [Active] BIT NOT NULL DEFAULT 1,
+                            [Featured] BIT NOT NULL DEFAULT 0,
+                            [SortOrder] INT NOT NULL DEFAULT 0,
+                            [CreatedAt] DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+                        );
+                    END
+                ");
+            }
+            else if (context.Database.IsSqlite())
+            {
+                await context.Database.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS ClientWorks (
+                        Id TEXT NOT NULL PRIMARY KEY,
+                        ImagesJson TEXT NOT NULL DEFAULT '[]',
+                        ClientName TEXT NULL,
+                        ShowClientName INTEGER NOT NULL DEFAULT 1,
+                        City TEXT NULL,
+                        Description TEXT NULL,
+                        ProductId TEXT NULL,
+                        Active INTEGER NOT NULL DEFAULT 1,
+                        Featured INTEGER NOT NULL DEFAULT 0,
+                        SortOrder INTEGER NOT NULL DEFAULT 0,
+                        CreatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    );
+                ");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DbInitializer] Nota al verificar la tabla ClientWorks: {ex.Message}");
+        }
+    }
 
     private static async Task EnsureColumnsExistAsync(AppDbContext context)
     {

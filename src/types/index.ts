@@ -128,3 +128,21 @@ export interface StoreConfig {
   heroFloatingImageUrl?: string;
   philosophyImageUrl?: string;
 }
+
+/** Trabajo realizado: fotos de macetas instaladas en lugares de clientes. */
+export interface ClientWork {
+  id: string;
+  /** La primera es la portada. */
+  images: string[];
+  /** En la tienda llega vacío si el cliente no dio permiso para mostrarlo. */
+  clientName?: string | null;
+  showClientName: boolean;
+  city?: string | null;
+  description?: string | null;
+  productId?: string | null;
+  productName?: string | null;
+  active: boolean;
+  featured: boolean;
+  sortOrder: number;
+  createdAt?: string;
+}

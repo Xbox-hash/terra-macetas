@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag, MessageCircle, Truck, Sparkles, Clock, ChevronLeft, ChevronRight, ZoomIn, ExternalLink } from 'lucide-react';
-import { Product, ProductLine, ProductColor } from '../../types';
+import { Product, ProductLine, ProductColor, ClientWork } from '../../types';
+import { workService } from '../../services/workService';
+import { WorksShowcase } from '../../components/public/WorksShowcase';
 import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
 import { useCart } from '../../contexts/CartContext';
@@ -27,6 +29,8 @@ export const ProductDetailPage: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [line, setLine] = useState<ProductLine | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  // Trabajos realizados con esta pieza
+  const [works, setWorks] = useState<ClientWork[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [productColors, setProductColors] = useState<ProductColor[]>([]);
@@ -120,6 +124,8 @@ export const ProductDetailPage: React.FC = () => {
     }
     loadProductData();
     window.scrollTo(0, 0);
+    setWorks([]);
+    if (id) workService.getAll({ productId: id }).then(setWorks);
   }, [id]);
 
   if (loading) {
@@ -446,6 +452,22 @@ export const ProductDetailPage: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* ASÍ QUEDÓ EN CASA DE CLIENTES */}
+      {works.length > 0 && (
+        <section className="pt-12 border-t border-[#E5DFD4]">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-8 gap-2">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-1">Portafolio</span>
+              <h3 className="font-serif text-2xl sm:text-3xl font-medium text-[#222A21]">Proyectos realizados con esta pieza</h3>
+            </div>
+            <Link to="/trabajos" className="text-xs font-semibold text-[#2D3A2F] hover:underline">
+              Ver todos los trabajos →
+            </Link>
+          </div>
+          <WorksShowcase works={works} showProduct={false} imagesPerWork={4} className="aspect-4/5 sm:aspect-16/8" />
+        </section>
+      )}
 
       {/* RELATED PRODUCTS */}
       {relatedProducts.length > 0 && (

@@ -6,7 +6,7 @@ export const uploadService = {
   /**
    * Sube un archivo físico de imagen (File) al servidor y devuelve la ruta relativa (/uploads/...)
    */
-  async uploadFile(file: File, folder: 'products' | 'lines' | 'colors' | 'company' = 'products'): Promise<string> {
+  async uploadFile(file: File, folder: 'products' | 'lines' | 'colors' | 'company' | 'works' = 'products'): Promise<string> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('folder', folder);
@@ -29,7 +29,7 @@ export const uploadService = {
    * Sube una imagen procesada o comprimida en Base64 (data:image/...) al servidor,
    * la guarda físicamente en el disco y devuelve la ruta relativa (/uploads/...)
    */
-  async uploadBase64(base64: string, folder: 'products' | 'lines' | 'colors' | 'company' = 'products'): Promise<string> {
+  async uploadBase64(base64: string, folder: 'products' | 'lines' | 'colors' | 'company' | 'works' = 'products'): Promise<string> {
     // Si ya es una URL o ruta relativa (no base64), devolver tal cual
     if (!base64.startsWith('data:image/')) {
       return base64;

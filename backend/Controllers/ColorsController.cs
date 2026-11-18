@@ -41,6 +41,8 @@ public class ColorsController : ControllerBase
         return Ok(color);
     }
 
+    public const int MaxDescriptionLength = 500;
+
     [HttpPost]
     public async Task<ActionResult<PotColor>> Create([FromBody] PotColor color)
     {
@@ -49,11 +51,16 @@ public class ColorsController : ControllerBase
             return BadRequest(new { message = "El nombre del color es obligatorio" });
         }
 
+        var descriptionError = ValidateDescription(color.Description);
+        if (descriptionError != null) return BadRequest(new { message = descriptionError });
+
         if (string.IsNullOrWhiteSpace(color.Id))
         {
             color.Id = Guid.NewGuid().ToString();
         }
 
+        color.Name = color.Name.Trim();
+        color.Description = CleanDescription(color.Description);
         color.CreatedAt = DateTime.UtcNow;
 
         _context.PotColors.Add(color);
@@ -62,28 +69,45 @@ public class ColorsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = color.Id }, color);
     }
 
+    /// <summary>
+    /// Actualiza solo los campos que llegan. Así, activar o desactivar un color
+    /// (que manda solo "active") no borra la descripción ni el nombre.
+    /// </summary>
     [HttpPut("{id}")]
-    public async Task<ActionResult<PotColor>> Update(string id, [FromBody] PotColor updateData)
+    public async Task<ActionResult<PotColor>> Update(string id, [FromBody] UpdatePotColorDto updateData)
     {
         var color = await _context.PotColors.FindAsync(id);
         if (color == null) return NotFound(new { message = "Color no encontrado" });
 
+        var descriptionError = ValidateDescription(updateData.Description);
+        if (descriptionError != null) return BadRequest(new { message = descriptionError });
+
         if (!string.IsNullOrWhiteSpace(updateData.Name))
-            color.Name = updateData.Name;
+            color.Name = updateData.Name.Trim();
 
         if (!string.IsNullOrWhiteSpace(updateData.Hex))
             color.Hex = updateData.Hex;
 
-        color.Description = updateData.Description;
+        if (updateData.Description != null)
+            color.Description = CleanDescription(updateData.Description);
 
         if (updateData.Image != null)
             color.Image = updateData.Image;
 
-        color.Active = updateData.Active;
+        if (updateData.Active.HasValue)
+            color.Active = updateData.Active.Value;
 
         await _context.SaveChangesAsync();
         return Ok(color);
     }
+
+    private static string? ValidateDescription(string? description) =>
+        description != null && description.Trim().Length > MaxDescriptionLength
+            ? $"La descripción puede tener hasta {MaxDescriptionLength} caracteres (tiene {description.Trim().Length})."
+            : null;
+
+    private static string? CleanDescription(string? description) =>
+        string.IsNullOrWhiteSpace(description) ? null : description.Trim();
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
@@ -95,4 +119,14 @@ public class ColorsController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+}
+
+/// <summary>Datos para editar un color. Los que no llegan (null) no se tocan.</summary>
+public class UpdatePotColorDto
+{
+    public string? Name { get; set; }
+    public string? Hex { get; set; }
+    public string? Description { get; set; }
+    public string? Image { get; set; }
+    public bool? Active { get; set; }
 }

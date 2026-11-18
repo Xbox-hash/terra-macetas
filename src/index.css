@@ -130,3 +130,45 @@
     animation: none;
   }
 }
+
+/* ============ Trabajos realizados ============ */
+/* Zoom lento mientras la foto está en pantalla */
+@keyframes worksKb {
+  from { transform: scale(1.14) translate(1.5%, 1%); }
+  to { transform: scale(1.02); }
+}
+.works-kb { animation: worksKb 9s cubic-bezier(0.25, 0.1, 0.25, 1) both; }
+
+/* Texto que sube palabra por palabra, como en una revista */
+@keyframes worksWordUp { to { transform: none; } }
+@keyframes worksFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes worksChipIn { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+@keyframes worksBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.works-word { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: 0.08em; }
+.works-word > span { display: inline-block; transform: translateY(105%); animation: worksWordUp 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.works-fade { opacity: 0; animation: worksFadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.works-chip { opacity: 0; animation: worksChipIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.works-bar { transform-origin: left; animation: worksBar linear forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .works-kb, .works-bar { animation: none; }
+  .works-word > span { animation: none; transform: none; }
+  .works-fade, .works-chip { animation: none; opacity: 1; }
+}
+
+/* Vista rápida: sube desde abajo en el celular y entra por la derecha en computadora */
+@keyframes quickviewUp { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes quickviewRight { from { transform: translateX(100%); } to { transform: none; } }
+.animate-quickview { animation: quickviewUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (min-width: 640px) {
+  .animate-quickview { animation-name: quickviewRight; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-quickview { animation: none; }
+}
+
+/* Panel: el menú ☰ se despliega desde arriba */
+@keyframes adminDrop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.animate-admin-drop { animation: adminDrop 0.22s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .animate-admin-drop { animation: none; } }
