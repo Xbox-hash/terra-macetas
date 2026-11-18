@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Edit2,
@@ -74,6 +74,16 @@ export const ColorsAdminPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Desde el botón "Crear" del panel llega ?nuevo=1
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('nuevo')) {
+      handleOpenCreateModal();
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const handleOpenCreateModal = () => {
     setEditingColor(null);

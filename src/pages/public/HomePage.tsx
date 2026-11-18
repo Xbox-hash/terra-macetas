@@ -11,6 +11,9 @@ import { useCompany } from '../../contexts/CompanyContext';
 import { ImageStack } from '../../components/common/ImageStack';
 import { useSlideshow } from '../../hooks/useSlideshow';
 import { buildProductSlides, ProductSlide } from '../../utils/productSlides';
+import { ClientWork } from '../../types';
+import { workService } from '../../services/workService';
+import { WorksShowcase } from '../../components/public/WorksShowcase';
 
 const MAX_HERO_IMAGES = 6;
 
@@ -38,6 +41,20 @@ export const HomePage: React.FC = () => {
   // Productos activos: dan las fotos que rotan en las tarjetas de líneas
   // (y completan el carrusel de portada si no tiene fotos propias)
   const [activeProducts, setActiveProducts] = useState<Product[]>([]);
+  // Trabajos destacados para el carrusel (si no hay destacados, los últimos cargados)
+  const [works, setWorks] = useState<ClientWork[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    workService.getAll().then((list) => {
+      if (!isMounted) return;
+      const featured = list.filter((w) => w.featured);
+      setWorks((featured.length > 0 ? featured : list).slice(0, 8));
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -289,6 +306,27 @@ export const HomePage: React.FC = () => {
               />
             ))}
           </div>
+        </section>
+      )}
+
+      {/* TRABAJOS REALIZADOS (solo si hay trabajos cargados) */}
+      {works.length > 0 && (
+        <section className="max-w-7xl 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-10 gap-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-2">
+                En casa de nuestros clientes
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl font-medium text-[#222A21]">Trabajos realizados</h2>
+            </div>
+            <Link
+              to="/trabajos"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#2D3A2F] hover:text-[#4A5D4E] transition-colors"
+            >
+              Ver todos los trabajos <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <WorksShowcase works={works} className="aspect-4/5 sm:aspect-16/8" />
         </section>
       )}
 

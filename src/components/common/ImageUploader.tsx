@@ -7,7 +7,7 @@ interface ImageUploaderProps {
   value: string[];
   onChange: (images: string[]) => void;
   maxImages?: number;
-  folder?: 'products' | 'lines' | 'colors' | 'company';
+  folder?: 'products' | 'lines' | 'colors' | 'company' | 'works';
 }
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -21,9 +21,21 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   const [isCompressing, setIsCompressing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Foto que se está arrastrando para cambiarla de lugar
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
 
   const handleRemove = (index: number) => {
     const updated = value.filter((_, i) => i !== index);
+    onChange(updated);
+  };
+
+  /** Mueve una foto a otra posición (la posición 0 es la principal / portada). */
+  const handleMove = (from: number, to: number) => {
+    if (from === to || to < 0 || to >= value.length) return;
+    const updated = [...value];
+    const [moved] = updated.splice(from, 1);
+    updated.splice(to, 0, moved);
     onChange(updated);
   };
 
@@ -113,7 +125,35 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       {/* Grid of uploaded images */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {value.map((img, idx) => (
-          <div key={idx} className="group relative aspect-square rounded-xl overflow-hidden border border-[#D5CEC2] bg-[#EFECE6] shadow-xs">
+          <div
+            key={`${idx}-${img}`}
+            draggable={value.length > 1}
+            onDragStart={(e) => {
+              setDragIndex(idx);
+              e.dataTransfer.effectAllowed = 'move';
+            }}
+            onDragOver={(e) => {
+              if (dragIndex === null) return;
+              e.preventDefault();
+              setOverIndex(idx);
+            }}
+            onDragLeave={() => setOverIndex((o) => (o === idx ? null : o))}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragIndex !== null) handleMove(dragIndex, idx);
+              setDragIndex(null);
+              setOverIndex(null);
+            }}
+            onDragEnd={() => {
+              setDragIndex(null);
+              setOverIndex(null);
+            }}
+            className={`group relative aspect-square rounded-xl overflow-hidden border bg-[#EFECE6] shadow-xs transition-all ${
+              value.length > 1 ? 'cursor-grab active:cursor-grabbing' : ''
+            } ${dragIndex === idx ? 'opacity-40' : ''} ${
+              overIndex === idx && dragIndex !== idx ? 'border-[#2D3A2F] ring-2 ring-[#2D3A2F]' : 'border-[#D5CEC2]'
+            }`}
+          >
             <img
               src={img}
               alt={`Preview ${idx + 1}`}
@@ -131,10 +171,45 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             >
               <X className="w-3.5 h-3.5" />
             </button>
-            {idx === 0 && (
+            {idx === 0 ? (
               <span className="absolute bottom-1.5 left-1.5 text-[10px] uppercase font-semibold tracking-wider bg-[#2D3A2F]/90 text-white px-2 py-0.5 rounded shadow-xs">
                 Principal
               </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleMove(idx, 0)}
+                className="absolute bottom-1.5 left-1.5 text-[10px] font-semibold bg-white/90 text-[#2D3A2F] px-2 py-0.5 rounded shadow-xs hover:bg-white"
+                title="Usar esta foto como principal"
+              >
+                Hacer principal
+              </button>
+            )}
+
+            {/* Mover con flechas (sirve en el celular, donde no se puede arrastrar) */}
+            {value.length > 1 && (
+              <div className="absolute top-1.5 left-1.5 flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleMove(idx, idx - 1)}
+                  disabled={idx === 0}
+                  className="w-6 h-6 rounded-full bg-black/60 text-white text-xs leading-none hover:bg-black/80 disabled:opacity-0"
+                  aria-label="Mover a la izquierda"
+                  title="Mover a la izquierda"
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMove(idx, idx + 1)}
+                  disabled={idx === value.length - 1}
+                  className="w-6 h-6 rounded-full bg-black/60 text-white text-xs leading-none hover:bg-black/80 disabled:opacity-0"
+                  aria-label="Mover a la derecha"
+                  title="Mover a la derecha"
+                >
+                  →
+                </button>
+              </div>
             )}
           </div>
         ))}

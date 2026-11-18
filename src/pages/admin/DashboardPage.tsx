@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import { 
   Eye, 
   ShoppingBag, 
@@ -65,7 +65,11 @@ export const DashboardPage: React.FC = () => {
     recentOrders: [],
   });
 
-  const [filterStatus, setFilterStatus] = useState<'all' | 'Pendiente' | 'Cerrado' | 'Cancelado'>('all');
+  // ?estado=pendientes llega desde el Inicio
+  const [searchParams] = useSearchParams();
+  const [filterStatus, setFilterStatus] = useState<'all' | 'Pendiente' | 'Cerrado' | 'Cancelado'>(() =>
+    searchParams.get('estado') === 'pendientes' ? 'Pendiente' : 'all'
+  );
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [orderToCancel, setOrderToCancel] = useState<any | null>(null);
@@ -138,8 +142,8 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       <AdminHeader
-        title="Dashboard de Métricas & Pedidos"
-        subtitle="Monitoreo en tiempo real de visitas a la tienda, pedidos por WhatsApp y estado de ventas"
+        title="Pedidos"
+        subtitle="Pedidos por WhatsApp, visitas a la tienda y estado de ventas, actualizados cada 10 segundos"
         onOpenMobileSidebar={openMobileSidebar}
         actions={
           <Button variant="outline" size="sm" onClick={() => loadDashboardData()} isLoading={loading}>
