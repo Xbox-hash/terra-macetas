@@ -315,7 +315,7 @@ export const HomePage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-10 gap-4">
             <div>
               <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-2">
-                En casa de nuestros clientes
+                Portafolio
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl font-medium text-[#222A21]">Trabajos realizados</h2>
             </div>

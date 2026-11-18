@@ -28,6 +28,23 @@ const saveLocalColors = (colors: ProductColor[]) => {
   }
 };
 
+/** Envía al servidor; si no hay conexión, avisa con un mensaje claro. */
+async function send(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await apiFetch(url, { ...init, headers: { 'Content-Type': 'application/json', ...(init.headers || {}) } });
+  } catch {
+    throw new Error('No hay conexión con el servidor. Revisá internet y probá de nuevo; no se guardó nada.');
+  }
+}
+
+async function errorMessage(res: Response, fallback: string): Promise<string> {
+  const body = await res.json().catch(() => null);
+  if (body?.message) return body.message;
+  // Errores de validación de ASP.NET: { errors: { Campo: ["mensaje"] } }
+  const first = body?.errors && Object.values(body.errors as Record<string, string[]>)[0]?.[0];
+  return first || `${fallback} (error ${res.status})`;
+}
+
 export const colorService = {
   async getAll(): Promise<ProductColor[]> {
     try {
@@ -55,11 +72,13 @@ export const colorService = {
     return all.find((c) => c.id === id);
   },
 
+  // Para guardar SIEMPRE se usa el servidor: si falla, se avisa con el motivo.
+  // (Antes se guardaba solo en este navegador y se mostraba "guardado" aunque el servidor lo hubiera rechazado.)
   async create(colorData: Omit<ProductColor, 'id'>): Promise<ProductColor> {
     const slugId = colorData.name
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[̀-ͯ]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '') || `color-${Date.now()}`;
 
@@ -70,82 +89,25 @@ export const colorService = {
       createdAt: new Date().toISOString(),
     };
 
-    try {
-      const res = await apiFetch(API_BASE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newColor),
-      });
-      if (res.ok) {
-        const created: ProductColor = await res.json();
-        const current = getLocalColors();
-        saveLocalColors([...current.filter((c) => c.id !== created.id), created]);
-        return created;
-      }
-    } catch {
-      // fallback local
-    }
-
-    const current = getLocalColors();
-    // evitar duplicados de id
-    const existingIndex = current.findIndex((c) => c.id === newColor.id);
-    if (existingIndex >= 0) {
-      newColor.id = `${newColor.id}-${Date.now().toString().slice(-4)}`;
-    }
-    const updated = [...current, newColor];
-    saveLocalColors(updated);
-    return newColor;
+    const res = await send(API_BASE_URL, { method: 'POST', body: JSON.stringify(newColor) });
+    if (!res.ok) throw new Error(await errorMessage(res, 'No se pudo crear el color.'));
+    const created: ProductColor = await res.json();
+    saveLocalColors([...getLocalColors().filter((c) => c.id !== created.id), created]);
+    return created;
   },
 
   async update(id: string, updates: Partial<ProductColor>): Promise<ProductColor> {
-    try {
-      const res = await apiFetch(`${API_BASE_URL}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      if (res.ok) {
-        const updated: ProductColor = await res.json();
-        const current = getLocalColors();
-        saveLocalColors(current.map((c) => (c.id === id ? updated : c)));
-        return updated;
-      }
-    } catch {
-      // fallback local
-    }
-
-    const current = getLocalColors();
-    const index = current.findIndex((c) => c.id === id);
-    if (index === -1) {
-      throw new Error(`Color con ID ${id} no encontrado.`);
-    }
-
-    const updatedColor: ProductColor = {
-      ...current[index],
-      ...updates,
-    };
-
-    current[index] = updatedColor;
-    saveLocalColors(current);
-    return updatedColor;
+    const res = await send(`${API_BASE_URL}/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+    if (!res.ok) throw new Error(await errorMessage(res, 'No se pudo guardar el color.'));
+    const updated: ProductColor = await res.json();
+    saveLocalColors(getLocalColors().map((c) => (c.id === id ? updated : c)));
+    return updated;
   },
 
   async delete(id: string): Promise<void> {
-    try {
-      const res = await apiFetch(`${API_BASE_URL}/${id}`, {
-        method: 'DELETE',
-      });
-      if (res.ok || res.status === 404) {
-        const current = getLocalColors();
-        saveLocalColors(current.filter((c) => c.id !== id));
-        return;
-      }
-    } catch {
-      // fallback local
-    }
-
-    const current = getLocalColors();
-    saveLocalColors(current.filter((c) => c.id !== id));
+    const res = await send(`${API_BASE_URL}/${id}`, { method: 'DELETE' });
+    if (!res.ok && res.status !== 404) throw new Error(await errorMessage(res, 'No se pudo eliminar el color.'));
+    saveLocalColors(getLocalColors().filter((c) => c.id !== id));
   },
 
   async resetToDefaults(): Promise<ProductColor[]> {

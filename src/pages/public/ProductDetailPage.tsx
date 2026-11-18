@@ -458,8 +458,8 @@ export const ProductDetailPage: React.FC = () => {
         <section className="pt-12 border-t border-[#E5DFD4]">
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-8 gap-2">
             <div>
-              <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-1">Trabajos realizados</span>
-              <h3 className="font-serif text-2xl sm:text-3xl font-medium text-[#222A21]">Así quedó en casa de clientes</h3>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-1">Portafolio</span>
+              <h3 className="font-serif text-2xl sm:text-3xl font-medium text-[#222A21]">Proyectos realizados con esta pieza</h3>
             </div>
             <Link to="/trabajos" className="text-xs font-semibold text-[#2D3A2F] hover:underline">
               Ver todos los trabajos →
