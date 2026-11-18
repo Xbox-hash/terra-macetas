@@ -6,6 +6,7 @@ import { productService } from '../../services/productService';
 import { lineService } from '../../services/lineService';
 import { ProductCard } from '../../components/public/ProductCard';
 import { OrderBar } from '../../components/public/OrderBar';
+import { LineTabs, splitLineName } from '../../components/public/LineTabs';
 
 const getCachedLines = (): ProductLine[] => {
   try {
@@ -75,7 +76,21 @@ export const CatalogPage: React.FC = () => {
     setSearchParams(next, { replace: true });
   };
 
-  const handleLineChange = (lineId: string) => setParam('linea', lineId === 'todas' ? null : lineId);
+  // Al cambiar de línea, si la línea nueva no tiene el color elegido, se quita ese filtro
+  // (antes quedaba puesto y mostraba "No hay piezas con esos filtros")
+  const handleLineChange = (lineId: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (lineId === 'todas') next.delete('linea');
+    else next.set('linea', lineId);
+    const color = next.get('color');
+    if (color) {
+      const lineHasColor = products.some(
+        (p) => (lineId === 'todas' || p.lineId === lineId) && (p.colors ?? []).some((c) => c.id === color)
+      );
+      if (!lineHasColor) next.delete('color');
+    }
+    setSearchParams(next, { replace: true });
+  };
   const handleColorChange = (colorId: string) => setParam('color', colorId === selectedColorParam ? null : colorId);
 
   // Piezas de la línea elegida que coinciden con la búsqueda (todavía sin filtrar por color)
@@ -138,19 +153,29 @@ export const CatalogPage: React.FC = () => {
     setSearchParams(new URLSearchParams(), { replace: true });
   };
 
-  const lineLinkClass = (active: boolean) =>
-    `relative whitespace-nowrap py-1.5 text-sm transition-colors cursor-pointer after:absolute after:left-0 after:right-0 after:-bottom-px after:h-[1.5px] after:bg-[#222A21] after:origin-left after:transition-transform after:duration-300 ${
-      active ? 'text-[#222A21] font-semibold after:scale-x-100' : 'text-[#6F7B6D] hover:text-[#222A21] after:scale-x-0 hover:after:scale-x-100'
-    }`;
+  const lineTabs = useMemo(
+    () =>
+      linesWithProducts.map((line) => ({
+        id: line.id,
+        name: line.name,
+        count: products.filter((p) => p.lineId === line.id).length,
+      })),
+    [linesWithProducts, products]
+  );
+  const activeLineName = activeLineObj ? splitLineName(activeLineObj.name) : null;
+  // Cambia con cada filtro: hace que el título y las piezas se vuelvan a animar
+  const viewKey = `${selectedLineParam}|${selectedColorParam}`;
 
   return (
     <div className="max-w-7xl 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-10 sm:py-14 pb-28 space-y-8">
       {/* Encabezado */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-2">Colección disponible</span>
+        <div key={selectedLineParam} className="animate-fade-in-up">
+          <span className="text-xs font-bold uppercase tracking-widest text-[#5E725F] block mb-2">
+            {activeLineName?.subtitle || 'Colección disponible'}
+          </span>
           <h1 className="font-serif text-4xl sm:text-6xl font-medium text-[#222A21] leading-none">
-            {activeLineObj ? activeLineObj.name : 'Catálogo'}
+            {activeLineName ? activeLineName.title : 'Catálogo'}
           </h1>
           {activeLineObj?.description && <p className="text-sm sm:text-base text-[#657363] max-w-2xl mt-3">{activeLineObj.description}</p>}
         </div>
@@ -162,27 +187,48 @@ export const CatalogPage: React.FC = () => {
         )}
       </div>
 
-      {/* Filtros */}
-      <div className="border-y border-[#E8E2D6] py-3 space-y-3">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <nav className="flex items-center gap-5 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0" aria-label="Líneas">
-            <button type="button" onClick={() => handleLineChange('todas')} className={lineLinkClass(selectedLineParam === 'todas')}>
-              Todas
-            </button>
-            {linesWithProducts.map((line) => (
-              <button
-                key={line.id}
-                type="button"
-                onClick={() => handleLineChange(line.id)}
-                className={lineLinkClass(selectedLineParam === line.id)}
-                aria-current={selectedLineParam === line.id ? 'true' : undefined}
-              >
-                {line.name}
-              </button>
-            ))}
-          </nav>
+      {/* Líneas */}
+      <LineTabs lines={lineTabs} totalCount={products.length} selectedId={activeLineObj ? selectedLineParam : 'todas'} onSelect={handleLineChange} />
 
-          <div className="flex items-center gap-3">
+      {/* Color, búsqueda y orden */}
+      <div className="border-y border-[#E8E2D6] py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        {(availableColors.length > 1 || !!selectedColorParam) ? (
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#7D8B7A] shrink-0">Color</span>
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1 px-1" role="group" aria-label="Filtrar por color">
+              {availableColors.map((c) => {
+                const active = c.id === selectedColorParam;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => handleColorChange(c.id)}
+                    aria-pressed={active}
+                    aria-label={`${c.name} (${c.count})`}
+                    title={`${c.name} · ${c.count} ${c.count === 1 ? 'pieza' : 'piezas'}`}
+                    className={`w-6 h-6 rounded-full shrink-0 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D3A2F] focus-visible:ring-offset-2 ${
+                      active ? 'ring-2 ring-[#2D3A2F] ring-offset-2 ring-offset-[#FAF8F5] scale-110' : 'ring-1 ring-black/15 hover:scale-110'
+                    }`}
+                    style={{ backgroundColor: c.hex }}
+                  />
+                );
+              })}
+            </div>
+            {activeColorObj && (
+              <button
+                type="button"
+                onClick={() => handleColorChange(activeColorObj.id)}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[#2D3A2F] bg-[#EDE7DC] rounded-full px-2.5 py-1 shrink-0 hover:bg-[#E2DACB]"
+              >
+                {activeColorObj.name} <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        ) : (
+          <span />
+        )}
+
+        <div className="flex items-center gap-3 lg:shrink-0">
             <div className="relative flex-1 lg:w-64">
               <Search className="w-4 h-4 text-[#7A8878] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -219,43 +265,7 @@ export const CatalogPage: React.FC = () => {
               <option value="price-desc">Mayor precio</option>
               <option value="name">Nombre A-Z</option>
             </select>
-          </div>
         </div>
-
-        {/* Filtro por color */}
-        {(availableColors.length > 1 || !!selectedColorParam) && (
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#7D8B7A] shrink-0">Color</span>
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1 px-1" role="group" aria-label="Filtrar por color">
-              {availableColors.map((c) => {
-                const active = c.id === selectedColorParam;
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => handleColorChange(c.id)}
-                    aria-pressed={active}
-                    aria-label={`${c.name} (${c.count})`}
-                    title={`${c.name} · ${c.count} ${c.count === 1 ? 'pieza' : 'piezas'}`}
-                    className={`w-6 h-6 rounded-full shrink-0 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D3A2F] focus-visible:ring-offset-2 ${
-                      active ? 'ring-2 ring-[#2D3A2F] ring-offset-2 ring-offset-[#FAF8F5] scale-110' : 'ring-1 ring-black/15 hover:scale-110'
-                    }`}
-                    style={{ backgroundColor: c.hex }}
-                  />
-                );
-              })}
-            </div>
-            {activeColorObj && (
-              <button
-                type="button"
-                onClick={() => handleColorChange(activeColorObj.id)}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#2D3A2F] bg-[#EDE7DC] rounded-full px-2.5 py-1 shrink-0 hover:bg-[#E2DACB]"
-              >
-                {activeColorObj.name} <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Grilla */}
@@ -281,11 +291,15 @@ export const CatalogPage: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10">
+        <div key={viewKey} className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10">
           {filteredProducts.map((product, i) => {
             const large = bigFirst && i === 0;
             return (
-              <div key={product.id} className={large ? 'col-span-2 lg:row-span-2' : ''}>
+              <div
+                key={product.id}
+                className={`animate-fade-in-up ${large ? 'col-span-2 lg:row-span-2' : ''}`}
+                style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
+              >
                 <ProductCard
                   product={product}
                   lineName={getLineName(product.lineId)}
