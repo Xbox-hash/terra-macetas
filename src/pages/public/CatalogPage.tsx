@@ -78,38 +78,47 @@ export const CatalogPage: React.FC = () => {
   const handleLineChange = (lineId: string) => setParam('linea', lineId === 'todas' ? null : lineId);
   const handleColorChange = (colorId: string) => setParam('color', colorId === selectedColorParam ? null : colorId);
 
-  // Colores que tienen las piezas del catálogo, los más usados primero
+  // Piezas de la línea elegida que coinciden con la búsqueda (todavía sin filtrar por color)
+  const baseProducts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return products.filter((product) => {
+      if (selectedLineParam !== 'todas' && product.lineId !== selectedLineParam) return false;
+      if (q) {
+        const colorNames = (product.colors ?? []).map((c) => c.name).join(' ');
+        const haystack = `${product.name} ${product.description} ${product.dimensions ?? ''} ${colorNames}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [products, selectedLineParam, searchQuery]);
+
+  // Solo los colores que tienen las piezas que se están viendo, los más usados primero.
+  // El color elegido se mantiene aunque no esté en la línea, para poder quitarlo.
   const availableColors = useMemo(() => {
     const byId = new Map<string, ProductColor & { count: number }>();
-    for (const p of products) {
+    for (const p of baseProducts) {
       for (const c of p.colors ?? []) {
         const prev = byId.get(c.id);
         byId.set(c.id, { ...c, count: (prev?.count ?? 0) + 1 });
       }
     }
-    return [...byId.values()].sort((a, b) => b.count - a.count);
-  }, [products]);
+    if (selectedColorParam && !byId.has(selectedColorParam)) {
+      const selected = products.flatMap((p) => p.colors ?? []).find((c) => c.id === selectedColorParam);
+      if (selected) byId.set(selected.id, { ...selected, count: 0 });
+    }
+    return [...byId.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }, [baseProducts, products, selectedColorParam]);
 
   const filteredProducts = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return products
-      .filter((product) => {
-        if (selectedLineParam !== 'todas' && product.lineId !== selectedLineParam) return false;
-        if (selectedColorParam && !(product.colors ?? []).some((c) => c.id === selectedColorParam)) return false;
-        if (q) {
-          const colorNames = (product.colors ?? []).map((c) => c.name).join(' ');
-          const haystack = `${product.name} ${product.description} ${product.dimensions ?? ''} ${colorNames}`.toLowerCase();
-          if (!haystack.includes(q)) return false;
-        }
-        return true;
-      })
+    return baseProducts
+      .filter((product) => !selectedColorParam || (product.colors ?? []).some((c) => c.id === selectedColorParam))
       .sort((a, b) => {
         if (sortBy === 'price-asc') return a.price - b.price;
         if (sortBy === 'price-desc') return b.price - a.price;
         if (sortBy === 'name') return a.name.localeCompare(b.name);
         return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
       });
-  }, [products, selectedLineParam, selectedColorParam, searchQuery, sortBy]);
+  }, [baseProducts, selectedColorParam, sortBy]);
 
   const linesWithProducts = useMemo(() => {
     return lines.filter((line) => (line.productsCount ?? 0) > 0 || products.some((p) => p.lineId === line.id && p.active));
@@ -214,7 +223,7 @@ export const CatalogPage: React.FC = () => {
         </div>
 
         {/* Filtro por color */}
-        {availableColors.length > 1 && (
+        {(availableColors.length > 1 || !!selectedColorParam) && (
           <div className="flex items-center gap-3">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-[#7D8B7A] shrink-0">Color</span>
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1 px-1" role="group" aria-label="Filtrar por color">
