@@ -167,13 +167,3 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-quickview { animation: none; }
 }
-
-/* Login: la foto nueva entra como una cortina de derecha a izquierda */
-@keyframes loginCurtain {
-  from { clip-path: inset(0 0 0 100%); }
-  to { clip-path: inset(0 0 0 0); }
-}
-.login-curtain { animation: loginCurtain 1.3s cubic-bezier(0.77, 0, 0.18, 1) both; }
-@media (prefers-reduced-motion: reduce) {
-  .login-curtain { animation: none; }
-}

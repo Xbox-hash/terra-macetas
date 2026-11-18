@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { ArrowRight, Camera, Eye, MessageCircle, Package, Plus, ShoppingBag, TrendingUp } from 'lucide-react';
 import { dashboardService, DashboardStats } from '../../services/orderService';
 import { workService } from '../../services/workService';
@@ -7,6 +7,7 @@ import { ClientWork, Order } from '../../types';
 import { formatPrice } from '../../utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminAccess } from '../../components/admin/AdminNav';
+import { AdminHeader } from '../../components/admin/AdminHeader';
 
 const isPending = (o: Order) => (o.status as string)?.trim().toLowerCase() === 'pendiente';
 
@@ -33,6 +34,7 @@ const pieces = (o: Order) => (o.items ?? []).reduce((n, it) => n + (it.quantity 
 /** Inicio del panel: lo que hay que atender hoy primero, los números al final. */
 export const HomeAdminPage: React.FC = () => {
   const { user } = useAuth();
+  const { openMobileSidebar } = useOutletContext<{ openMobileSidebar: () => void }>();
   const can = useAdminAccess();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [works, setWorks] = useState<ClientWork[]>([]);
@@ -56,22 +58,18 @@ export const HomeAdminPage: React.FC = () => {
   const firstName = user?.name?.split(' ')[0];
 
   return (
-    <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <span className="text-[11px] font-bold uppercase tracking-widest text-[#5E725F]">
-            {now.toLocaleDateString('es-PY', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </span>
-          <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-[#222A21] leading-tight">
-            {greeting(now)}
-            {firstName ? `, ${firstName}` : ''}
-          </h1>
-        </div>
-        <a href="/" target="_blank" rel="noreferrer" className="text-sm font-semibold text-[#2D3A2F] hover:underline inline-flex items-center gap-1">
-          Ver la tienda <ArrowRight className="w-4 h-4" />
-        </a>
-      </div>
-
+    <div className="flex-1 flex flex-col min-h-screen">
+      <AdminHeader
+        title={`${greeting(now)}${firstName ? `, ${firstName}` : ''}`}
+        subtitle={now.toLocaleDateString('es-PY', { weekday: 'long', day: 'numeric', month: 'long' })}
+        onOpenMobileSidebar={openMobileSidebar}
+        actions={
+          <a href="/" target="_blank" rel="noreferrer" className="hidden sm:inline-flex text-sm font-semibold text-[#2D3A2F] hover:underline items-center gap-1">
+            Ver la tienda <ArrowRight className="w-4 h-4" />
+          </a>
+        }
+      />
+    <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
       {/* Tareas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Link
@@ -224,5 +222,6 @@ export const HomeAdminPage: React.FC = () => {
         </div>
       </div>
     </main>
+    </div>
   );
 };
