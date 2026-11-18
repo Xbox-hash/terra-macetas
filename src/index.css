@@ -167,3 +167,8 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-quickview { animation: none; }
 }
+
+/* Panel: el menú ☰ se despliega desde arriba */
+@keyframes adminDrop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.animate-admin-drop { animation: adminDrop 0.22s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .animate-admin-drop { animation: none; } }
