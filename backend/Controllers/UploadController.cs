@@ -13,7 +13,7 @@ public class UploadController : ControllerBase
     };
     private static readonly HashSet<string> AllowedFolders = new(StringComparer.OrdinalIgnoreCase)
     {
-        "products", "lines", "colors", "company"
+        "products", "lines", "colors", "company", "works"
     };
 
     public UploadController(IWebHostEnvironment env)

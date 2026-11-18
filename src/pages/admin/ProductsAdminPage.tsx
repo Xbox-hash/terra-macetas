@@ -112,6 +112,16 @@ export const ProductsAdminPage: React.FC = () => {
     }
   }, [products, searchParams]);
 
+  // Desde el botón "Crear" del panel llega ?nuevo=1 (se espera a tener las líneas para preseleccionar una)
+  useEffect(() => {
+    if (searchParams.get('nuevo') && lines.length > 0) {
+      handleOpenCreate();
+      searchParams.delete('nuevo');
+      setSearchParams(searchParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lines, searchParams]);
+
   const loadData = async (silent = products.length > 0) => {
     if (!silent) setLoading(true);
     try {

@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<SiteVisit> SiteVisits => Set<SiteVisit>();
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
     public DbSet<PotColor> PotColors => Set<PotColor>();
+    public DbSet<ClientWork> ClientWorks => Set<ClientWork>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -59,6 +60,11 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Email).IsUnique();
+        });
+
+        modelBuilder.Entity<ClientWork>(entity =>
+        {
+            entity.HasKey(e => e.Id);
         });
     }
 }

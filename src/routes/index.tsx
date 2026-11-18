@@ -9,6 +9,7 @@ import { CatalogPage } from '../pages/public/CatalogPage';
 import { ProductDetailPage } from '../pages/public/ProductDetailPage';
 import { CartPage } from '../pages/public/CartPage';
 import { ContactPage } from '../pages/public/ContactPage';
+import { WorksPage } from '../pages/public/WorksPage';
 
 // Admin Pages
 import { LoginPage } from '../pages/admin/LoginPage';
@@ -20,6 +21,9 @@ import { CompanyAdminPage } from '../pages/admin/CompanyAdminPage';
 import { WhatsAppAdminPage } from '../pages/admin/WhatsAppAdminPage';
 import { UsersAdminPage } from '../pages/admin/UsersAdminPage';
 import { AnalyticsPage } from '../pages/admin/AnalyticsPage';
+import { WorksAdminPage } from '../pages/admin/WorksAdminPage';
+import { WorksNewPage } from '../pages/admin/WorksNewPage';
+import { HomeAdminPage } from '../pages/admin/HomeAdminPage';
 
 export const router = createBrowserRouter([
   // Public Site routes
@@ -31,6 +35,7 @@ export const router = createBrowserRouter([
       { path: 'catalogo', element: <CatalogPage /> },
       { path: 'producto/:id', element: <ProductDetailPage /> },
       { path: 'carrito', element: <CartPage /> },
+      { path: 'trabajos', element: <WorksPage /> },
       { path: 'contacto', element: <ContactPage /> },
     ],
   },
@@ -44,13 +49,16 @@ export const router = createBrowserRouter([
     path: '/admin',
     element: <AdminLayout />,
     children: [
-      { index: true, element: <DashboardPage /> },
-      { path: 'dashboard', element: <DashboardPage /> },
+      { index: true, element: <HomeAdminPage /> },
+      { path: 'dashboard', element: <HomeAdminPage /> },
+      { path: 'pedidos', element: <DashboardPage /> },
       { path: 'reportes', element: <AnalyticsPage /> },
       { path: 'analytics', element: <AnalyticsPage /> },
       { path: 'lineas', element: <LinesAdminPage /> },
       { path: 'productos', element: <ProductsAdminPage /> },
       { path: 'colores', element: <ColorsAdminPage /> },
+      { path: 'trabajos', element: <WorksAdminPage /> },
+      { path: 'trabajos/nuevo', element: <WorksNewPage /> },
       { path: 'empresa', element: <CompanyAdminPage /> },
       { path: 'whatsapp', element: <WhatsAppAdminPage /> },
       { path: 'usuarios', element: <UsersAdminPage /> },
