@@ -18,6 +18,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { colorService } from '../../services/colorService';
 import { compressImageFile } from '../../utils/imageCompressor';
 import { uploadService } from '../../services/uploadService';
+import { rangoPrecios } from '../../utils/precios';
 
 const getCachedAdminProducts = (): Product[] => {
   try {
@@ -71,6 +72,15 @@ export const ProductsAdminPage: React.FC = () => {
       colors: prev.colors.map((c) =>
         c.id === colorId ? { ...c, image: imageUrl || undefined } : c
       ),
+    }));
+  };
+
+  // Precio propio de un color; vacío = usa el precio general del producto
+  const handleSetColorPrice = (colorId: string, value: string) => {
+    const precio = value === '' ? null : Number(value);
+    setFormData((prev) => ({
+      ...prev,
+      colors: prev.colors.map((c) => (c.id === colorId ? { ...c, price: precio && precio > 0 ? precio : null } : c)),
     }));
   };
 
@@ -399,7 +409,8 @@ export const ProductsAdminPage: React.FC = () => {
 
                   <div>
                     <FormInput
-                      label="Precio de Venta (Guaraníes ₲)"
+                      label="Precio general (Guaraníes ₲)"
+                      helperText="Se usa en los colores que no tengan un precio propio (más abajo, en cada color)."
                       type="number"
                       required
                       min={1000}
@@ -627,6 +638,34 @@ export const ProductsAdminPage: React.FC = () => {
                                     </button>
                                   )}
                                 </div>
+                              </div>
+
+                              {/* Precio de este color */}
+                              <div className="mt-3 flex items-center gap-2">
+                                <label htmlFor={`precio-color-${color.id}`} className="text-[11px] font-semibold text-[#475446] shrink-0">
+                                  Precio de este color
+                                </label>
+                                <input
+                                  id={`precio-color-${color.id}`}
+                                  type="number"
+                                  min={1000}
+                                  step={1000}
+                                  inputMode="numeric"
+                                  value={color.price ?? ''}
+                                  onChange={(e) => handleSetColorPrice(color.id, e.target.value)}
+                                  placeholder={formData.price ? `${formatPrice(formData.price)} (general)` : 'Igual al general'}
+                                  className="min-w-0 flex-1 px-2.5 py-1.5 bg-white border border-[#D9D3C7] rounded-lg text-xs text-[#2D3A2F] tabular-nums focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
+                                />
+                                {color.price ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSetColorPrice(color.id, '')}
+                                    className="text-[11px] font-semibold text-[#4A5D4E] hover:underline shrink-0 cursor-pointer"
+                                    title="Volver al precio general"
+                                  >
+                                    Usar general
+                                  </button>
+                                ) : null}
                               </div>
 
                               {/* Panel Desplegable para Asignar Foto */}
@@ -920,7 +959,10 @@ export const ProductsAdminPage: React.FC = () => {
                         {formData.name || 'Nombre del Producto'}
                       </h4>
                       <p className="text-sm font-bold text-[#2D3A2F]">
-                        {formatPrice(formData.price || 0)}
+                        {(() => {
+                          const r = rangoPrecios({ price: formData.price || 0, colors: formData.colors } as Product);
+                          return r.varia ? `desde ${formatPrice(r.min)}` : formatPrice(r.min);
+                        })()}
                       </p>
                       {formData.colors.length > 0 && (
                         <div className="flex items-center gap-1 pt-1">
@@ -1135,7 +1177,19 @@ export const ProductsAdminPage: React.FC = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-[#4A5749]">{getLineName(product.lineId)}</td>
-                      <td className="px-6 py-4 font-bold text-base text-[#222A21]">{formatPrice(product.price)}</td>
+                      <td className="px-6 py-4 font-bold text-base text-[#222A21] tabular-nums">
+                        {(() => {
+                          const r = rangoPrecios(product);
+                          return r.varia ? (
+                            <span title="Los colores tienen precios distintos">
+                              {formatPrice(r.min)} – {formatPrice(r.max)}
+                              <span className="block text-[10px] font-semibold uppercase tracking-wider text-[#7D8B7A]">según color</span>
+                            </span>
+                          ) : (
+                            formatPrice(r.min)
+                          );
+                        })()}
+                      </td>
                       <td className="px-6 py-4">
                         <StatusBadge active={product.active} />
                       </td>

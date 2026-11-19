@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, CartItem } from '../types';
+import { precioDeColor } from '../utils/precios';
 
 interface CartContextType {
   items: CartItem[];
@@ -48,7 +49,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updated[existingIndex] = {
           ...updated[existingIndex],
           quantity: newQty,
-          subtotal: newQty * product.price,
+          subtotal: newQty * precioDeColor(product, selectedColor),
         };
         return updated;
       } else {
@@ -57,7 +58,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           {
             product,
             quantity,
-            subtotal: quantity * product.price,
+            subtotal: quantity * precioDeColor(product, selectedColor),
             selectedColor,
           },
         ];
@@ -84,7 +85,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return {
             ...item,
             quantity,
-            subtotal: quantity * item.product.price,
+            subtotal: quantity * precioDeColor(item.product, item.selectedColor),
           };
         }
         return item;

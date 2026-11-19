@@ -9,6 +9,7 @@ import { formatPrice } from '../../utils';
 import { CartItem } from '../../types';
 import { CheckoutModal } from './CheckoutModal';
 import { posicionFoco } from '../../utils/encuadre';
+import { precioDeColor } from '../../utils/precios';
 
 /** Foto y color del ítem: si eligió un color con foto propia, se muestra esa. */
 function itemVisuals(item: CartItem) {
@@ -152,7 +153,7 @@ export const CartDrawer: React.FC = () => {
                                 </span>
                                 {item.quantity > 1 && (
                                   <span className="block text-[11px] text-[#8C988A]">
-                                    {formatPrice(item.product.price)} c/u
+                                    {formatPrice(precioDeColor(item.product, item.selectedColor))} c/u
                                   </span>
                                 )}
                               </div>

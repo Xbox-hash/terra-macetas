@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { CartItem } from '../types';
 import { STORE_CONFIG } from '../data/mockData';
+import { precioDeColor } from './precios';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -85,7 +86,7 @@ export function generateWhatsAppMessage(
     const colorLabel = item.selectedColor ? `\n   🎨 Color: ${item.selectedColor}` : '';
     const timeLabel = item.product.manufacturingTime ? `\n   ⏳ Fab: ${item.product.manufacturingTime}` : '';
     message += `• *${item.quantity}x ${item.product.name}*${colorLabel}${timeLabel}\n`;
-    message += `   💵 Precio: ${formatPrice(item.product.price)} c/u | Subtotal: ${formatPrice(item.subtotal)}\n\n`;
+    message += `   💵 Precio: ${formatPrice(precioDeColor(item.product, item.selectedColor))} c/u | Subtotal: ${formatPrice(item.subtotal)}\n\n`;
   });
 
   message += `━━━━━━━━━━━━━━━━━━━━\n`;

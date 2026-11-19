@@ -9,6 +9,7 @@ import { useCart } from '../../contexts/CartContext';
 import { useToast } from '../../contexts/ToastContext';
 import { ImageStack } from '../common/ImageStack';
 import { QuantitySelector } from '../common/QuantitySelector';
+import { precioDeColor } from '../../utils/precios';
 
 interface QuickViewProps {
   product: Product;
@@ -103,7 +104,7 @@ export const QuickView: React.FC<QuickViewProps> = ({ product, lineName, initial
             </div>
             <div className="sm:mt-4 space-y-1 min-w-0">
               <h2 className="font-serif text-xl sm:text-2xl font-semibold text-[#222A21] leading-tight">{product.name}</h2>
-              <p className="text-lg font-bold text-[#2D3A2F] tabular-nums">{formatPrice(product.price)}</p>
+              <p className="text-lg font-bold text-[#2D3A2F] tabular-nums">{formatPrice(precioDeColor(product, color))}</p>
               {product.dimensions && (
                 <p className="inline-flex items-center gap-1.5 text-xs text-[#5A6757]">
                   <Ruler className="w-3.5 h-3.5 text-[#7D8B7A]" /> {product.dimensions}
