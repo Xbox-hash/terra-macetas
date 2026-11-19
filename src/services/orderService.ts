@@ -1,5 +1,6 @@
 import { CartItem, Order } from '../types';
 import { API_BASE, apiFetch, getAuthToken } from './apiConfig';
+import { precioDeColor } from '../utils/precios';
 
 const API_BASE_URL = API_BASE;
 
@@ -88,7 +89,7 @@ export const orderService = {
       productId: item.product.id,
       productName: item.selectedColor ? `${item.product.name} (Color: ${item.selectedColor})` : item.product.name,
       productImage: item.product.images[0] || '',
-      price: item.product.price,
+      price: precioDeColor(item.product, item.selectedColor), // el servidor lo recalcula igual
       quantity: item.quantity,
       subtotal: item.subtotal,
     }));

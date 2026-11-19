@@ -46,6 +46,8 @@ export interface ProductColor {
   swatchImage?: string;
   description?: string;
   active?: boolean;
+  /** Precio propio de este color en el producto; vacío = usa el precio general. */
+  price?: number | null;
   createdAt?: string;
 }
 

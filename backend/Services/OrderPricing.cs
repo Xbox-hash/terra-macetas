@@ -49,7 +49,9 @@ public static class OrderPricing
             if (!productsById.TryGetValue(item.ProductId, out var product) || !product.Active)
                 return Result<PricedOrder>.Fail("Uno de los productos ya no está disponible. Actualice el carrito e intente de nuevo.");
 
-            var subtotal = product.Price * item.Quantity;
+            // Precio del color elegido (si tiene uno propio); si no, el precio general del producto
+            var unitPrice = UnitPrice(product, ColorName(item.ProductName));
+            var subtotal = unitPrice * item.Quantity;
             total += subtotal;
 
             priced.Add(new OrderItemDto
@@ -57,13 +59,39 @@ public static class OrderPricing
                 ProductId = product.Id,
                 ProductName = BuildName(product.Name, item.ProductName),
                 ProductImage = FirstImage(product.ImagesJson),
-                Price = product.Price,
+                Price = unitPrice,
                 Quantity = item.Quantity,
                 Subtotal = subtotal
             });
         }
 
         return Result<PricedOrder>.Ok(new PricedOrder(priced, total));
+    }
+
+    /// <summary>Nombre del color que viene al final del nombre: "Vaso Botija (Color: Blanco)".</summary>
+    public static string? ColorName(string? clientName)
+    {
+        var match = ColorSuffix.Match(clientName ?? string.Empty);
+        return match.Success ? match.Groups[1].Value.Trim() : null;
+    }
+
+    /// <summary>
+    /// Precio unitario con los datos de la base: el del color (si existe en el producto y tiene precio
+    /// propio) o el precio general. Un color desconocido nunca cambia el precio.
+    /// </summary>
+    public static decimal UnitPrice(Product product, string? colorName)
+    {
+        if (string.IsNullOrWhiteSpace(colorName) || string.IsNullOrWhiteSpace(product.ColorsJson)) return product.Price;
+        try
+        {
+            var colors = JsonSerializer.Deserialize<List<ProductColorDto>>(product.ColorsJson);
+            var color = colors?.FirstOrDefault(c => string.Equals(c.Name?.Trim(), colorName.Trim(), StringComparison.OrdinalIgnoreCase));
+            return color?.Price is > 0 ? color.Price.Value : product.Price;
+        }
+        catch (JsonException)
+        {
+            return product.Price;
+        }
     }
 
     // El nombre sale de la base; del navegador solo se toma el color elegido, si vino.
