@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { ClientWork } from '../../types';
 import { workTitle } from '../../services/workService';
 import { usePrefersReducedMotion } from '../../hooks/useSlideshow';
+import { posicionFoco } from '../../utils/encuadre';
 
 /** Efecto con el que entra cada foto. */
 export type WorksEffect = 'cortina' | 'circulo' | 'diagonal' | 'tiras';
@@ -56,12 +57,12 @@ const LayerContent: React.FC<{ slide: Slide; effect: WorksEffect; alt: string }>
             alt={i === 0 ? alt : ''}
             draggable={false}
             className="absolute top-0 h-full max-w-none object-cover"
-            style={{ left: `-${i * 100}%`, width: `${STRIPS * 100}%` }}
+            style={{ left: `-${i * 100}%`, width: `${STRIPS * 100}%`, ...posicionFoco(slide.src) }}
           />
         </div>
       ))
     ) : (
-      <img src={slide.src} alt={alt} draggable={false} className="absolute inset-0 w-full h-full object-cover" />
+      <img src={slide.src} alt={alt} draggable={false} className="absolute inset-0 w-full h-full object-cover" style={posicionFoco(slide.src)} />
     )}
   </div>
 );

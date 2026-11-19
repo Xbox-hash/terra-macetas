@@ -18,6 +18,8 @@ import { colorService } from '../../services/colorService';
 import { ImageStack } from '../../components/common/ImageStack';
 import { InstagramIcon } from '../../components/common/InstagramIcon';
 import { Modal } from '../../components/common/Modal';
+import { posicionFoco } from '../../utils/encuadre';
+import { precioDeColor } from '../../utils/precios';
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -162,6 +164,9 @@ export const ProductDetailPage: React.FC = () => {
   const shownImage = activeImage || product.images[selectedImageIndex] || product.images[0] || '';
   const activeMainIndex = Math.max(0, mainImages.indexOf(shownImage));
 
+  // Precio del color elegido (o el general si el color no tiene uno propio)
+  const precioActual = precioDeColor(product, productColors.length > 0 ? selectedColor : null);
+
   const handleAddToCart = () => {
     const colorToSave = productColors.length > 0 && selectedColor ? selectedColor.name : undefined;
     addToCart(product, quantity, colorToSave);
@@ -173,7 +178,7 @@ export const ProductDetailPage: React.FC = () => {
   const handleQuickWhatsApp = () => {
     const timeDetail = product.manufacturingTime ? `\n⏳ *Tiempo de fabricación:* ${product.manufacturingTime}` : '';
     const colorDetail = productColors.length > 0 && selectedColor ? `\n🎨 *Color seleccionado:* ${selectedColor.name}` : '';
-    const message = `✨ *¡Hola ${config.storeName}!* Me interesa pedir directamente esta pieza:\n\n🏺 *${product.name}*${colorDetail}${timeDetail}\n   • Cantidad: ${quantity}\n   • Precio unitario: ${formatPrice(product.price)}\n   • Total estimado: ${formatPrice(product.price * quantity)}\n\n¿Tienen disponibilidad y cómo coordinamos la entrega? ¡Muchas gracias!`;
+    const message = `✨ *¡Hola ${config.storeName}!* Me interesa pedir directamente esta pieza:\n\n🏺 *${product.name}*${colorDetail}${timeDetail}\n   • Cantidad: ${quantity}\n   • Precio unitario: ${formatPrice(precioActual)}\n   • Total estimado: ${formatPrice(precioActual * quantity)}\n\n¿Tienen disponibilidad y cómo coordinamos la entrega? ¡Muchas gracias!`;
     const targetNumber = config.whatsappNumber?.replace(/\D/g, '') || '595981234567';
     const url = `https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -230,7 +235,7 @@ export const ProductDetailPage: React.FC = () => {
                       : 'border-transparent opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <img src={img} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" />
+                  <img src={img} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" style={posicionFoco(img)} />
                 </button>
               ))}
             </div>
@@ -252,8 +257,8 @@ export const ProductDetailPage: React.FC = () => {
               {product.name}
             </h1>
             <div className="mt-4 flex items-baseline gap-3">
-              <span className="text-2xl sm:text-3xl font-bold text-[#222A21]">
-                {formatPrice(product.price)}
+              <span className="text-2xl sm:text-3xl font-bold text-[#222A21] tabular-nums">
+                {formatPrice(precioActual)}
               </span>
               <span className="text-xs text-[#7B8878] font-medium">IVA incluido</span>
             </div>
@@ -396,6 +401,7 @@ export const ProductDetailPage: React.FC = () => {
                       src={photo.image}
                       alt={photo.caption || `Detalle ${idx + 1} de ${product.name}`}
                       loading="lazy"
+                      style={posicionFoco(photo.image)}
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/detail:scale-110"
                     />
                     <span className="absolute top-2 right-2 p-1.5 rounded-full bg-white/85 text-[#2D3A2F] opacity-0 group-hover/detail:opacity-100 transition-opacity duration-300">

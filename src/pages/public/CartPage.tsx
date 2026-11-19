@@ -7,6 +7,8 @@ import { QuantitySelector } from '../../components/common/QuantitySelector';
 import { Button } from '../../components/common/Button';
 import { formatPrice } from '../../utils';
 import { CheckoutModal } from '../../components/public/CheckoutModal';
+import { posicionFoco } from '../../utils/encuadre';
+import { precioDeColor } from '../../utils/precios';
 
 export const CartPage: React.FC = () => {
   const { items, totalItems, totalAmount, updateQuantity, removeFromCart, clearCart } = useCart();
@@ -66,6 +68,7 @@ export const CartPage: React.FC = () => {
                     <img
                       src={item.product.images[0]}
                       alt={item.product.name}
+                      style={posicionFoco(item.product.images[0])}
                       className="w-full h-full object-cover hover:scale-105 transition-transform"
                     />
                   </Link>
@@ -84,7 +87,7 @@ export const CartPage: React.FC = () => {
                           </span>
                         )}
                         <p className="text-xs text-[#6F7B6D] mt-1">
-                          Precio Unitario: <span className="font-medium text-[#2D3A2F]">{formatPrice(item.product.price)}</span>
+                          Precio Unitario: <span className="font-medium text-[#2D3A2F]">{formatPrice(precioDeColor(item.product, item.selectedColor))}</span>
                         </p>
                       </div>
 

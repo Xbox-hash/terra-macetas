@@ -6,6 +6,7 @@ import { useCompany } from '../../contexts/CompanyContext';
 import { useCart } from '../../contexts/CartContext';
 import { formatPrice } from '../../utils';
 import { orderService } from '../../services/orderService';
+import { precioDeColor } from '../../utils/precios';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -61,7 +62,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
         const colorLabel = item.selectedColor ? `\n   🎨 Color: ${item.selectedColor}` : '';
         const timeLabel = item.product.manufacturingTime ? `\n   ⏳ Fab: ${item.product.manufacturingTime}` : '';
         message += `• *${item.quantity}x ${item.product.name}*${colorLabel}${timeLabel}\n`;
-        message += `   💵 Precio: ${formatPrice(item.product.price)} c/u | Subtotal: ${formatPrice(item.subtotal)}\n\n`;
+        message += `   💵 Precio: ${formatPrice(precioDeColor(item.product, item.selectedColor))} c/u | Subtotal: ${formatPrice(item.subtotal)}\n\n`;
       });
 
       message += `━━━━━━━━━━━━━━━━━━━━\n`;

@@ -36,6 +36,8 @@ public class ProductColorDto
     public string Name { get; set; } = string.Empty;
     public string Hex { get; set; } = string.Empty;
     public string? Image { get; set; }
+    /// <summary>Precio propio de este color; null = usa el precio general del producto.</summary>
+    public decimal? Price { get; set; }
 }
 
 public class ProductDetailPhotoDto

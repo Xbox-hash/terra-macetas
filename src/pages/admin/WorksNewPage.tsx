@@ -8,6 +8,8 @@ import { uploadService } from '../../services/uploadService';
 import { compressImageFile } from '../../utils/imageCompressor';
 import { ImageUploader } from '../../components/common/ImageUploader';
 import { useToast } from '../../contexts/ToastContext';
+import { posicionFoco } from '../../utils/encuadre';
+import { SelectorPieza } from '../../components/admin/SelectorPieza';
 
 const MAX_IMAGES = 8;
 const STEPS = ['Fotos', 'Orden', 'Datos'] as const;
@@ -60,7 +62,6 @@ export const WorksNewPage: React.FC = () => {
     productService.getAll().then(setProducts).catch(() => setProducts([]));
   }, []);
 
-  const sortedProducts = useMemo(() => [...products].sort((a, b) => a.name.localeCompare(b.name)), [products]);
   const preview = workTitle(form);
 
   const handleFiles = async (files: FileList | null) => {
@@ -203,7 +204,7 @@ export const WorksNewPage: React.FC = () => {
               <div className="grid grid-cols-4 gap-2">
                 {images.map((src, i) => (
                   <div key={src} className="relative aspect-square rounded-lg overflow-hidden bg-[#F0ECE4]">
-                    <img src={src} alt="" className="w-full h-full object-cover" />
+                    <img src={src} alt="" className="w-full h-full object-cover" style={posicionFoco(src)} />
                     {i === 0 && (
                       <span className="absolute bottom-1 left-1 text-[9px] font-bold uppercase bg-[#2D3A2F]/90 text-white px-1.5 py-0.5 rounded">Portada</span>
                     )}
@@ -225,7 +226,7 @@ export const WorksNewPage: React.FC = () => {
             2 · Ordená
           </h2>
           <p className="text-xs text-[#6F7B6D] mb-3">
-            La primera es la portada. Arrastrá las fotos, usá las flechas o tocá "Hacer principal".
+            La primera es la portada. Arrastrá las fotos, usá las flechas o tocá "Hacer principal". Con el ícono de la mira elegís qué parte de la foto se ve cuando se recorta (por ejemplo, para que la maceta no quede cortada).
           </p>
           {images.length === 0 ? (
             <div className="rounded-2xl border border-[#E5DFD4] bg-white p-8 text-center text-sm text-[#6F7B6D]">Primero subí las fotos del trabajo.</div>
@@ -285,20 +286,7 @@ export const WorksNewPage: React.FC = () => {
             <label htmlFor="nw-product" className="block text-xs font-semibold text-[#475446]">
               Pieza usada <span className="font-normal text-[#7E8B7D]">(opcional)</span>
             </label>
-            <select
-              id="nw-product"
-              value={form.productId}
-              onChange={(e) => setForm({ ...form, productId: e.target.value })}
-              className="w-full px-3.5 py-3 bg-white border border-[#D9D3C7] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
-            >
-              <option value="">Ninguna</option>
-              {sortedProducts.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                  {p.active ? '' : ' (pausado)'}
-                </option>
-              ))}
-            </select>
+            <SelectorPieza id="nw-product" products={products} value={form.productId} onChange={(id) => setForm({ ...form, productId: id })} />
           </div>
           <Toggle
             id="nw-show-name"
@@ -318,7 +306,7 @@ export const WorksNewPage: React.FC = () => {
           {/* Así se ve */}
           {images[0] && (
             <div className="relative aspect-video rounded-2xl overflow-hidden bg-[#1F2720]">
-              <img src={images[0]} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              <img src={images[0]} alt="" className="absolute inset-0 w-full h-full object-cover" style={posicionFoco(images[0])} />
               <div className="absolute inset-x-0 bottom-0 p-4 pt-12 bg-gradient-to-t from-[#1A221B]/90 to-transparent text-white">
                 <span className="block text-[9px] uppercase tracking-widest opacity-80">{preview.eyebrow}</span>
                 <span className="block font-serif text-lg font-semibold leading-tight">{preview.title}</span>

@@ -7,6 +7,7 @@ import { lineService } from '../../services/lineService';
 import { ProductCard } from '../../components/public/ProductCard';
 import { OrderBar } from '../../components/public/OrderBar';
 import { LineTabs, splitLineName } from '../../components/public/LineTabs';
+import { precioMinimo } from '../../utils/precios';
 
 const getCachedLines = (): ProductLine[] => {
   try {
@@ -128,8 +129,9 @@ export const CatalogPage: React.FC = () => {
     return baseProducts
       .filter((product) => !selectedColorParam || (product.colors ?? []).some((c) => c.id === selectedColorParam))
       .sort((a, b) => {
-        if (sortBy === 'price-asc') return a.price - b.price;
-        if (sortBy === 'price-desc') return b.price - a.price;
+        // Con precios por color, se ordena por el precio más bajo de cada pieza
+        if (sortBy === 'price-asc') return precioMinimo(a) - precioMinimo(b);
+        if (sortBy === 'price-desc') return precioMinimo(b) - precioMinimo(a);
         if (sortBy === 'name') return a.name.localeCompare(b.name);
         return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
       });

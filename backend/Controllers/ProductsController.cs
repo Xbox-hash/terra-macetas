@@ -94,6 +94,9 @@ public class ProductsController : ControllerBase
             return BadRequest(new { message = "El nombre y un precio válido son obligatorios" });
         }
 
+        var colorPriceError = ValidateColorPrices(dto.Colors);
+        if (colorPriceError != null) return BadRequest(new { message = colorPriceError });
+
         var line = await _context.ProductLines.FindAsync(dto.LineId);
         if (line == null)
         {
@@ -161,7 +164,12 @@ public class ProductsController : ControllerBase
         product.Material = dto.Material?.Trim();
         product.Finish = dto.Finish?.Trim();
         product.ManufacturingTime = dto.ManufacturingTime?.Trim();
-        if (dto.Colors != null) product.ColorsJson = JsonSerializer.Serialize(dto.Colors);
+        if (dto.Colors != null)
+        {
+            var colorPriceError = ValidateColorPrices(dto.Colors);
+            if (colorPriceError != null) return BadRequest(new { message = colorPriceError });
+            product.ColorsJson = JsonSerializer.Serialize(dto.Colors);
+        }
         product.InstagramUrl = instagramUrl;
         if (dto.DetailPhotos != null) product.DetailPhotosJson = JsonSerializer.Serialize(CleanDetailPhotos(dto.DetailPhotos));
         product.Active = dto.Active;
@@ -241,6 +249,13 @@ public class ProductsController : ControllerBase
                 };
             })
             .ToList();
+    }
+
+    /// <summary>Precio por color: opcional, pero si se carga tiene que ser mayor que cero.</summary>
+    private static string? ValidateColorPrices(IEnumerable<ProductColorDto>? colors)
+    {
+        var invalid = colors?.FirstOrDefault(c => c.Price.HasValue && c.Price.Value <= 0);
+        return invalid == null ? null : $"El precio del color \"{invalid.Name}\" tiene que ser mayor que cero (o dejalo vacío para usar el precio general).";
     }
 
     private static ProductDto MapToDto(Product product, bool isList = false)

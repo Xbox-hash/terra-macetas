@@ -7,6 +7,7 @@ import { buildProductSlides } from '../../utils/productSlides';
 import { ImageStack } from '../common/ImageStack';
 import { useSlideshow } from '../../hooks/useSlideshow';
 import { QuickView } from './QuickView';
+import { precioDeColor, rangoPrecios } from '../../utils/precios';
 
 interface ProductCardProps {
   product: Product;
@@ -57,6 +58,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const colors = product.colors ?? [];
   const activeSlide = slides[index] ?? slides[0];
+
+  // Precio: el del color filtrado o el que se está mirando; si los colores tienen precios distintos, "desde"
+  const rango = rangoPrecios(product);
+  const colorVisto = preferredColorId ?? (hovered ? activeSlide.color?.id : undefined);
+  const textoPrecio = colorVisto
+    ? formatPrice(precioDeColor(product, colorVisto))
+    : rango.varia
+    ? `desde ${formatPrice(rango.min)}`
+    : formatPrice(rango.min);
 
   const showColor = (colorId: string) => {
     const i = slides.findIndex((s) => s.color?.id === colorId);
@@ -125,9 +135,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {product.name}
             </h3>
           </Link>
-          <span className="hidden sm:inline text-sm font-bold text-[#2D3A2F] tabular-nums shrink-0">{formatPrice(product.price)}</span>
+          <span className="hidden sm:inline text-sm font-bold text-[#2D3A2F] tabular-nums shrink-0">{textoPrecio}</span>
         </div>
-        <span className="sm:hidden text-sm font-bold text-[#2D3A2F] tabular-nums">{formatPrice(product.price)}</span>
+        <span className="sm:hidden text-sm font-bold text-[#2D3A2F] tabular-nums">{textoPrecio}</span>
 
         <div className="flex items-center justify-between gap-2 min-h-5">
           {product.dimensions ? (
