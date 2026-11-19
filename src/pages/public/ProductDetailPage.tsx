@@ -18,6 +18,7 @@ import { colorService } from '../../services/colorService';
 import { ImageStack } from '../../components/common/ImageStack';
 import { InstagramIcon } from '../../components/common/InstagramIcon';
 import { Modal } from '../../components/common/Modal';
+import { posicionFoco } from '../../utils/encuadre';
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -230,7 +231,7 @@ export const ProductDetailPage: React.FC = () => {
                       : 'border-transparent opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <img src={img} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" />
+                  <img src={img} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" style={posicionFoco(img)} />
                 </button>
               ))}
             </div>
@@ -396,6 +397,7 @@ export const ProductDetailPage: React.FC = () => {
                       src={photo.image}
                       alt={photo.caption || `Detalle ${idx + 1} de ${product.name}`}
                       loading="lazy"
+                      style={posicionFoco(photo.image)}
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/detail:scale-110"
                     />
                     <span className="absolute top-2 right-2 p-1.5 rounded-full bg-white/85 text-[#2D3A2F] opacity-0 group-hover/detail:opacity-100 transition-opacity duration-300">

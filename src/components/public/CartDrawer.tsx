@@ -8,6 +8,7 @@ import { Button } from '../common/Button';
 import { formatPrice } from '../../utils';
 import { CartItem } from '../../types';
 import { CheckoutModal } from './CheckoutModal';
+import { posicionFoco } from '../../utils/encuadre';
 
 /** Foto y color del ítem: si eligió un color con foto propia, se muestra esa. */
 function itemVisuals(item: CartItem) {
@@ -97,7 +98,7 @@ export const CartDrawer: React.FC = () => {
                             onClick={closeCartDrawer}
                             className="w-24 h-28 rounded-xl overflow-hidden bg-[#F1EDE5] border border-[#ECE6DB] shrink-0"
                           >
-                            <img src={image} alt={item.product.name} className="w-full h-full object-cover" />
+                            <img src={image} alt={item.product.name} className="w-full h-full object-cover" style={posicionFoco(image)} />
                           </Link>
 
                           {/* Datos */}

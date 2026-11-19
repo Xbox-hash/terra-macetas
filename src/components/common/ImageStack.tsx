@@ -1,4 +1,11 @@
 import React from 'react';
+import { posicionFoco } from '../../utils/encuadre';
+
+/** Encuadre elegido para la foto; el zoom lento también se acerca hacia ese punto. */
+const encuadre = (src: string): React.CSSProperties | undefined => {
+  const p = posicionFoco(src);
+  return p ? { ...p, transformOrigin: String(p.objectPosition) } : undefined;
+};
 
 interface ImageStackProps {
   /** Todas las fotos que se pueden mostrar. Se apilan y solo la activa es visible. */
@@ -41,7 +48,7 @@ export const ImageStack: React.FC<ImageStackProps> = ({
             loading={eager && idx === 0 ? 'eager' : 'lazy'}
             decoding="async"
             draggable={false}
-            style={{ transitionDuration: `${fadeMs}ms` }}
+            style={{ transitionDuration: `${fadeMs}ms`, ...encuadre(src) }}
             className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity ease-in-out ${
               isActive ? 'opacity-100 z-[1]' : 'opacity-0 z-0'
             } ${kenBurns && isActive ? 'animate-ken-burns' : ''}`}
