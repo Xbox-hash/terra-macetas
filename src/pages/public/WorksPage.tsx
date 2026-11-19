@@ -4,6 +4,7 @@ import { ArrowRight, Camera, ChevronLeft, ChevronRight, MapPin, X } from 'lucide
 import { ClientWork } from '../../types';
 import { workService, workTitle } from '../../services/workService';
 import { usePrefersReducedMotion } from '../../hooks/useSlideshow';
+import { posicionFoco } from '../../utils/encuadre';
 
 const CACHE_KEY = 'terra_cached_works';
 
@@ -177,6 +178,7 @@ export const WorksPage: React.FC = () => {
                   alt=""
                   loading="lazy"
                   decoding="async"
+                  style={posicionFoco(w.images[0])}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1100ms] ease-[cubic-bezier(.2,.8,.2,1)] group-hover:scale-[1.08] group-focus-visible:scale-[1.08]"
                 />
                 <span className="absolute inset-0 bg-gradient-to-t from-[#1A221B]/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-500" />
@@ -219,6 +221,7 @@ export const WorksPage: React.FC = () => {
                   key={src}
                   src={src}
                   alt={i === opened.image ? current.title : ''}
+                  style={posicionFoco(src)}
                   className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${i === opened.image ? 'opacity-100' : 'opacity-0'}`}
                 />
               ))}

@@ -11,6 +11,8 @@ import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { FormInput } from '../../components/common/FormInput';
 import { ImageUploader } from '../../components/common/ImageUploader';
 import { useToast } from '../../contexts/ToastContext';
+import { posicionFoco } from '../../utils/encuadre';
+import { SelectorPieza } from '../../components/admin/SelectorPieza';
 
 const MAX_IMAGES = 8;
 
@@ -77,7 +79,8 @@ export const WorksAdminPage: React.FC = () => {
     productService.getAll().then(setProducts).catch(() => setProducts([]));
   }, []);
 
-  const sortedProducts = useMemo(() => [...products].sort((a, b) => a.name.localeCompare(b.name)), [products]);
+  // Línea de cada pieza, para mostrarla en las tarjetas (hay nombres repetidos entre líneas)
+  const lineaDe = useMemo(() => new Map(products.map((p) => [p.id, p.lineName])), [products]);
 
   // Los trabajos nuevos se cargan en la pantalla de 3 pasos; la ventana queda para editar
   const openCreate = () => navigate('/admin/trabajos/nuevo');
@@ -196,7 +199,7 @@ export const WorksAdminPage: React.FC = () => {
                   className={`bg-white rounded-2xl border border-[#E5DFD4] overflow-hidden flex flex-col transition-opacity ${w.active ? '' : 'opacity-60'}`}
                 >
                   <div className="relative aspect-4/3 bg-[#F0ECE4]">
-                    {w.images[0] && <img src={w.images[0]} alt="" className="w-full h-full object-cover" loading="lazy" />}
+                    {w.images[0] && <img src={w.images[0]} alt="" className="w-full h-full object-cover" style={posicionFoco(w.images[0])} loading="lazy" />}
                     <div className="absolute top-2.5 left-2.5 flex gap-1.5">
                       {w.featured && (
                         <span className="inline-flex items-center gap-1 bg-[#2D3A2F]/90 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full">
@@ -225,6 +228,7 @@ export const WorksAdminPage: React.FC = () => {
                       {w.productName && (
                         <span className="inline-flex items-center gap-1">
                           <Package className="w-3 h-3" /> {w.productName}
+                          {w.productId && lineaDe.get(w.productId) ? ` · ${lineaDe.get(w.productId)}` : ''}
                         </span>
                       )}
                     </div>
@@ -275,7 +279,7 @@ export const WorksAdminPage: React.FC = () => {
                   {form.images.length} de {MAX_IMAGES}
                 </span>
               </div>
-              <p className="text-[11px] text-[#6E7B6C]">La primera foto es la portada. Arrastralas o usá las flechas para cambiar el orden. Se comprimen solas al subirlas.</p>
+              <p className="text-[11px] text-[#6E7B6C]">La primera foto es la portada. Arrastralas o usá las flechas para cambiar el orden. Con el ícono de la mira elegís qué parte de la foto se ve cuando se recorta.</p>
               <ImageUploader maxImages={MAX_IMAGES} folder="works" value={form.images} onChange={(images) => setForm({ ...form, images })} />
             </div>
 
@@ -317,20 +321,7 @@ export const WorksAdminPage: React.FC = () => {
               <label htmlFor="work-product" className="block text-xs font-semibold uppercase tracking-wider text-[#475446]">
                 Pieza usada (opcional)
               </label>
-              <select
-                id="work-product"
-                value={form.productId ?? ''}
-                onChange={(e) => setForm({ ...form, productId: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-white border border-[#D9D3C7] rounded-xl text-sm text-[#2D3A2F] focus:outline-none focus:ring-2 focus:ring-[#2D3A2F]"
-              >
-                <option value="">Ninguna</option>
-                {sortedProducts.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                    {p.active ? '' : ' (pausado)'}
-                  </option>
-                ))}
-              </select>
+              <SelectorPieza id="work-product" products={products} value={form.productId} onChange={(id) => setForm({ ...form, productId: id })} />
               <p className="text-[11px] text-[#6E7B6C]">Pone un botón hacia la ficha y muestra este trabajo en esa ficha.</p>
             </div>
 
@@ -373,7 +364,7 @@ export const WorksAdminPage: React.FC = () => {
             <span className="block text-xs font-semibold uppercase tracking-wider text-[#475446]">Vista previa</span>
             <div className="relative aspect-4/5 rounded-2xl overflow-hidden bg-[#1F2720]">
               {form.images[0] ? (
-                <img src={form.images[0]} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                <img src={form.images[0]} alt="" className="absolute inset-0 w-full h-full object-cover" style={posicionFoco(form.images[0])} />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-[#8C988A]">
                   <Camera className="w-8 h-8" />

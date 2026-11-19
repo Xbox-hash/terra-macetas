@@ -8,6 +8,7 @@ import { formatPrice } from '../../utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminAccess } from '../../components/admin/AdminNav';
 import { AdminHeader } from '../../components/admin/AdminHeader';
+import { posicionFoco } from '../../utils/encuadre';
 
 const isPending = (o: Order) => (o.status as string)?.trim().toLowerCase() === 'pendiente';
 
@@ -179,7 +180,7 @@ export const HomeAdminPage: React.FC = () => {
             <div className="grid grid-cols-4 gap-2">
               {works.slice(0, 3).map((w) => (
                 <Link key={w.id} to="/admin/trabajos" className="aspect-square rounded-xl overflow-hidden bg-[#F0ECE4]">
-                  {w.images[0] && <img src={w.images[0]} alt="" className="w-full h-full object-cover" loading="lazy" />}
+                  {w.images[0] && <img src={w.images[0]} alt="" className="w-full h-full object-cover" style={posicionFoco(w.images[0])} loading="lazy" />}
                 </Link>
               ))}
               <Link

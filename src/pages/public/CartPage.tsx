@@ -7,6 +7,7 @@ import { QuantitySelector } from '../../components/common/QuantitySelector';
 import { Button } from '../../components/common/Button';
 import { formatPrice } from '../../utils';
 import { CheckoutModal } from '../../components/public/CheckoutModal';
+import { posicionFoco } from '../../utils/encuadre';
 
 export const CartPage: React.FC = () => {
   const { items, totalItems, totalAmount, updateQuantity, removeFromCart, clearCart } = useCart();
@@ -66,6 +67,7 @@ export const CartPage: React.FC = () => {
                     <img
                       src={item.product.images[0]}
                       alt={item.product.name}
+                      style={posicionFoco(item.product.images[0])}
                       className="w-full h-full object-cover hover:scale-105 transition-transform"
                     />
                   </Link>

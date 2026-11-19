@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, Image as ImageIcon, X, Link as LinkIcon, FolderOpen, Check, Loader2 } from 'lucide-react';
+import { UploadCloud, Image as ImageIcon, X, Link as LinkIcon, FolderOpen, Check, Loader2, Crosshair } from 'lucide-react';
 import { compressImageFile } from '../../utils/imageCompressor';
 import { uploadService } from '../../services/uploadService';
+import { leerFoco, posicionFoco } from '../../utils/encuadre';
+import { EncuadreFoto } from './EncuadreFoto';
 
 interface ImageUploaderProps {
   value: string[];
@@ -24,6 +26,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   // Foto que se está arrastrando para cambiarla de lugar
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  // Foto a la que se le está eligiendo el encuadre
+  const [encuadrando, setEncuadrando] = useState<number | null>(null);
 
   const handleRemove = (index: number) => {
     const updated = value.filter((_, i) => i !== index);
@@ -158,6 +162,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
               src={img}
               alt={`Preview ${idx + 1}`}
               className="w-full h-full object-cover"
+              style={posicionFoco(img)}
+              draggable={false}
               onError={(e) => {
                 // Fallback si la url no carga
                 (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=600&q=80';
@@ -170,6 +176,18 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
               title="Eliminar imagen"
             >
               <X className="w-3.5 h-3.5" />
+            </button>
+            {/* Encuadre: qué parte de la foto queda a la vista al recortarse */}
+            <button
+              type="button"
+              onClick={() => setEncuadrando(idx)}
+              className={`absolute top-1.5 right-9 w-[26px] h-[26px] grid place-items-center rounded-full shadow-xs cursor-pointer transition-colors ${
+                leerFoco(img) ? 'bg-[#2D3A2F] text-white' : 'bg-black/70 text-white hover:bg-[#2D3A2F]'
+              }`}
+              title={leerFoco(img) ? 'Encuadre elegido: tocá para cambiarlo' : 'Encuadre: elegir qué parte de la foto se ve al recortarse'}
+              aria-label="Encuadre de la foto"
+            >
+              <Crosshair className="w-3.5 h-3.5" />
             </button>
             {idx === 0 ? (
               <span className="absolute bottom-1.5 left-1.5 text-[10px] uppercase font-semibold tracking-wider bg-[#2D3A2F]/90 text-white px-2 py-0.5 rounded shadow-xs">
@@ -235,6 +253,17 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
           </div>
         )}
       </div>
+
+      {encuadrando !== null && value[encuadrando] && (
+        <EncuadreFoto
+          src={value[encuadrando]}
+          onCancel={() => setEncuadrando(null)}
+          onSave={(nueva) => {
+            onChange(value.map((v, i) => (i === encuadrando ? nueva : v)));
+            setEncuadrando(null);
+          }}
+        />
+      )}
 
       {/* Upload/Add Modal or Dropdown */}
       {isAddingUrl && (
